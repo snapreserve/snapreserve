@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Centre — SnapReserve</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F4601A;--orange-light:#FF7A35;--orange-dim:rgba(244,96,26,.1);
+  --blue:#1A6EF4;--blue-light:#4A8EF6;--blue-dim:rgba(26,110,244,.1);
+  --green:#16A34A;--green-dim:rgba(22,163,74,.1);
+  --gold:#D97706;--gold-dim:rgba(217,119,6,.1);
+  --red:#DC2626;--red-dim:rgba(220,38,38,.08);
+  --bg:#FAF8F5;--surface:#FFFFFF;--card:#F3F0EB;--xlight:#F0EDE8;
+  --border:#E8E2D9;--border2:#D4CEC5;
+  --dark:#1A1410;--mid:#6B5F54;--light:#C4BAB0;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --shadow:0 4px 16px rgba(0,0,0,.09);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.13);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--dark);line-height:1.6;font-size:15px;}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:64px;background:white;
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;}
+.logo{font-family:var(--serif);font-size:1.25rem;font-weight:900;text-decoration:none;color:var(--dark);}
+.logo span{color:var(--orange);}
+.nav-r{display:flex;align-items:center;gap:10px;}
+.nav-btn{background:none;border:1px solid var(--border2);border-radius:100px;
+  padding:7px 16px;font-size:.82rem;font-weight:600;color:var(--mid);
+  cursor:pointer;font-family:var(--sans);transition:all .18s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.nav-btn:hover{border-color:var(--dark);color:var(--dark);}
+.nav-btn.primary{background:var(--orange);border-color:var(--orange);color:white;}
+.nav-btn.primary:hover{background:var(--orange-light);border-color:var(--orange-light);}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(160deg,#fff9f6 0%,#fffbf8 40%,#f0f6ff 100%);
+  border-bottom:1px solid var(--border);
+  padding:64px 40px 56px;text-align:center;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,var(--orange) 1px,transparent 1px),
+    radial-gradient(circle,var(--blue) 1px,transparent 1px);
+  background-size:60px 60px,90px 90px;
+  background-position:10px 10px,40px 45px;
+  opacity:.06;pointer-events:none;
+}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;
+  background:var(--orange-dim);border:1px solid rgba(244,96,26,.2);
+  border-radius:100px;padding:5px 16px;font-size:.72rem;font-weight:700;
+  color:var(--orange);margin-bottom:18px;text-transform:uppercase;letter-spacing:.06em;}
+.hero h1{font-family:var(--serif);font-size:clamp(2rem,5vw,3rem);font-weight:700;
+  letter-spacing:-.8px;line-height:1.1;margin-bottom:14px;}
+.hero h1 em{font-style:italic;color:var(--orange);}
+.hero-sub{font-size:.92rem;color:var(--mid);max-width:500px;margin:0 auto 32px;line-height:1.75;}
+
+/* Search bar */
+.support-search{
+  max-width:560px;margin:0 auto;
+  background:white;border:1px solid var(--border2);border-radius:16px;
+  display:flex;align-items:center;gap:0;overflow:hidden;
+  box-shadow:var(--shadow);transition:box-shadow .2s;
+}
+.support-search:focus-within{box-shadow:var(--shadow-lg);border-color:var(--orange);}
+.ss-input{flex:1;border:none;outline:none;padding:16px 20px;font-size:.9rem;
+  font-family:var(--sans);color:var(--dark);background:transparent;}
+.ss-input::placeholder{color:var(--light);}
+.ss-btn{background:var(--orange);border:none;padding:12px 24px;font-size:.84rem;
+  font-weight:700;color:white;cursor:pointer;font-family:var(--sans);
+  transition:background .18s;margin:6px;border-radius:10px;}
+.ss-btn:hover{background:var(--orange-light);}
+
+/* ── CONTACT CARDS ── */
+.contact-strip{
+  max-width:1100px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:20px;padding:48px 40px 0;
+}
+.contact-card{
+  background:white;border:1px solid var(--border);border-radius:18px;
+  padding:28px 24px;text-align:center;transition:all .22s;cursor:pointer;
+  text-decoration:none;color:inherit;display:block;
+}
+.contact-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--border2);}
+.cc-ico{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;
+  justify-content:center;font-size:24px;margin:0 auto 14px;}
+.cc-title{font-family:var(--serif);font-size:1.05rem;font-weight:700;margin-bottom:6px;}
+.cc-desc{font-size:.8rem;color:var(--mid);line-height:1.65;margin-bottom:14px;}
+.cc-meta{font-size:.72rem;font-weight:700;border-radius:100px;padding:4px 14px;
+  display:inline-flex;align-items:center;gap:5px;}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1100px;margin:0 auto;padding:48px 40px 80px;
+  display:grid;grid-template-columns:240px 1fr;gap:40px;align-items:start;}
+
+/* ── SIDEBAR ── */
+.sidebar{position:sticky;top:84px;}
+.sb-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--light);margin-bottom:10px;padding:0 4px;}
+.sb-nav{display:flex;flex-direction:column;gap:2px;margin-bottom:28px;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  font-size:.84rem;font-weight:600;color:var(--mid);text-decoration:none;
+  transition:all .15s;cursor:pointer;border:none;background:none;font-family:var(--sans);
+  text-align:left;width:100%;}
+.sb-link:hover,.sb-link.active{background:var(--orange-dim);color:var(--orange);}
+.sb-link .sb-ico{font-size:16px;width:22px;text-align:center;}
+.sb-divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.sb-emergency{background:var(--red-dim);border:1px solid rgba(220,38,38,.15);
+  border-radius:12px;padding:14px;margin-top:4px;}
+.se-t{font-size:.78rem;font-weight:700;color:var(--red);margin-bottom:4px;}
+.se-d{font-size:.72rem;color:var(--mid);line-height:1.6;margin-bottom:10px;}
+.se-btn{width:100%;background:var(--red);border:none;border-radius:8px;padding:9px;
+  font-size:.76rem;font-weight:700;color:white;cursor:pointer;font-family:var(--sans);}
+
+/* ── CONTENT ── */
+.content{}
+.section-block{margin-bottom:40px;}
+.sb-h{font-family:var(--serif);font-size:1.4rem;font-weight:700;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.sb-sub{font-size:.84rem;color:var(--mid);margin-bottom:20px;}
+
+/* FAQ accordions */
+.faq-list{display:flex;flex-direction:column;gap:8px;}
+.faq-item{background:white;border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;transition:border-color .18s;}
+.faq-item.open{border-color:var(--orange);}
+.faq-q{display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px;cursor:pointer;font-size:.88rem;font-weight:600;
+  gap:12px;transition:background .15s;}
+.faq-q:hover{background:var(--xlight);}
+.faq-item.open .faq-q{background:var(--orange-dim);color:var(--orange);}
+.faq-arrow{flex-shrink:0;font-size:13px;transition:transform .2s;color:var(--light);}
+.faq-item.open .faq-arrow{transform:rotate(180deg);color:var(--orange);}
+.faq-a{display:none;padding:0 20px 18px;font-size:.84rem;color:var(--mid);
+  line-height:1.8;border-top:1px solid var(--border);}
+.faq-item.open .faq-a{display:block;}
+.faq-a a{color:var(--orange);text-decoration:none;font-weight:600;}
+.faq-a a:hover{text-decoration:underline;}
+
+/* Policy cards */
+.policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pol-card{background:white;border:1px solid var(--border);border-radius:14px;padding:20px;}
+.pol-ico{font-size:24px;margin-bottom:10px;}
+.pol-t{font-size:.9rem;font-weight:700;margin-bottom:6px;}
+.pol-d{font-size:.8rem;color:var(--mid);line-height:1.7;}
+.pol-highlight{background:var(--orange-dim);border:1px solid rgba(244,96,26,.15);
+  border-radius:8px;padding:10px 14px;margin-top:10px;font-size:.76rem;
+  color:var(--orange);font-weight:600;}
+
+/* Step guides */
+.steps-list{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:16px;position:relative;}
+.step-item::before{content:'';position:absolute;left:19px;top:40px;
+  width:2px;height:calc(100% - 8px);background:var(--border);}
+.step-item:last-child::before{display:none;}
+.step-num{width:40px;height:40px;border-radius:50%;background:var(--orange);
+  color:white;font-weight:700;font-size:.86rem;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;z-index:1;}
+.step-body{padding:8px 0 28px;}
+.step-t{font-size:.9rem;font-weight:700;margin-bottom:4px;}
+.step-d{font-size:.82rem;color:var(--mid);line-height:1.75;}
+.step-note{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  font-size:.74rem;font-weight:700;color:var(--green);background:var(--green-dim);
+  border-radius:100px;padding:3px 10px;}
+
+/* Status banner */
+.status-banner{background:white;border:1px solid var(--border);border-radius:14px;
+  padding:18px 20px;display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;
+  animation:pulse 2s ease-in-out infinite;}
+.status-dot.green{background:var(--green);box-shadow:0 0 0 4px var(--green-dim);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.status-text{flex:1;}
+.st-t{font-size:.86rem;font-weight:700;margin-bottom:1px;}
+.st-d{font-size:.74rem;color:var(--mid);}
+.status-time{font-size:.72rem;color:var(--light);}
+
+/* Contact form */
+.contact-form{background:white;border:1px solid var(--border);border-radius:18px;padding:28px;}
+.cf-h{font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:6px;}
+.cf-sub{font-size:.8rem;color:var(--mid);margin-bottom:22px;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--mid);margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--xlight);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;font-size:.86rem;color:var(--dark);
+  font-family:var(--sans);outline:none;transition:all .18s;}
+.form-input:focus{border-color:var(--orange);background:white;}
+.form-select{width:100%;background:var(--xlight);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;font-size:.86rem;color:var(--dark);
+  font-family:var(--sans);outline:none;appearance:none;cursor:pointer;
+  transition:all .18s;}
+.form-select:focus{border-color:var(--orange);background:white;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.submit-btn{width:100%;background:var(--orange);border:none;border-radius:12px;
+  padding:14px;font-size:.92rem;font-weight:700;color:white;cursor:pointer;
+  font-family:var(--sans);transition:all .2s;margin-top:6px;}
+.submit-btn:hover{background:var(--orange-light);transform:translateY(-1px);}
+.response-note{text-align:center;font-size:.72rem;color:var(--light);margin-top:10px;
+  display:flex;align-items:center;justify-content:center;gap:5px;}
+
+/* ── POPULAR TOPICS ── */
+.topics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:40px;}
+.topic-card{background:white;border:1px solid var(--border);border-radius:14px;
+  padding:18px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;display:block;}
+.topic-card:hover{border-color:var(--orange);background:var(--orange-dim);transform:translateY(-2px);}
+.tc-ico{font-size:26px;margin-bottom:10px;}
+.tc-t{font-size:.86rem;font-weight:700;margin-bottom:4px;}
+.tc-d{font-size:.74rem;color:var(--mid);}
+.tc-arr{font-size:.76rem;color:var(--orange);font-weight:700;margin-top:8px;}
+
+/* ── FOOTER ── */
+.support-footer{background:#1A1410;color:#A89880;padding:32px 40px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;
+  font-family:var(--sans);}
+.sf-logo{font-family:var(--serif);font-size:1rem;font-weight:700;color:#F5EFE8;}
+.sf-logo span{color:var(--orange);}
+.sf-socials{display:flex;gap:10px;}
+.sf-s{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;
+  text-decoration:none;color:#A89880;font-size:11px;font-weight:700;transition:all .18s;}
+.sf-s:hover{background:var(--orange);color:white;}
+.sf-copy{font-size:.72rem;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;
+  border-radius:12px;padding:13px 18px;font-size:.8rem;font-weight:500;z-index:9999;
+  transform:translateY(80px);opacity:0;transition:all .3s;max-width:280px;box-shadow:var(--shadow-lg);}
+#toast.show{transform:translateY(0);opacity:1;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:860px){
+  .main{grid-template-columns:1fr;}
+  .sidebar{position:relative;top:0;}
+  .contact-strip,.topics-grid{grid-template-columns:1fr 1fr;}
+  .policy-grid{grid-template-columns:1fr;}
+  .nav,.hero,.contact-strip,.main{padding-left:20px;padding-right:20px;}
+  .support-footer{padding:24px 20px;}
+}
+@media(max-width:560px){
+  .contact-strip,.topics-grid{grid-template-columns:1fr;}
+  .g2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="snapreserve.html" class="logo">Snap<span>Reserve</span></a>
+  <div class="nav-r">
+    <a href="snapreserve.html" class="nav-btn">🏠 Home</a>
+    <a href="mailto:support@snapreserve.co" class="nav-btn primary">✉️ Email support</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🛎️ Support Centre</div>
+  <h1>How can we <em>help you?</em></h1>
+  <p class="hero-sub">Find answers instantly, or reach our team directly. We're here 24/7 for anything that affects your stay or your listing.</p>
+  <div class="support-search">
+    <input class="ss-input" placeholder="Search for answers — e.g. 'cancel booking', 'payout', 'refund'..." id="searchInput" oninput="liveSearch(this.value)">
+    <button class="ss-btn" onclick="toast('🔍 Searching...')">Search</button>
+  </div>
+</div>
+
+<!-- CONTACT CARDS -->
+<div class="contact-strip">
+  <a class="contact-card" href="mailto:support@snapreserve.co">
+    <div class="cc-ico" style="background:var(--orange-dim);">✉️</div>
+    <div class="cc-title">Email Support</div>
+    <div class="cc-desc">Send us a message and we'll get back to you with a full resolution.</div>
+    <div class="cc-meta" style="background:var(--orange-dim);color:var(--orange);">⏱ Within 24 hours</div>
+  </a>
+  <div class="contact-card" onclick="scrollTo('contact-form')">
+    <div class="cc-ico" style="background:var(--blue-dim);">💬</div>
+    <div class="cc-title">Submit a Request</div>
+    <div class="cc-desc">Fill out our support form and we'll route it to the right team straight away.</div>
+    <div class="cc-meta" style="background:var(--blue-dim);color:var(--blue);">📋 Tracked ticket</div>
+  </div>
+  <div class="contact-card" onclick="toast('Live chat launching soon!')">
+    <div class="cc-ico" style="background:var(--green-dim);">🟢</div>
+    <div class="cc-title">Live Chat</div>
+    <div class="cc-desc">Chat with a real person for urgent issues. Available during business hours.</div>
+    <div class="cc-meta" style="background:var(--green-dim);color:var(--green);">🚀 Coming soon</div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-label">Browse topics</div>
+    <div class="sb-nav">
+      <button class="sb-link active" onclick="showSection('guests')">
+        <span class="sb-ico">🏨</span> For Guests
+      </button>
+      <button class="sb-link" onclick="showSection('hosts')">
+        <span class="sb-ico">🏠</span> For Hosts
+      </button>
+      <button class="sb-link" onclick="showSection('payments')">
+        <span class="sb-ico">💳</span> Payments & Refunds
+      </button>
+      <button class="sb-link" onclick="showSection('cancellations')">
+        <span class="sb-ico">🌿</span> Cancellations
+      </button>
+      <button class="sb-link" onclick="showSection('account')">
+        <span class="sb-ico">👤</span> Account & Profile
+      </button>
+      <button class="sb-link" onclick="showSection('contact')">
+        <span class="sb-ico">✉️</span> Contact Us
+      </button>
+    </div>
+
+    <hr class="sb-divider">
+    <div class="sb-label">System status</div>
+    <div class="status-banner" style="padding:14px 16px;margin-bottom:0;">
+      <div class="status-dot green"></div>
+      <div class="status-text">
+        <div class="st-t">All systems normal</div>
+        <div class="st-d">No issues reported</div>
+      </div>
+    </div>
+
+    <hr class="sb-divider">
+    <div class="sb-emergency">
+      <div class="se-t">🚨 Urgent issue?</div>
+      <div class="se-d">If your safety is at risk or you have an emergency at your stay, contact us immediately.</div>
+      <button class="se-btn" onclick="toast('Connecting to urgent support...')">Get urgent help</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- POPULAR TOPICS -->
+    <div class="topics-grid">
+      <div class="topic-card" onclick="openFaq('cancel')">
+        <div class="tc-ico">🌿</div>
+        <div class="tc-t">Cancel a booking</div>
+        <div class="tc-d">Free cancellation up to 48h before check-in</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+      <div class="topic-card" onclick="openFaq('refund')">
+        <div class="tc-ico">💸</div>
+        <div class="tc-t">Get a refund</div>
+        <div class="tc-d">How refunds work and when they arrive</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+      <div class="topic-card" onclick="openFaq('payout')">
+        <div class="tc-ico">💰</div>
+        <div class="tc-t">Host payouts</div>
+        <div class="tc-d">When you get paid and how it works</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+      <div class="topic-card" onclick="openFaq('checkin')">
+        <div class="tc-ico">🗝️</div>
+        <div class="tc-t">Check-in help</div>
+        <div class="tc-d">Can't get in? Lost the code? We'll fix it</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+      <div class="topic-card" onclick="openFaq('modify')">
+        <div class="tc-ico">📅</div>
+        <div class="tc-t">Modify dates</div>
+        <div class="tc-d">Change your check-in or checkout date</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+      <div class="topic-card" onclick="openFaq('dispute')">
+        <div class="tc-ico">🤝</div>
+        <div class="tc-t">Raise a dispute</div>
+        <div class="tc-d">Property not as described or other issues</div>
+        <div class="tc-arr">Read more →</div>
+      </div>
+    </div>
+
+    <!-- SECTION: GUESTS -->
+    <div class="section-block" id="section-guests">
+      <div class="sb-h">🏨 For Guests</div>
+      <p class="sb-sub">Everything you need to know before, during, and after your stay.</p>
+      <div class="faq-list">
+
+        <div class="faq-item" id="faq-cancel">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I cancel my booking?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Go to your <a href="#">Trips</a> page, select the booking you want to cancel, and click "Cancel booking." If you cancel more than 48 hours before check-in, you'll receive a full refund. If you cancel within 48 hours, you'll receive a 50% refund. Refunds are processed within 5–10 business days depending on your bank.
+            <div style="margin-top:10px;padding:10px 14px;background:var(--orange-dim);border-radius:8px;font-size:.76rem;color:var(--orange);font-weight:600;">
+              ⏰ Free cancellation deadline: 48 hours before your check-in time
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-modify">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Can I change my check-in or checkout dates?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Yes — go to your Trips page, select the booking, and click "Request date change." Your host will need to approve the new dates. If the new dates are cheaper, you'll be refunded the difference. If they're more expensive, you'll be charged the extra amount. Date changes are subject to availability.
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-checkin">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            I can't check in — what do I do?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            First, message your host directly through the app — they usually respond within minutes. If you can't reach your host within 30 minutes of your expected check-in time, contact us at <a href="mailto:support@snapreserve.co">support@snapreserve.co</a> or use the urgent help button. We'll step in immediately and either resolve the issue or arrange alternative accommodation at no extra cost.
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-refund">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How long does a refund take?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Once a refund is approved, it typically takes 5–10 business days to appear on your original payment method. Credit cards usually process faster (3–5 days). Debit cards can take up to 10 days. You'll receive an email confirmation as soon as the refund is initiated.
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-dispute">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            The property wasn't as described — what can I do?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            If your property significantly differs from the listing — missing amenities, incorrect room type, safety issues, or cleanliness problems — contact us within 24 hours of check-in. Include photos where possible. We take these seriously and will either resolve the issue with the host or arrange a full refund and alternative accommodation.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Can I leave a review after my stay?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Yes — you'll receive an email after checkout with a link to leave a review. You can also go to your Trips page and click "Leave a review" on any past booking. Reviews can be left up to 14 days after checkout. All reviews are verified — only guests who actually stayed can leave them.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            What is the SnapReserve service fee?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            SnapReserve charges a 3.2% service fee on every booking — one of the lowest in the industry. This fee covers payment processing, 24/7 customer support, fraud protection, and platform maintenance. The fee is shown clearly in the price breakdown before you confirm any booking. There are no hidden charges.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: HOSTS -->
+    <div class="section-block" id="section-hosts" style="display:none;">
+      <div class="sb-h">🏠 For Hosts</div>
+      <p class="sb-sub">Everything you need to manage your listing and get paid reliably.</p>
+      <div class="faq-list">
+
+        <div class="faq-item" id="faq-payout">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            When do I get paid?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Payouts are released 24 hours after your guest checks in. This gives us time to confirm there are no issues. Payments are transferred directly to your bank account via Stripe. Standard bank transfers take 2–5 business days. You can track all your payouts in your <a href="snapreserve-admin.html">Host Dashboard</a>.
+            <div class="step-note" style="margin-top:10px;">✓ No payout fees — you keep 100% of your listing price minus the 3.2% platform fee</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I edit or pause my listing?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Log into your <a href="snapreserve-admin.html">Host Dashboard</a>, go to "My Listings," and click the listing you want to edit. You can update photos, description, pricing, availability, and house rules at any time. To temporarily pause bookings, toggle "Pause listing" — your listing will be hidden from search results until you reactivate it.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            A guest cancelled — what happens to my payout?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            It depends on when they cancelled. If the guest cancelled more than 48 hours before check-in, you won't receive a payout for that booking. If they cancelled within 48 hours of check-in, you receive 50% of the booking value. If they were a no-show without cancelling, you receive the full payout.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I handle a difficult guest?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            First try to resolve issues directly through the messaging system. If you're unable to resolve things, contact us at <a href="mailto:support@snapreserve.co">support@snapreserve.co</a>. In cases of property damage, you can raise a damage claim within 72 hours of checkout through your dashboard. We mediate all disputes fairly between hosts and guests.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Can I block certain dates?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Yes — in your Host Dashboard, go to your listing's availability calendar. Click any date or drag across a range to block it. Blocked dates won't appear as available to guests. You can also set minimum and maximum stay lengths, and apply different rates for weekends or peak seasons.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            What are the host requirements?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            To list on SnapReserve you need: a verified ID, a valid bank account for payouts, accurate photos of your property, and a response rate above 70% within 24 hours. Properties must comply with local short-term rental laws. We verify all listings before they go live — this usually takes 1–2 business days.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION: PAYMENTS -->
+    <div class="section-block" id="section-payments" style="display:none;">
+      <div class="sb-h">💳 Payments & Refunds</div>
+      <p class="sb-sub">How money moves on SnapReserve — transparent, simple, fair.</p>
+
+      <div class="policy-grid" style="margin-bottom:20px;">
+        <div class="pol-card">
+          <div class="pol-ico">🔒</div>
+          <div class="pol-t">Secure payments</div>
+          <div class="pol-d">All payments are processed by Stripe — the same payment infrastructure used by Amazon, Airbnb, and Shopify. Your card details are never stored on our servers.</div>
+        </div>
+        <div class="pol-card">
+          <div class="pol-ico">💸</div>
+          <div class="pol-t">Refund timeline</div>
+          <div class="pol-d">Refunds are initiated immediately upon approval. Allow 5–10 business days for your bank to process it. You'll get an email confirmation as soon as we send it.</div>
+        </div>
+        <div class="pol-card">
+          <div class="pol-ico">📊</div>
+          <div class="pol-t">Service fee breakdown</div>
+          <div class="pol-d">3.2% platform fee, shown before you pay. Covers payment processing, support, fraud protection. No booking fees, no hidden charges.</div>
+          <div class="pol-highlight">Lowest fee in the industry</div>
+        </div>
+        <div class="pol-card">
+          <div class="pol-ico">🏦</div>
+          <div class="pol-t">Host payouts</div>
+          <div class="pol-d">Released 24h after guest check-in. Direct bank transfer via Stripe. 2–5 business days to arrive. No payout fees — you receive the full booking amount minus the 3.2% platform fee.</div>
+        </div>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            What payment methods are accepted?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            We accept all major credit and debit cards (Visa, Mastercard, American Express, Discover), Apple Pay, and Google Pay. Payments are processed in USD. Currency conversion is handled automatically for international cards by your card issuer.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Why was my payment declined?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Common reasons include: insufficient funds, card issuer blocking the transaction (call your bank to authorise), incorrect card details, or an expired card. Try a different card or contact your bank. If the issue persists, email us at <a href="mailto:support@snapreserve.co">support@snapreserve.co</a>.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Is my payment information safe?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Yes. SnapReserve never stores your card details. All payment data is handled directly by Stripe, which is PCI DSS Level 1 certified — the highest level of payment security certification. All transactions are encrypted using TLS 1.3.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: CANCELLATIONS -->
+    <div class="section-block" id="section-cancellations" style="display:none;">
+      <div class="sb-h">🌿 Cancellation Policy</div>
+      <p class="sb-sub">We keep it simple. No confusing tiers — one clear policy for everyone.</p>
+
+      <div class="steps-list" style="margin-bottom:24px;">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-t">More than 48 hours before check-in</div>
+            <div class="step-d">Full refund, no questions asked. The entire amount including cleaning fee is returned to your original payment method within 5–10 business days.</div>
+            <div class="step-note">✓ 100% refund</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-t">Within 48 hours of check-in</div>
+            <div class="step-d">50% refund of the nightly rate. Cleaning fee is fully refunded. The SnapReserve service fee is non-refundable. The remaining 50% goes to the host to compensate for lost income.</div>
+            <div class="step-note" style="background:var(--gold-dim);color:var(--gold);">⚠ 50% refund</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-t">No-show (no cancellation made)</div>
+            <div class="step-d">No refund. The full booking amount is paid to the host. If exceptional circumstances apply (medical emergency, natural disaster), contact us within 24 hours with documentation.</div>
+            <div class="step-note" style="background:var(--red-dim);color:var(--red);">✗ No refund</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-t">Host cancels on you</div>
+            <div class="step-d">Full refund immediately plus a $25 credit applied to your next booking. We also work to find you comparable alternative accommodation at no extra cost.</div>
+            <div class="step-note">✓ Full refund + $25 credit</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            What counts as exceptional circumstances?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Exceptional circumstances include: serious illness or injury requiring hospitalisation, death of a close family member, natural disasters or severe weather making travel impossible, government travel bans, and major transport disruptions beyond your control. Documentation will be required. Contact us as soon as possible at <a href="mailto:support@snapreserve.co">support@snapreserve.co</a>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: ACCOUNT -->
+    <div class="section-block" id="section-account" style="display:none;">
+      <div class="sb-h">👤 Account & Profile</div>
+      <p class="sb-sub">Managing your SnapReserve account, identity, and preferences.</p>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I verify my identity?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Go to your profile settings and click "Verify ID." You'll be asked to upload a government-issued photo ID (passport or driver's licence) and a selfie. Verification is usually completed within 2 hours. Verified accounts get a blue checkmark and are prioritised in search results.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I delete my account?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Go to Profile → Settings → Account → "Delete account." Please note: you cannot delete your account if you have active bookings or pending payouts. All your data will be permanently deleted within 30 days in accordance with our Privacy Policy. If you're a host, your listing will be removed immediately.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            I forgot my password — how do I reset it?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            On the login page, click "Forgot password?" and enter your email address. You'll receive a reset link within a few minutes. If you don't see it, check your spam folder. The reset link expires after 1 hour. If you continue to have issues, contact <a href="mailto:support@snapreserve.co">support@snapreserve.co</a>.
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            How do I update my email address?
+            <span class="faq-arrow">▼</span>
+          </div>
+          <div class="faq-a">
+            Go to Profile → Settings → Personal info → "Change email." You'll need to verify both your old and new email addresses. This is a security measure to prevent unauthorised changes. The update takes effect immediately after both addresses are confirmed.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: CONTACT FORM -->
+    <div class="section-block" id="section-contact" style="display:none;">
+      <div class="sb-h">✉️ Contact Us</div>
+      <p class="sb-sub">Can't find what you need? Send us a message and we'll get back to you within 24 hours.</p>
+
+      <div class="status-banner" style="margin-bottom:24px;">
+        <div class="status-dot green"></div>
+        <div class="status-text">
+          <div class="st-t">Support team is online</div>
+          <div class="st-d">Average response time today: 3 hours</div>
+        </div>
+        <div class="status-time">Updated just now</div>
+      </div>
+
+      <div class="contact-form" id="contact-form">
+        <div class="cf-h">Submit a support request</div>
+        <div class="cf-sub">We'll send your response to your email address.</div>
+        <div class="g2">
+          <div class="form-group">
+            <label class="form-label">First name</label>
+            <input class="form-input" placeholder="Your first name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last name</label>
+            <input class="form-input" placeholder="Your last name">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">I am a</label>
+          <select class="form-select">
+            <option>Guest — I have a booking</option>
+            <option>Host — I have a listing</option>
+            <option>Prospective host — interested in listing</option>
+            <option>Other enquiry</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Topic</label>
+          <select class="form-select">
+            <option>Cancellation or refund</option>
+            <option>Check-in issue</option>
+            <option>Payment problem</option>
+            <option>Property not as described</option>
+            <option>Host payout</option>
+            <option>Account or profile</option>
+            <option>Safety concern</option>
+            <option>Technical issue</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Booking reference (if applicable)</label>
+          <input class="form-input" placeholder="e.g. SNP-2026-BCN-7841">
+        </div>
+        <div class="form-group">
+          <label class="form-label">How can we help?</label>
+          <textarea class="form-input" rows="5" placeholder="Please describe your issue in as much detail as possible. Include dates, names, and any relevant screenshots if you have them."></textarea>
+        </div>
+        <button class="submit-btn" onclick="submitForm()">Send message →</button>
+        <div class="response-note">📧 We respond to every message within 24 hours · support@snapreserve.co</div>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<!-- FOOTER -->
+<footer class="support-footer">
+  <div class="sf-logo">Snap<span>Reserve</span></div>
+  <div class="sf-socials">
+    <a href="https://x.com/snapreserve" target="_blank" class="sf-s">𝕏</a>
+    <a href="https://www.instagram.com/snapreserve/" target="_blank" class="sf-s">IG</a>
+    <a href="https://www.youtube.com/@SnapReserve" target="_blank" class="sf-s">▶</a>
+    <a href="https://www.linkedin.com/company/snapreserve/" target="_blank" class="sf-s">in</a>
+  </div>
+  <div class="sf-copy">© 2026 SnapReserve · support@snapreserve.co · snapreserve.app</div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+// ── SECTION TOGGLE ──
+function showSection(id){
+  document.querySelectorAll('.section-block').forEach(s => s.style.display='none');
+  document.getElementById('section-'+id).style.display='block';
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelector('.content').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── FAQ ACCORDION ──
+function toggleFaq(el){
+  var item = el.closest('.faq-item');
+  var isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+
+// ── OPEN SPECIFIC FAQ ──
+function openFaq(id){
+  document.querySelectorAll('.section-block').forEach(s => s.style.display='none');
+  // Find which section contains this faq
+  var el = document.getElementById('faq-'+id);
+  if(el){
+    var section = el.closest('.section-block');
+    if(section){ section.style.display='block'; }
+    el.classList.add('open');
+    setTimeout(()=>{ el.scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+  } else {
+    document.getElementById('section-guests').style.display='block';
+  }
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+}
+
+// ── SCROLL TO ──
+function scrollTo(id){
+  document.querySelectorAll('.section-block').forEach(s => s.style.display='none');
+  document.getElementById('section-contact').style.display='block';
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  setTimeout(()=>{
+    document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
+
+// ── LIVE SEARCH ──
+function liveSearch(val){
+  if(val.length < 2) return;
+  var keywords = val.toLowerCase();
+  var map = {
+    'cancel': 'faq-cancel', 'cancell': 'faq-cancel',
+    'refund': 'faq-refund', 'money back': 'faq-refund',
+    'check in': 'faq-checkin', 'checkin': 'faq-checkin', 'check-in': 'faq-checkin',
+    'payout': 'faq-payout', 'paid': 'faq-payout', 'payment': 'faq-payout',
+    'modify': 'faq-modify', 'change date': 'faq-modify', 'dates': 'faq-modify',
+    'dispute': 'faq-dispute', 'wrong': 'faq-dispute', 'described': 'faq-dispute',
+  };
+  for(var k in map){
+    if(keywords.includes(k)){
+      toast('💡 Found: clicking most relevant answer...');
+      setTimeout(()=>{ openFaq(map[k].replace('faq-','')); }, 600);
+      return;
+    }
+  }
+}
+
+// ── SUBMIT FORM ──
+function submitForm(){
+  toast('✅ Message sent! We\'ll reply within 24 hours at your email address.');
+}
+
+// ── TOAST ──
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=> t.classList.remove('show'), 3400);
+}
+</script>
+</body>
+</html>

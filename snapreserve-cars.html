@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapReserve — SnapDrive Car Rental</title>
+<style>
+:root{
+  --or:#F4601A;--or-d:rgba(244,96,26,.12);--or-g:rgba(244,96,26,.22);
+  --bl:#3B82F6;--bl-d:rgba(59,130,246,.12);
+  --gr:#22C55E;--gr-d:rgba(34,197,94,.12);
+  --am:#F59E0B;--am-d:rgba(245,158,11,.12);
+  --bg:#0B0907;--sf:#121009;--cd:#181410;--c2:#1E1A15;--c3:#242019;
+  --br:rgba(255,255,255,.07);--br2:rgba(255,255,255,.13);--br3:rgba(255,255,255,.2);
+  --tx:#F5EFE8;--t2:#A89880;--t3:#60524A;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden;}
+
+/* ── ambient bg ── */
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:600px;
+  background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(244,96,26,.07),transparent);
+  pointer-events:none;z-index:0;}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 36px;
+  border-bottom:1px solid var(--br);background:rgba(11,9,7,.8);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;}
+.logo{font-family:var(--serif);font-size:1.2rem;font-weight:700;text-decoration:none;color:var(--tx);}
+.logo span{color:var(--or);}
+.nav-r{display:flex;align-items:center;gap:10px;}
+.nav-back{background:var(--cd);border:1px solid var(--br2);border-radius:8px;padding:7px 15px;
+  font-size:.76rem;font-weight:600;color:var(--t2);cursor:pointer;text-decoration:none;
+  font-family:var(--sans);transition:all .18s;}
+.nav-back:hover{background:var(--c2);color:var(--tx);}
+.nav-cta{background:var(--or);color:white;border:none;border-radius:8px;padding:8px 16px;
+  font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--sans);}
+
+/* ── HERO ── */
+.hero{position:relative;padding:70px 40px 0;text-align:center;z-index:1;}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:var(--or-d);border:1px solid var(--or-g);
+  border-radius:100px;padding:5px 16px;font-size:.68rem;font-weight:700;color:var(--or);margin-bottom:18px;}
+.hero-badge::before{content:'🚗';}
+.hero h1{font-family:var(--serif);font-size:clamp(2.2rem,5vw,4rem);font-weight:700;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:14px;}
+.hero h1 em{font-style:italic;color:var(--or);}
+.hero-sub{font-size:.9rem;color:var(--t2);line-height:1.7;max-width:480px;margin:0 auto 36px;}
+
+/* ── SEARCH BOX ── */
+.search-shell{max-width:880px;margin:0 auto 0;position:relative;z-index:2;}
+.search-box{background:white;border-radius:18px;padding:8px;display:grid;
+  grid-template-columns:1.4fr 1fr 1fr .8fr auto;gap:0;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.sf{display:flex;flex-direction:column;padding:10px 16px;border-right:1px solid #e8e3dc;cursor:pointer;}
+.sf:last-of-type{border-right:none;}
+.sf-l{font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:4px;}
+.sf-v{font-size:.86rem;font-weight:600;color:#1a1614;}
+.sf-v.ph{color:#aaa;font-weight:400;}
+.sf-sub{font-size:.68rem;color:#bbb;margin-top:2px;}
+.search-btn{background:var(--or);border:none;border-radius:12px;padding:0 28px;font-size:.88rem;
+  font-weight:700;color:white;cursor:pointer;font-family:var(--sans);white-space:nowrap;
+  transition:all .2s;display:flex;align-items:center;gap:8px;}
+.search-btn:hover{background:#e8541a;transform:scale(1.02);}
+
+/* ── CATEGORIES ── */
+.cats{display:flex;gap:9px;justify-content:center;padding:20px 40px 0;flex-wrap:wrap;position:relative;z-index:1;}
+.cat{background:var(--cd);border:1px solid var(--br);border-radius:100px;padding:8px 18px;
+  font-size:.75rem;font-weight:600;color:var(--t2);cursor:pointer;transition:all .18s;}
+.cat:hover,.cat.on{background:var(--or);border-color:var(--or);color:white;}
+
+/* ── DIVIDER ── */
+.divider{height:80px;background:linear-gradient(to bottom,var(--bg),#0f0c09);margin-top:40px;}
+
+/* ── MAIN CONTENT ── */
+.content{background:#0f0c09;padding:0 40px 80px;}
+
+/* ── SECTION HEADER ── */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-top:48px;}
+.sec-title{font-family:var(--serif);font-size:1.4rem;font-weight:700;letter-spacing:-.5px;}
+.sec-sub{font-size:.78rem;color:var(--t2);margin-top:2px;}
+.sec-link{font-size:.76rem;font-weight:600;color:var(--or);text-decoration:none;
+  display:flex;align-items:center;gap:4px;transition:gap .18s;}
+.sec-link:hover{gap:8px;}
+
+/* ── CAR CARDS GRID ── */
+.cars-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:48px;}
+.car-card{background:var(--cd);border:1px solid var(--br);border-radius:18px;overflow:hidden;
+  cursor:pointer;transition:all .22s;position:relative;}
+.car-card:hover{border-color:var(--br3);transform:translateY(-4px);box-shadow:0 16px 50px rgba(0,0,0,.5);}
+
+.car-img{width:100%;height:180px;background:var(--c2);display:flex;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;}
+.car-img .car-emoji{font-size:80px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.4));
+  transition:transform .3s ease;}
+.car-card:hover .car-emoji{transform:scale(1.08) translateY(-4px);}
+.car-img-bg{position:absolute;inset:0;opacity:.06;}
+
+.car-badge{position:absolute;top:12px;left:12px;font-size:.6rem;font-weight:700;
+  border-radius:100px;padding:3px 10px;border:1px solid;}
+.best{background:rgba(244,96,26,.15);border-color:rgba(244,96,26,.3);color:var(--or);}
+.instant{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.25);color:var(--gr);}
+.luxury{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.25);color:var(--am);}
+
+.car-body{padding:16px;}
+.car-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.car-name{font-size:.92rem;font-weight:700;letter-spacing:-.2px;}
+.car-model{font-size:.7rem;color:var(--t2);margin-top:2px;}
+.car-price{text-align:right;}
+.car-pnum{font-size:1rem;font-weight:800;color:var(--or);}
+.car-punit{font-size:.62rem;color:var(--t2);margin-top:1px;}
+
+.car-specs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.cs{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--t2);}
+.cs-ico{font-size:11px;}
+
+.car-features{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.cf{font-size:.58rem;font-weight:600;background:var(--c2);border:1px solid var(--br2);
+  border-radius:100px;padding:2px 8px;color:var(--t2);}
+
+.car-foot{display:flex;align-items:center;justify-content:space-between;}
+.car-rating{display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;}
+.car-rating .star{color:var(--am);}
+.car-rating .cnt{color:var(--t3);}
+.book-now{background:var(--or);border:none;border-radius:9px;padding:8px 18px;
+  font-size:.76rem;font-weight:700;color:white;cursor:pointer;font-family:var(--sans);
+  transition:all .18s;}
+.book-now:hover{background:#e8541a;}
+
+/* ── WHY SECTION ── */
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:48px;}
+.why-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;}
+.why-ico{font-size:26px;margin-bottom:12px;}
+.why-title{font-size:.84rem;font-weight:700;margin-bottom:5px;}
+.why-desc{font-size:.72rem;color:var(--t2);line-height:1.65;}
+
+/* ── PERKS STRIP ── */
+.perks{display:flex;gap:0;background:var(--cd);border:1px solid var(--br);border-radius:16px;
+  overflow:hidden;margin-bottom:48px;}
+.perk{flex:1;padding:20px;border-right:1px solid var(--br);display:flex;align-items:center;gap:12px;}
+.perk:last-child{border-right:none;}
+.perk-ico{font-size:22px;flex-shrink:0;}
+.perk-t{font-size:.8rem;font-weight:700;margin-bottom:2px;}
+.perk-d{font-size:.67rem;color:var(--t2);}
+
+/* ── BUNDLE CTA ── */
+.bundle{background:linear-gradient(135deg,#1a1208,#0f0c09);border:1px solid rgba(244,96,26,.2);
+  border-radius:20px;padding:40px;display:flex;align-items:center;gap:32px;margin-bottom:48px;
+  position:relative;overflow:hidden;}
+.bundle::before{content:'';position:absolute;top:-40px;right:-40px;width:250px;height:250px;
+  background:radial-gradient(circle,rgba(244,96,26,.1),transparent 60%);pointer-events:none;}
+.bundle-l{flex:1;}
+.bundle-tag{display:inline-flex;align-items:center;gap:6px;background:var(--or-d);
+  border:1px solid var(--or-g);border-radius:100px;padding:4px 12px;font-size:.65rem;
+  font-weight:700;color:var(--or);margin-bottom:12px;}
+.bundle-h{font-family:var(--serif);font-size:1.5rem;font-weight:700;letter-spacing:-.5px;margin-bottom:8px;}
+.bundle-p{font-size:.78rem;color:var(--t2);line-height:1.65;margin-bottom:18px;max-width:380px;}
+.bundle-saves{display:flex;gap:12px;flex-wrap:wrap;}
+.bs{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;color:var(--gr);}
+.bundle-r{background:var(--c2);border:1px solid var(--br2);border-radius:16px;padding:22px 26px;
+  text-align:center;flex-shrink:0;min-width:200px;}
+.bundle-r .bi{font-size:40px;margin-bottom:8px;display:block;}
+.bundle-r .bt{font-size:.72rem;color:var(--t2);margin-bottom:4px;}
+.bundle-r .bp{font-family:var(--serif);font-size:1.8rem;font-weight:700;color:var(--or);
+  letter-spacing:-.5px;margin-bottom:12px;}
+.bundle-btn{background:var(--or);border:none;border-radius:10px;padding:11px 22px;
+  font-size:.82rem;font-weight:700;color:white;cursor:pointer;font-family:var(--sans);width:100%;}
+
+/* ── CALLOUT ── */
+.callout{display:flex;gap:10px;border-radius:10px;padding:13px 15px;font-size:.77rem;
+  line-height:1.65;margin-bottom:18px;border:1px solid;}
+.ci{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ct{flex:1;color:var(--t2);}
+.ct strong{color:var(--tx);}
+.c-or{background:var(--or-d);border-color:var(--or-g);}
+.c-gr{background:var(--gr-d);border-color:rgba(34,197,94,.2);}
+.c-am{background:var(--am-d);border-color:rgba(245,158,11,.2);}
+.c-bl{background:var(--bl-d);border-color:rgba(59,130,246,.2);}
+
+/* ── PARTNERS ── */
+.partners{text-align:center;margin-bottom:60px;}
+.partners-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--t3);margin-bottom:20px;}
+.partner-logos{display:flex;gap:24px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.pl{background:var(--cd);border:1px solid var(--br);border-radius:10px;padding:10px 22px;
+  font-size:.78rem;font-weight:700;color:var(--t2);letter-spacing:.04em;}
+
+/* MODAL OVERLAY */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+  z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--cd);border:1px solid var(--br2);border-radius:20px;padding:30px;
+  max-width:500px;width:90%;position:relative;animation:pop .25s ease;}
+@keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-close{position:absolute;top:14px;right:14px;background:var(--c2);border:none;
+  border-radius:8px;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--t2);}
+.modal-ico{font-size:48px;text-align:center;margin-bottom:14px;}
+.modal-h{font-family:var(--serif);font-size:1.3rem;font-weight:700;margin-bottom:7px;text-align:center;}
+.modal-p{font-size:.8rem;color:var(--t2);line-height:1.65;text-align:center;margin-bottom:20px;}
+.modal-fields{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.modal-field{display:flex;flex-direction:column;gap:5px;}
+.mfl{font-size:.65rem;font-weight:600;color:var(--t2);}
+.mfi{background:var(--c2);border:1px solid var(--br2);border-radius:9px;padding:10px 13px;
+  font-size:.82rem;color:var(--tx);font-family:var(--sans);outline:none;
+  transition:border-color .18s;}
+.mfi:focus{border-color:var(--or);}
+.modal-total{background:var(--c2);border:1px solid var(--br2);border-radius:11px;
+  padding:14px;margin-bottom:18px;}
+.mt-row{display:flex;justify-content:space-between;font-size:.77rem;color:var(--t2);margin-bottom:6px;}
+.mt-row:last-child{margin-bottom:0;font-weight:700;color:var(--tx);font-size:.85rem;padding-top:8px;border-top:1px solid var(--br);}
+.modal-book{background:var(--or);border:none;border-radius:11px;padding:13px;width:100%;
+  font-size:.88rem;font-weight:700;color:white;cursor:pointer;font-family:var(--sans);}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--cd);border:1px solid var(--br2);
+  border-left:3px solid var(--or);border-radius:11px;padding:12px 17px;font-size:.78rem;
+  z-index:9999;transform:translateX(150%);transition:transform .3s ease;
+  max-width:260px;box-shadow:0 8px 28px rgba(0,0,0,.5);}
+
+@media(max-width:768px){
+  .search-box{grid-template-columns:1fr 1fr;gap:0;}
+  .sf{border-right:none;border-bottom:1px solid #e8e3dc;}
+  .search-btn{grid-column:1/-1;border-radius:10px;padding:13px;}
+  .cars-grid,.why-grid{grid-template-columns:1fr 1fr;}
+  .perks{flex-direction:column;}
+  .perk{border-right:none;border-bottom:1px solid var(--br);}
+  .bundle{flex-direction:column;}
+  .content{padding:0 20px 60px;}
+  .hero{padding:50px 20px 0;}
+  .nav{padding:14px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="snapreserve.html" class="logo">Snap<span>Reserve</span></a>
+  <div class="nav-r">
+    <a href="snapreserve.html" class="nav-back">← Back to home</a>
+    <button class="nav-cta" onclick="toast('Opening account...')">Sign in</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" style="position:relative;z-index:1;">
+  <div class="hero-badge">SnapDrive — Car Rental</div>
+  <h1>Discover world-class<br>stays with <em>SnapReserve.</em></h1>
+  <p class="hero-sub">Instant car hire at US-wide locations across the US. Compare, book, and pick up — no hidden fees, ever.</p>
+
+  <!-- SEARCH BAR -->
+  <div class="search-shell">
+    <div class="search-box">
+      <div class="sf" onclick="toast('Pick-up location selector')">
+        <div class="sf-l">Pick-up location</div>
+        <div class="sf-v">Barcelona Airport</div>
+        <div class="sf-sub">BCN · Terminal 1</div>
+      </div>
+      <div class="sf" onclick="toast('Pick-up date picker')">
+        <div class="sf-l">Pick-up date</div>
+        <div class="sf-v">Mar 27</div>
+        <div class="sf-sub">10:00 AM</div>
+      </div>
+      <div class="sf" onclick="toast('Drop-off date picker')">
+        <div class="sf-l">Drop-off date</div>
+        <div class="sf-v">Mar 29</div>
+        <div class="sf-sub">10:00 AM · Same location</div>
+      </div>
+      <div class="sf" onclick="toast('Driver details')">
+        <div class="sf-l">Driver age</div>
+        <div class="sf-v">25+</div>
+        <div class="sf-sub">1 driver</div>
+      </div>
+      <button class="search-btn" onclick="toast('Searching US-wide locations...')">
+        🔍 Search cars
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY PILLS -->
+<div class="cats" style="padding-top:28px;">
+  <div class="cat on" onclick="filterCat(this)">All cars</div>
+  <div class="cat" onclick="filterCat(this)">🏎️ Economy</div>
+  <div class="cat" onclick="filterCat(this)">🚗 Compact</div>
+  <div class="cat" onclick="filterCat(this)">🚙 SUV</div>
+  <div class="cat" onclick="filterCat(this)">🏕️ Minivan</div>
+  <div class="cat" onclick="filterCat(this)">⚡ Electric</div>
+  <div class="cat" onclick="filterCat(this)">👑 Luxury</div>
+  <div class="cat" onclick="filterCat(this)">🚐 Van</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- MAIN CONTENT -->
+<div class="content" style="max-width:1200px;margin:0 auto;">
+
+  <!-- PERKS STRIP -->
+  <div class="perks" style="margin-top:0;padding-top:0;">
+    <div class="perk"><div class="perk-ico">🚫</div><div><div class="perk-t">Zero hidden fees</div><div class="perk-d">Price shown = price paid</div></div></div>
+    <div class="perk"><div class="perk-ico">⚡</div><div><div class="perk-t">Instant confirmation</div><div class="perk-d">No waiting, no callbacks</div></div></div>
+    <div class="perk"><div class="perk-ico">🔄</div><div><div class="perk-t">Free cancellation</div><div class="perk-d">Up to 48h before pickup</div></div></div>
+    <div class="perk"><div class="perk-ico">🌍</div><div><div class="perk-t">US-wide locations</div><div class="perk-d">Airports, cities, train stations</div></div></div>
+  </div>
+
+  <!-- FEATURED CARS -->
+  <div class="sec-head">
+    <div>
+      <div class="sec-title">Available near Barcelona Airport</div>
+      <div class="sec-sub">Showing 6 of 48 results · Mar 27–29 · 2 days</div>
+    </div>
+    <a href="#" class="sec-link" onclick="toast('Showing all 48 results')">See all 48 →</a>
+  </div>
+
+  <div class="cars-grid" id="cars-grid">
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#1a1208,#251c0f);">
+        <div class="car-emoji">🚗</div>
+        <div class="car-badge best">⭐ Best value</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">Volkswagen Polo</div><div class="car-model">or similar · Economy</div></div>
+          <div class="car-price"><div class="car-pnum">$38</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>5 seats</div>
+          <div class="cs"><span class="cs-ico">🧳</span>2 bags</div>
+          <div class="cs"><span class="cs-ico">⚙️</span>Manual</div>
+          <div class="cs"><span class="cs-ico">❄️</span>A/C</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">Unlimited km</div>
+          <div class="cf">Full insurance</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.7<span class="cnt">(1,240)</span></div>
+          <button class="book-now" onclick="openModal('Volkswagen Polo','Economy','38','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#0d1a25,#091420);">
+        <div class="car-emoji">🚙</div>
+        <div class="car-badge instant">⚡ Instant</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">Toyota RAV4</div><div class="car-model">or similar · SUV</div></div>
+          <div class="car-price"><div class="car-pnum">$72</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>5 seats</div>
+          <div class="cs"><span class="cs-ico">🧳</span>4 bags</div>
+          <div class="cs"><span class="cs-ico">🤖</span>Auto</div>
+          <div class="cs"><span class="cs-ico">❄️</span>A/C</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">GPS included</div>
+          <div class="cf">Full insurance</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.9<span class="cnt">(876)</span></div>
+          <button class="book-now" onclick="openModal('Toyota RAV4','SUV','72','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#1a1408,#201a08);">
+        <div class="car-emoji">⚡</div>
+        <div class="car-badge instant">⚡ Electric</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">Tesla Model 3</div><div class="car-model">Long Range · Electric</div></div>
+          <div class="car-price"><div class="car-pnum">$95</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>5 seats</div>
+          <div class="cs"><span class="cs-ico">⚡</span>358mi range</div>
+          <div class="cs"><span class="cs-ico">🤖</span>Auto</div>
+          <div class="cs"><span class="cs-ico">🔌</span>Supercharger</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">Autopilot</div>
+          <div class="cf">Zero emissions</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.8<span class="cnt">(432)</span></div>
+          <button class="book-now" onclick="openModal('Tesla Model 3','Electric','95','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#12100d,#1c1812);">
+        <div class="car-emoji">🏎️</div>
+        <div class="car-badge luxury">👑 Luxury</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">BMW 5 Series</div><div class="car-model">530i · Premium</div></div>
+          <div class="car-price"><div class="car-pnum">$148</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>5 seats</div>
+          <div class="cs"><span class="cs-ico">🧳</span>3 bags</div>
+          <div class="cs"><span class="cs-ico">🤖</span>Auto</div>
+          <div class="cs"><span class="cs-ico">🏎️</span>248hp</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">Premium sound</div>
+          <div class="cf">Heated seats</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.9<span class="cnt">(218)</span></div>
+          <button class="book-now" onclick="openModal('BMW 5 Series','Luxury','148','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#0a180f,#081410);">
+        <div class="car-emoji">🚐</div>
+        <div class="car-badge instant">⚡ Instant</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">Ford Transit</div><div class="car-model">9-seater · Minivan</div></div>
+          <div class="car-price"><div class="car-pnum">$89</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>9 seats</div>
+          <div class="cs"><span class="cs-ico">🧳</span>6 bags</div>
+          <div class="cs"><span class="cs-ico">🤖</span>Auto</div>
+          <div class="cs"><span class="cs-ico">❄️</span>A/C</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">USB charging</div>
+          <div class="cf">Full insurance</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.6<span class="cnt">(654)</span></div>
+          <button class="book-now" onclick="openModal('Ford Transit','Minivan','89','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <div class="car-img" style="background:linear-gradient(135deg,#180d1a,#120914);">
+        <div class="car-emoji">🚗</div>
+        <div class="car-badge best">⭐ Popular</div>
+      </div>
+      <div class="car-body">
+        <div class="car-top">
+          <div><div class="car-name">Seat Ibiza</div><div class="car-model">or similar · Compact</div></div>
+          <div class="car-price"><div class="car-pnum">$45</div><div class="car-punit">/day</div></div>
+        </div>
+        <div class="car-specs">
+          <div class="cs"><span class="cs-ico">👥</span>5 seats</div>
+          <div class="cs"><span class="cs-ico">🧳</span>2 bags</div>
+          <div class="cs"><span class="cs-ico">⚙️</span>Manual</div>
+          <div class="cs"><span class="cs-ico">❄️</span>A/C</div>
+        </div>
+        <div class="car-features">
+          <div class="cf">Free cancellation</div>
+          <div class="cf">Unlimited km</div>
+          <div class="cf">Theft cover</div>
+        </div>
+        <div class="car-foot">
+          <div class="car-rating"><span class="star">★</span>4.8<span class="cnt">(989)</span></div>
+          <button class="book-now" onclick="openModal('Seat Ibiza','Compact','45','2')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BUNDLE CTA -->
+  <div class="bundle">
+    <div class="bundle-l">
+      <div class="bundle-tag">🏨 + 🚗 Bundle deal</div>
+      <div class="bundle-h">Book your stay + car together,<br>save up to 22%</div>
+      <p class="bundle-p">Add a SnapDrive rental to any hotel or private stay booking at checkout. We negotiate fleet rates so you don't have to. One price, one confirmation, one trip.</p>
+      <div class="bundle-saves">
+        <div class="bs">✓ No airport surcharges</div>
+        <div class="bs">✓ Key handoff at property</div>
+        <div class="bs">✓ One receipt for expenses</div>
+      </div>
+    </div>
+    <div class="bundle-r">
+      <span class="bi">🤝</span>
+      <div class="bt">Average bundle saving</div>
+      <div class="bp">$47</div>
+      <button class="bundle-btn" onclick="toast('Bundle booking coming soon — save up to 22%!')">Add car to my booking</button>
+    </div>
+  </div>
+
+  <!-- WHY SNAPDRIVE -->
+  <div class="sec-head">
+    <div>
+      <div class="sec-title">Why SnapDrive?</div>
+      <div class="sec-sub">What makes us different from every other car rental site</div>
+    </div>
+  </div>
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="why-ico">🔍</div>
+      <div class="why-title">Real-time pricing</div>
+      <div class="why-desc">We search across 30+ suppliers in real time. The price you see is the best available — not an estimate.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-ico">🛡️</div>
+      <div class="why-title">Full cover included</div>
+      <div class="why-desc">Every rental includes collision damage waiver, theft protection, and third-party liability. No upsells at the desk.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-ico">📍</div>
+      <div class="why-title">Airport + city pickup</div>
+      <div class="why-desc">2,400 pick-up points including 340 major airports, 800+ city centres, and hotel delivery in select cities.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-ico">💬</div>
+      <div class="why-title">24/7 support</div>
+      <div class="why-desc">Real humans, real help. If anything goes wrong on the road, our team is one tap away around the clock.</div>
+    </div>
+  </div>
+
+  <!-- PARTNERS -->
+  <div class="partners">
+    <div class="partners-label">Fleet supplied by</div>
+    <div class="partner-logos">
+      <div class="pl">HERTZ</div>
+      <div class="pl">ENTERPRISE</div>
+      <div class="pl">SIXT</div>
+      <div class="pl">EUROPCAR</div>
+      <div class="pl">BUDGET</div>
+      <div class="pl">AVIS</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-bg" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('show')">✕</button>
+    <div class="modal-ico">🚗</div>
+    <div class="modal-h" id="m-car-name">Volkswagen Polo</div>
+    <p class="modal-p" id="m-car-type">Economy · Barcelona Airport · Mar 27–29</p>
+    <div class="modal-fields">
+      <div class="modal-field">
+        <div class="mfl">Full name</div>
+        <input class="mfi" placeholder="As on driving licence">
+      </div>
+      <div class="modal-field">
+        <div class="mfl">Driving licence number</div>
+        <input class="mfi" placeholder="e.g. SMITH703085JA9AB">
+      </div>
+      <div class="modal-field">
+        <div class="mfl">Mobile number</div>
+        <input class="mfi" placeholder="+1 (555) 000-0000">
+      </div>
+    </div>
+    <div class="modal-total" id="m-total">
+      <div class="mt-row"><span>Daily rate</span><span id="m-rate">$38 × 2 days</span></div>
+      <div class="mt-row"><span>Insurance</span><span>Included</span></div>
+      <div class="mt-row"><span>Service fee (3.2%)</span><span id="m-fee">$2.43</span></div>
+      <div class="mt-row"><span>Total</span><span id="m-total-price">$78.43</span></div>
+    </div>
+    <button class="modal-book" onclick="bookCar()">Confirm &amp; pay →</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- FLOATING TEST NAV (injected by hub) -->
+
+<script>
+function filterCat(el){
+  document.querySelectorAll('.cat').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+  toast('Filtering: '+el.textContent.trim());
+}
+
+function openModal(name, type, rate, days){
+  document.getElementById('m-car-name').textContent=name;
+  document.getElementById('m-car-type').textContent=type+' · Barcelona Airport · Mar 27–29';
+  var total=parseFloat(rate)*parseInt(days);
+  var fee=total*0.032;
+  document.getElementById('m-rate').textContent='$'+rate+' × '+days+' days';
+  document.getElementById('m-fee').textContent='$'+fee.toFixed(2);
+  document.getElementById('m-total-price').textContent='$'+(total+fee).toFixed(2);
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e){
+  if(e.target===document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('show');
+}
+
+function bookCar(){
+  document.getElementById('modal').classList.remove('show');
+  toast('🎉 Booking confirmed! Check your email.');
+}
+
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.transform='translateX(0)';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(function(){t.style.transform='translateX(150%)';},3000);
+}
+</script>
+<footer style="background:#1A1410;color:#A89880;padding:32px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="font-family:Georgia,serif;font-size:1rem;font-weight:700;color:#F5EFE8;">Snap<span style="color:#F4601A;">Reserve</span></div>
+  <div style="display:flex;gap:10px;">
+    <a href="https://x.com/snapreserve" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:13px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'" title="X / Twitter">𝕏</a>
+    <a href="https://www.instagram.com/snapreserve/" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:11px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'" title="Instagram">IG</a>
+    <a href="https://www.youtube.com/@SnapReserve" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:13px;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'" title="YouTube">▶</a>
+    <a href="https://www.linkedin.com/company/snapreserve/" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:11px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'" title="LinkedIn">in</a>
+  </div>
+  <div style="font-size:.72rem;">© 2026 SnapReserve · <a href="snapreserve.html" style="color:#A89880;text-decoration:none;">snapreserve.app</a></div>
+</footer>
+<div id="sr-nav" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#0E0C0A;border:1px solid rgba(255,255,255,0.15);border-radius:100px;padding:7px 9px;display:flex;align-items:center;gap:3px;box-shadow:0 8px 32px rgba(0,0,0,0.6);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;overflow-x:auto;max-width:95vw;">
+<span style="font-size:0.58rem;font-weight:700;color:#665A4E;text-transform:uppercase;letter-spacing:.1em;padding:0 7px;flex-shrink:0;">Test nav</span>
+<a href="snapreserve.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🏠 Home</a>
+<a href="snapreserve-property.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🏨 Property</a>
+<a href="snapreserve-confirmation.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">✅ Confirmation</a>
+<a href="snapreserve-list-property.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📋 List Property</a>
+<a href="snapreserve-admin.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📊 Dashboard</a>
+<a href="snapreserve-cars.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🚗 Cars</a>
+<a href="snapreserve-experiences.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">✨ Experiences</a>
+<a href="snapreserve-app.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📱 App</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapReserve — Social Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#0A0806;
+  color:white;
+  padding:40px;
+}
+
+h2{
+  font-family:'Playfair Display',serif;
+  font-size:1rem;font-weight:700;
+  color:#A89880;margin-bottom:6px;
+  display:flex;align-items:center;gap:10px;
+}
+h2 span{font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:600;
+  background:rgba(244,96,26,.15);border:1px solid rgba(244,96,26,.3);
+  border-radius:100px;padding:2px 10px;color:#F4601A;}
+.hint{font-size:.72rem;color:#5A4E44;margin-bottom:28px;}
+
+.mockup-wrap{margin-bottom:64px;}
+
+/* ════════════════════════════════════════
+   CARD 1 — Instagram / Square (1080×1080)
+   ════════════════════════════════════════ */
+.card-instagram{
+  width:1080px;height:1080px;
+  background:linear-gradient(145deg,#0D0A07 0%,#1A1208 50%,#0A0F1A 100%);
+  border-radius:24px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.card-instagram::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 80%,rgba(244,96,26,.14),transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%,rgba(26,110,244,.1),transparent 60%);
+  pointer-events:none;
+}
+/* grain */
+.card-instagram::after{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+  opacity:.5;pointer-events:none;
+}
+
+.ig-top{position:absolute;top:52px;left:60px;right:60px;
+  display:flex;align-items:center;justify-content:space-between;z-index:10;}
+.ig-logo{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:white;}
+.ig-logo em{color:#F4601A;font-style:normal;}
+.ig-tag{font-size:.8rem;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.12em;text-transform:uppercase;}
+
+/* BIG PHONE MOCKUP */
+.ig-phone-wrap{position:relative;z-index:5;margin-top:-40px;}
+.ig-phone{
+  width:340px;height:680px;
+  background:#111;
+  border-radius:50px;
+  border:10px solid #2A2520;
+  box-shadow:
+    0 0 0 1px #3A3028,
+    0 40px 120px rgba(0,0,0,.8),
+    0 0 80px rgba(244,96,26,.12),
+    inset 0 0 20px rgba(0,0,0,.5);
+  overflow:hidden;position:relative;
+}
+/* notch */
+.ig-phone::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:28px;background:#111;border-radius:0 0 20px 20px;z-index:20;
+}
+.ig-screen{width:100%;height:100%;overflow:hidden;background:#FAF8F5;}
+
+/* phone screen content */
+.ps-nav{background:white;padding:12px 16px 10px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;justify-content:space-between;}
+.ps-logo{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:900;color:#1A1410;}
+.ps-logo em{color:#F4601A;font-style:normal;}
+.ps-nav-btn{background:#F4601A;border-radius:100px;padding:4px 10px;
+  font-size:.55rem;font-weight:700;color:white;}
+
+.ps-hero{background:linear-gradient(135deg,#EEF4FF,#F0F8FF);padding:20px 16px 16px;text-align:center;}
+.ps-mode-pills{display:flex;gap:6px;justify-content:center;margin-bottom:12px;}
+.ps-pill{border-radius:100px;padding:5px 12px;font-size:.58rem;font-weight:700;}
+.ps-pill.on{background:#1A6EF4;color:white;}
+.ps-pill.off{background:rgba(0,0,0,.06);color:#6B5F54;}
+.ps-h{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;
+  color:#1A1410;line-height:1.2;margin-bottom:4px;}
+.ps-h em{color:#1A6EF4;font-style:italic;}
+.ps-sub{font-size:.58rem;color:#6B5F54;margin-bottom:12px;}
+.ps-search{background:white;border-radius:12px;padding:10px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:6px;}
+.ps-search-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #E8E2D9;}
+.ps-search-row:last-of-type{border-bottom:none;}
+.ps-search-ico{font-size:12px;width:18px;text-align:center;}
+.ps-search-t{font-size:.58rem;}
+.ps-search-v{font-size:.6rem;font-weight:600;color:#1A1410;}
+.ps-search-btn{background:#1A6EF4;border-radius:9px;padding:8px;font-size:.65rem;font-weight:700;color:white;text-align:center;}
+
+.ps-cards{padding:12px 12px;display:flex;flex-direction:column;gap:8px;}
+.ps-card{background:white;border-radius:12px;overflow:hidden;display:flex;gap:0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.ps-card-img{width:80px;height:72px;background:linear-gradient(135deg,#e8d5b7,#d4b894);
+  display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.ps-card-body{padding:8px 10px;flex:1;}
+.ps-card-name{font-size:.6rem;font-weight:700;color:#1A1410;margin-bottom:2px;}
+.ps-card-loc{font-size:.52rem;color:#6B5F54;margin-bottom:4px;}
+.ps-card-foot{display:flex;align-items:center;justify-content:space-between;}
+.ps-card-price{font-size:.65rem;font-weight:700;color:#1A6EF4;}
+.ps-card-stars{font-size:.5rem;color:#D97706;}
+
+/* IG bottom text */
+.ig-bottom{position:absolute;bottom:52px;left:60px;right:60px;z-index:10;
+  display:flex;align-items:flex-end;justify-content:space-between;}
+.ig-tagline{max-width:420px;}
+.ig-tl-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  color:#F4601A;margin-bottom:8px;}
+.ig-tl-h{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:700;
+  letter-spacing:-2px;line-height:1;color:white;margin-bottom:10px;}
+.ig-tl-h em{font-style:italic;color:#F4601A;}
+.ig-tl-sub{font-size:.8rem;color:rgba(255,255,255,.45);line-height:1.6;}
+.ig-url{font-size:.75rem;font-weight:700;color:rgba(255,255,255,.25);text-align:right;}
+
+/* ════════════════════════════════════════
+   CARD 2 — Twitter/X Banner (1500×500)
+   ════════════════════════════════════════ */
+.card-twitter{
+  width:1500px;height:500px;
+  background:linear-gradient(120deg,#080604 0%,#120E08 40%,#080C18 100%);
+  border-radius:20px;overflow:hidden;position:relative;
+  display:flex;align-items:center;gap:0;
+}
+.card-twitter::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 50% 80% at 0% 50%,rgba(244,96,26,.12),transparent 55%),
+    radial-gradient(ellipse 40% 70% at 100% 50%,rgba(26,110,244,.08),transparent 55%);
+  pointer-events:none;
+}
+
+.tw-left{flex:1;padding:50px 60px;position:relative;z-index:5;}
+.tw-logo{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;
+  color:white;margin-bottom:18px;}
+.tw-logo em{color:#F4601A;font-style:normal;}
+.tw-h{font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;
+  letter-spacing:-2px;line-height:1;color:white;margin-bottom:14px;}
+.tw-h em{font-style:italic;color:#F4601A;}
+.tw-sub{font-size:.9rem;color:rgba(255,255,255,.45);margin-bottom:24px;line-height:1.6;max-width:440px;}
+.tw-pills{display:flex;gap:10px;flex-wrap:wrap;}
+.tw-pill{border-radius:100px;padding:6px 16px;font-size:.72rem;font-weight:700;border:1px solid;}
+.tw-pill.or{background:rgba(244,96,26,.15);border-color:rgba(244,96,26,.3);color:#F4601A;}
+.tw-pill.bl{background:rgba(26,110,244,.12);border-color:rgba(26,110,244,.25);color:#4A8EF6;}
+.tw-pill.wh{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.6);}
+
+.tw-right{width:620px;height:100%;display:flex;align-items:center;
+  justify-content:center;gap:20px;position:relative;z-index:5;padding:30px 40px;}
+
+/* mini phone */
+.tw-phone{
+  width:155px;height:310px;
+  background:#111;border-radius:28px;border:6px solid #2A2520;
+  box-shadow:0 0 0 1px #3A3028,0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(244,96,26,.1);
+  overflow:hidden;flex-shrink:0;position:relative;
+}
+.tw-phone::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:60px;height:14px;background:#111;border-radius:0 0 10px 10px;z-index:10;}
+.tw-phone-screen{width:100%;height:100%;overflow:hidden;}
+.tw-ps-nav{background:white;padding:8px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;justify-content:space-between;}
+.tw-ps-logo{font-family:'Playfair Display',serif;font-size:.65rem;font-weight:900;color:#1A1410;}
+.tw-ps-logo em{color:#F4601A;font-style:normal;}
+.tw-ps-hero{background:linear-gradient(135deg,#EEF4FF,#F8F0FF);
+  padding:10px 8px;text-align:center;}
+.tw-ps-h{font-family:'Playfair Display',serif;font-size:.75rem;font-weight:700;
+  line-height:1.2;color:#1A1410;margin-bottom:6px;}
+.tw-ps-h em{color:#F4601A;font-style:italic;}
+.tw-ps-search{background:white;border-radius:8px;padding:7px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);margin:0 4px;}
+.tw-ps-sf{display:flex;align-items:center;gap:4px;padding:3px 0;
+  border-bottom:1px solid #E8E2D9;font-size:.42rem;color:#6B5F54;}
+.tw-ps-sf:last-of-type{border:none;}
+.tw-ps-btn{background:#F4601A;border-radius:6px;padding:6px;margin:4px;
+  font-size:.5rem;font-weight:700;color:white;text-align:center;}
+.tw-ps-card{background:white;margin:6px;border-radius:8px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.tw-ps-card-img{height:52px;background:linear-gradient(135deg,#e8d5b7,#d4b894);
+  display:flex;align-items:center;justify-content:center;font-size:22px;}
+.tw-ps-card-body{padding:6px 8px;}
+.tw-ps-card-name{font-size:.48rem;font-weight:700;color:#1A1410;}
+.tw-ps-card-loc{font-size:.42rem;color:#6B5F54;}
+.tw-ps-card-foot{display:flex;justify-content:space-between;margin-top:2px;}
+.tw-ps-price{font-size:.5rem;font-weight:700;color:#1A6EF4;}
+.tw-ps-stars{font-size:.42rem;color:#D97706;}
+
+/* laptop mockup */
+.tw-laptop{flex-shrink:0;}
+.tw-laptop-screen{
+  width:300px;height:190px;
+  background:#1a1410;border-radius:12px 12px 0 0;border:6px solid #2A2520;
+  border-bottom:none;overflow:hidden;position:relative;
+  box-shadow:0 0 0 1px #3A3028;
+}
+.tw-laptop-body{
+  width:340px;height:14px;background:#2A2520;border-radius:0 0 12px 12px;
+  margin:0 auto;box-shadow:0 8px 30px rgba(0,0,0,.6);
+  border:1px solid #3A3028;
+}
+.tw-laptop-content{width:100%;height:100%;overflow:hidden;background:#FAF8F5;}
+.tw-lc-nav{background:white;padding:5px 8px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;gap:5px;}
+.tw-lc-dots{display:flex;gap:3px;}
+.tw-lc-dot{width:6px;height:6px;border-radius:50%;}
+.tw-lc-logo{font-family:'Playfair Display',serif;font-size:.55rem;font-weight:900;color:#1A1410;margin-left:6px;}
+.tw-lc-logo em{color:#F4601A;font-style:normal;}
+.tw-lc-hero{background:linear-gradient(135deg,#FFFBF8,#F0F7FF);
+  padding:8px;text-align:center;}
+.tw-lc-h{font-family:'Playfair Display',serif;font-size:.75rem;font-weight:700;
+  color:#1A1410;margin-bottom:3px;}
+.tw-lc-h em{color:#1A6EF4;font-style:italic;}
+.tw-lc-search{background:white;border-radius:6px;padding:5px 6px;margin:0 4px 6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:3px;}
+.tw-lc-sf{font-size:.35rem;color:#6B5F54;padding:2px 3px;border-right:1px solid #E8E2D9;}
+.tw-lc-sf:last-of-type{border:none;}
+.tw-lc-sf-l{font-size:.28rem;font-weight:700;text-transform:uppercase;color:#C4BAB0;}
+.tw-lc-sf-v{font-size:.38rem;font-weight:600;color:#1A1410;}
+.tw-lc-btn{background:#1A6EF4;border-radius:5px;font-size:.38rem;font-weight:700;
+  color:white;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.tw-lc-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:5px 6px;}
+.tw-lc-card{background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.tw-lc-card-img{height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.tw-lc-card-body{padding:4px 5px;}
+.tw-lc-card-name{font-size:.34rem;font-weight:700;color:#1A1410;}
+.tw-lc-card-price{font-size:.36rem;font-weight:700;color:#1A6EF4;}
+
+/* ════════════════════════════════════════
+   CARD 3 — LinkedIn Banner (1584×396)
+   ════════════════════════════════════════ */
+.card-linkedin{
+  width:1584px;height:396px;
+  background:linear-gradient(110deg,#0A0806 0%,#181208 35%,#0A1020 70%,#06080E 100%);
+  border-radius:16px;overflow:hidden;position:relative;
+  display:flex;align-items:center;
+}
+.card-linkedin::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 45% 100% at 5% 50%,rgba(244,96,26,.1),transparent 55%),
+    radial-gradient(ellipse 35% 80% at 95% 50%,rgba(26,110,244,.08),transparent 55%);
+  pointer-events:none;
+}
+.li-left{padding:40px 56px;position:relative;z-index:5;flex:1;}
+.li-tag{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.18em;
+  color:#F4601A;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.li-tag::before{content:'';width:20px;height:1px;background:#F4601A;}
+.li-h{font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:700;
+  letter-spacing:-1.5px;line-height:1.05;color:white;margin-bottom:12px;}
+.li-h em{font-style:italic;color:#F4601A;}
+.li-sub{font-size:.82rem;color:rgba(255,255,255,.4);line-height:1.65;max-width:480px;margin-bottom:20px;}
+.li-stats{display:flex;gap:32px;}
+.li-stat{}
+.li-stat-num{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:white;line-height:1;}
+.li-stat-lbl{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-top:3px;}
+
+.li-right{width:640px;height:100%;display:flex;align-items:center;
+  justify-content:center;gap:18px;padding:30px;position:relative;z-index:5;}
+
+/* stacked phones */
+.li-phone-back{
+  width:130px;height:260px;background:#0E0B08;border-radius:24px;
+  border:5px solid #1E1A14;
+  box-shadow:0 0 0 1px #2A2420,0 16px 50px rgba(0,0,0,.8);
+  overflow:hidden;position:relative;margin-right:-30px;margin-top:30px;
+  opacity:.6;
+}
+.li-phone-front{
+  width:148px;height:295px;background:#111;border-radius:28px;
+  border:6px solid #2A2520;
+  box-shadow:0 0 0 1px #3A3028,0 24px 80px rgba(0,0,0,.9),0 0 50px rgba(244,96,26,.12);
+  overflow:hidden;position:relative;z-index:2;
+}
+.li-phone-front::before,.li-phone-back::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:55px;height:13px;background:inherit;border-radius:0 0 9px 9px;z-index:10;
+}
+.li-phone-screen{width:100%;height:100%;overflow:hidden;background:#FAF8F5;}
+.li-ps-nav{background:white;padding:8px 10px 6px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;justify-content:space-between;}
+.li-ps-logo{font-family:'Playfair Display',serif;font-size:.7rem;font-weight:900;color:#1A1410;}
+.li-ps-logo em{color:#F4601A;font-style:normal;}
+.li-ps-btn{background:#1A6EF4;border-radius:100px;padding:3px 8px;font-size:.45rem;font-weight:700;color:white;}
+.li-ps-hero{background:linear-gradient(135deg,#EEF4FF,#FFF5F0);padding:10px;text-align:center;}
+.li-ps-pill-row{display:flex;gap:4px;justify-content:center;margin-bottom:8px;}
+.li-ps-pill{border-radius:100px;padding:3px 8px;font-size:.42rem;font-weight:700;}
+.li-ps-pill.on{background:#1A6EF4;color:white;}
+.li-ps-pill.off{background:rgba(0,0,0,.07);color:#6B5F54;}
+.li-ps-h{font-family:'Playfair Display',serif;font-size:.85rem;font-weight:700;
+  color:#1A1410;line-height:1.2;margin-bottom:6px;}
+.li-ps-h em{color:#F4601A;font-style:italic;}
+.li-ps-search{background:white;border-radius:8px;padding:7px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin:0 2px 8px;}
+.li-ps-row{display:flex;align-items:center;gap:4px;padding:3px 0;
+  border-bottom:1px solid #E8E2D9;font-size:.42rem;color:#6B5F54;}
+.li-ps-row:last-of-type{border:none;}
+.li-ps-btn2{background:#F4601A;border-radius:6px;padding:6px;margin:2px;
+  font-size:.48rem;font-weight:700;color:white;text-align:center;}
+.li-ps-card{background:white;margin:5px;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.li-ps-cimg{height:48px;background:linear-gradient(135deg,#e8d5b7,#d4b894);
+  display:flex;align-items:center;justify-content:center;font-size:20px;}
+.li-ps-cbody{padding:5px 7px;}
+.li-ps-cname{font-size:.48rem;font-weight:700;color:#1A1410;}
+.li-ps-cloc{font-size:.4rem;color:#6B5F54;}
+.li-ps-cfoot{display:flex;justify-content:space-between;margin-top:2px;}
+.li-ps-cprice{font-size:.48rem;font-weight:700;color:#1A6EF4;}
+.li-ps-cstars{font-size:.4rem;color:#D97706;}
+
+/* ════════════════════════════════════════
+   CARD 4 — YouTube Thumbnail (1280×720)
+   ════════════════════════════════════════ */
+.card-youtube{
+  width:1280px;height:720px;
+  background:linear-gradient(145deg,#080604 0%,#120E06 45%,#060A18 100%);
+  border-radius:20px;overflow:hidden;position:relative;
+}
+.card-youtube::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at -10% 110%,rgba(244,96,26,.18),transparent 55%),
+    radial-gradient(ellipse 60% 50% at 110% -10%,rgba(26,110,244,.12),transparent 55%);
+  pointer-events:none;
+}
+
+.yt-inner{position:relative;z-index:5;height:100%;
+  display:flex;align-items:center;padding:60px 70px;gap:60px;}
+
+.yt-left{flex:1;}
+.yt-eyebrow{display:inline-flex;align-items:center;gap:8px;
+  background:rgba(244,96,26,.15);border:1px solid rgba(244,96,26,.3);
+  border-radius:100px;padding:6px 16px;font-size:.72rem;font-weight:700;
+  color:#F4601A;margin-bottom:20px;text-transform:uppercase;letter-spacing:.08em;}
+.yt-eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:#F4601A;
+  animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.yt-h{font-family:'Playfair Display',serif;font-size:4.2rem;font-weight:700;
+  letter-spacing:-3px;line-height:.95;color:white;margin-bottom:18px;}
+.yt-h em{font-style:italic;color:#F4601A;}
+.yt-h .line2{display:block;color:rgba(255,255,255,.55);}
+
+.yt-sub{font-size:.95rem;color:rgba(255,255,255,.4);line-height:1.7;
+  max-width:420px;margin-bottom:30px;}
+
+.yt-tags{display:flex;gap:10px;flex-wrap:wrap;}
+.yt-tag{border-radius:100px;padding:7px 16px;font-size:.72rem;font-weight:700;border:1px solid;}
+.yt-tag.or{background:rgba(244,96,26,.15);border-color:rgba(244,96,26,.3);color:#F4601A;}
+.yt-tag.bl{background:rgba(26,110,244,.12);border-color:rgba(26,110,244,.25);color:#4A8EF6;}
+.yt-tag.gr{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.2);color:#22C55E;}
+.yt-tag.wh{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.5);}
+
+/* Big laptop + phone combo */
+.yt-right{width:560px;position:relative;flex-shrink:0;}
+
+.yt-laptop{position:relative;}
+.yt-laptop-screen{
+  width:480px;height:300px;background:#1a1410;
+  border-radius:16px 16px 0 0;border:8px solid #2A2520;border-bottom:none;
+  overflow:hidden;box-shadow:0 0 0 1px #3A3028;position:relative;
+}
+.yt-laptop-body{
+  width:530px;height:18px;background:#2A2520;
+  border-radius:0 0 16px 16px;margin-left:-25px;
+  box-shadow:0 10px 40px rgba(0,0,0,.8);border:1px solid #3A3028;
+}
+.yt-laptop-content{width:100%;height:100%;overflow:hidden;background:#FAF8F5;}
+.yt-lc-bar{background:white;padding:6px 10px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;gap:5px;}
+.yt-lc-dots{display:flex;gap:3px;}
+.yt-lc-dot{width:7px;height:7px;border-radius:50%;}
+.yt-lc-logo{font-family:'Playfair Display',serif;font-size:.65rem;font-weight:900;color:#1A1410;margin-left:8px;}
+.yt-lc-logo em{color:#F4601A;font-style:normal;}
+.yt-lc-cta{margin-left:auto;background:#1A6EF4;border-radius:100px;
+  padding:3px 10px;font-size:.42rem;font-weight:700;color:white;}
+.yt-lc-hero{background:linear-gradient(135deg,#FFFBF8,#EEF4FF);padding:14px;text-align:center;}
+.yt-lc-mode{display:flex;gap:6px;justify-content:center;margin-bottom:10px;}
+.yt-lc-m{border-radius:100px;padding:4px 12px;font-size:.5rem;font-weight:700;}
+.yt-lc-m.on{background:#1A6EF4;color:white;}
+.yt-lc-m.off{background:rgba(0,0,0,.07);color:#6B5F54;}
+.yt-lc-h{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;
+  color:#1A1410;margin-bottom:4px;}
+.yt-lc-h em{color:#1A6EF4;font-style:italic;}
+.yt-lc-search{background:white;border-radius:9px;padding:8px 10px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);margin:0 8px;
+  display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:4px;align-items:center;}
+.yt-lc-sf{font-size:.38rem;color:#6B5F54;padding:3px 5px;border-right:1px solid #E8E2D9;}
+.yt-lc-sf:last-of-type{border:none;}
+.yt-lc-sf-l{font-size:.3rem;font-weight:700;text-transform:uppercase;color:#C4BAB0;margin-bottom:1px;}
+.yt-lc-sf-v{font-size:.42rem;font-weight:600;color:#1A1410;}
+.yt-lc-sbtn{background:#1A6EF4;border-radius:6px;padding:5px 8px;
+  font-size:.42rem;font-weight:700;color:white;text-align:center;}
+.yt-lc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 10px;}
+.yt-lc-card{background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.yt-lc-card-img{height:52px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.yt-lc-card-body{padding:5px 6px;}
+.yt-lc-card-name{font-size:.38rem;font-weight:700;color:#1A1410;margin-bottom:1px;}
+.yt-lc-card-loc{font-size:.32rem;color:#6B5F54;margin-bottom:3px;}
+.yt-lc-card-foot{display:flex;justify-content:space-between;align-items:center;}
+.yt-lc-card-price{font-size:.4rem;font-weight:700;color:#1A6EF4;}
+.yt-lc-card-stars{font-size:.34rem;color:#D97706;}
+
+/* floating phone over laptop */
+.yt-float-phone{
+  position:absolute;right:-40px;bottom:20px;
+  width:130px;height:262px;background:#111;border-radius:26px;
+  border:5px solid #2A2520;
+  box-shadow:0 0 0 1px #3A3028,0 20px 60px rgba(0,0,0,.9),0 0 40px rgba(244,96,26,.15);
+  overflow:hidden;z-index:10;
+}
+.yt-float-phone::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:50px;height:12px;background:#111;border-radius:0 0 8px 8px;z-index:10;}
+.yt-fp-screen{width:100%;height:100%;overflow:hidden;background:#FAF8F5;}
+.yt-fp-nav{background:white;padding:6px 8px;border-bottom:1px solid #E8E2D9;
+  display:flex;align-items:center;justify-content:space-between;}
+.yt-fp-logo{font-family:'Playfair Display',serif;font-size:.55rem;font-weight:900;color:#1A1410;}
+.yt-fp-logo em{color:#F4601A;font-style:normal;}
+/* confirmation screen in phone */
+.yt-fp-confirm{padding:12px 10px;text-align:center;}
+.yt-fp-check{width:44px;height:44px;border-radius:50%;background:rgba(34,197,94,.15);
+  border:2px solid #22C55E;display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin:0 auto 8px;color:#22C55E;font-weight:700;}
+.yt-fp-badge{font-size:.4rem;font-weight:700;background:rgba(34,197,94,.12);
+  border:1px solid rgba(34,197,94,.2);border-radius:100px;padding:2px 7px;
+  color:#16A34A;margin-bottom:8px;display:inline-block;}
+.yt-fp-dest{font-family:'Playfair Display',serif;font-size:.68rem;font-weight:700;
+  color:#1A1410;margin-bottom:4px;}
+.yt-fp-ref{font-size:.38rem;font-weight:700;color:#F4601A;background:rgba(244,96,26,.08);
+  border-radius:100px;padding:2px 6px;margin-bottom:8px;display:inline-block;}
+.yt-fp-detail{background:var(--xlight,#F0EDE8);border-radius:6px;padding:6px 8px;margin-bottom:6px;}
+.yt-fp-row{display:flex;justify-content:space-between;font-size:.38rem;
+  color:#6B5F54;margin-bottom:2px;}
+.yt-fp-row.total{font-weight:700;color:#1A1410;border-top:1px solid #E8E2D9;padding-top:4px;margin-top:2px;}
+.yt-fp-btn{background:#F4601A;border-radius:6px;padding:6px;font-size:.48rem;
+  font-weight:700;color:white;text-align:center;margin:0 4px;}
+
+/* yt logo bottom left */
+.yt-logo{position:absolute;bottom:36px;left:70px;z-index:10;}
+.yt-logo-text{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:rgba(255,255,255,.3);}
+.yt-logo-text em{color:rgba(244,96,26,.5);font-style:normal;}
+.yt-url{font-size:.7rem;color:rgba(255,255,255,.18);margin-top:2px;}
+
+/* ═══ CONTROLS ═══ */
+.controls{
+  position:fixed;top:20px;right:20px;
+  background:#1A1410;border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;padding:16px 20px;z-index:1000;
+  display:flex;flex-direction:column;gap:10px;min-width:200px;
+}
+.ctrl-title{font-size:.72rem;font-weight:700;color:#A89880;text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:4px;}
+.ctrl-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:9px;padding:9px 14px;font-size:.76rem;font-weight:700;
+  color:#F5EFE8;cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all .18s;text-align:left;display:flex;align-items:center;gap:8px;}
+.ctrl-btn:hover{background:rgba(244,96,26,.15);border-color:rgba(244,96,26,.3);color:#F4601A;}
+.ctrl-btn.active{background:rgba(244,96,26,.2);border-color:rgba(244,96,26,.4);color:#F4601A;}
+</style>
+</head>
+<body>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="ctrl-title">📸 Screenshot each card</div>
+  <button class="ctrl-btn active" onclick="showCard('all')">👁 Show all</button>
+  <button class="ctrl-btn" onclick="showCard('instagram')">📸 Instagram (1:1)</button>
+  <button class="ctrl-btn" onclick="showCard('twitter')">𝕏 X / Twitter banner</button>
+  <button class="ctrl-btn" onclick="showCard('linkedin')">in LinkedIn banner</button>
+  <button class="ctrl-btn" onclick="showCard('youtube')">▶ YouTube thumbnail</button>
+</div>
+
+<!-- ══════════════ CARD 1 — INSTAGRAM ══════════════ -->
+<div class="mockup-wrap" id="wrap-instagram">
+  <h2>📸 Instagram / Facebook Post <span>1080 × 1080 · Square</span></h2>
+  <p class="hint">Screenshot this card · Ideal for feed posts on Instagram and Facebook</p>
+
+  <div class="card-instagram">
+    <!-- top bar -->
+    <div class="ig-top">
+      <div class="ig-logo">Snap<em>Reserve</em></div>
+      <div class="ig-tag">snapreserve.app</div>
+    </div>
+
+    <!-- phone mockup -->
+    <div class="ig-phone-wrap">
+      <div class="ig-phone">
+        <div class="ig-screen">
+          <div class="ps-nav">
+            <div class="ps-logo">Snap<em>Reserve</em></div>
+            <div class="ps-nav-btn">List Property</div>
+          </div>
+          <div class="ps-hero">
+            <div class="ps-mode-pills">
+              <div class="ps-pill on">🏨 Hotels</div>
+              <div class="ps-pill off">🏠 Private Stays</div>
+            </div>
+            <div class="ps-h">Discover world-class<br>stays with <em>SnapReserve.</em></div>
+            <div class="ps-sub">Launching in the United States</div>
+            <div class="ps-search">
+              <div class="ps-search-row">
+                <span class="ps-search-ico">📍</span>
+                <div><div style="font-size:.45rem;color:#C4BAB0;font-weight:700;text-transform:uppercase;">Destination</div><div class="ps-search-v">Barcelona, Spain</div></div>
+              </div>
+              <div class="ps-search-row">
+                <span class="ps-search-ico">📅</span>
+                <div><div style="font-size:.45rem;color:#C4BAB0;font-weight:700;text-transform:uppercase;">Check in</div><div class="ps-search-v">Mar 27 → Mar 29</div></div>
+              </div>
+              <div class="ps-search-row" style="border:none;">
+                <span class="ps-search-ico">👥</span>
+                <div><div style="font-size:.45rem;color:#C4BAB0;font-weight:700;text-transform:uppercase;">Guests</div><div class="ps-search-v">2 adults</div></div>
+              </div>
+              <div class="ps-search-btn">🔍 Search hotels</div>
+            </div>
+          </div>
+          <div class="ps-cards">
+            <div class="ps-card">
+              <div class="ps-card-img">🏨</div>
+              <div class="ps-card-body">
+                <div class="ps-card-name">The Harbour View Suite</div>
+                <div class="ps-card-loc">📍 El Born, Barcelona</div>
+                <div class="ps-card-foot">
+                  <div class="ps-card-price">$185/night</div>
+                  <div class="ps-card-stars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+            <div class="ps-card">
+              <div class="ps-card-img" style="background:linear-gradient(135deg,#c4d4e8,#a0b4d4);">🌊</div>
+              <div class="ps-card-body">
+                <div class="ps-card-name">Barceloneta Sea Loft</div>
+                <div class="ps-card-loc">📍 Barceloneta Beach</div>
+                <div class="ps-card-foot">
+                  <div class="ps-card-price">$175/night</div>
+                  <div class="ps-card-stars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+            <div class="ps-card">
+              <div class="ps-card-img" style="background:linear-gradient(135deg,#d4e8c4,#b4d4a0);">🌿</div>
+              <div class="ps-card-body">
+                <div class="ps-card-name">Eixample Garden Apt</div>
+                <div class="ps-card-loc">📍 Eixample District</div>
+                <div class="ps-card-foot">
+                  <div class="ps-card-price">$130/night</div>
+                  <div class="ps-card-stars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom -->
+    <div class="ig-bottom">
+      <div class="ig-tagline">
+        <div class="ig-tl-label">Coming soon</div>
+        <div class="ig-tl-h">Book in a snap.<br><em>Stay anywhere.</em></div>
+        <div class="ig-tl-sub">Hotels · Private Stays · Cars · Experiences</div>
+      </div>
+      <div class="ig-url">snapreserve.app</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CARD 2 — TWITTER/X ══════════════ -->
+<div class="mockup-wrap" id="wrap-twitter">
+  <h2>𝕏 X / Twitter Banner <span>1500 × 500 · Wide</span></h2>
+  <p class="hint">Screenshot this card · Use as your Twitter/X profile banner</p>
+
+  <div class="card-twitter">
+    <div class="tw-left">
+      <div class="tw-logo">Snap<em>Reserve</em></div>
+      <div class="tw-h">Book in a snap.<br><em>Stay anywhere.</em></div>
+      <div class="tw-sub">Hotels, private stays, cars and experiences — all in one place. Launching soon on snapreserve.app</div>
+      <div class="tw-pills">
+        <div class="tw-pill or">🏨 Hotels</div>
+        <div class="tw-pill bl">🏠 Private Stays</div>
+        <div class="tw-pill wh">🚗 Cars · Coming Soon</div>
+        <div class="tw-pill wh">✨ Experiences · Coming Soon</div>
+      </div>
+    </div>
+    <div class="tw-right">
+      <!-- phone -->
+      <div class="tw-phone">
+        <div class="tw-phone-screen">
+          <div class="tw-ps-nav">
+            <div class="tw-ps-logo">Snap<em>Reserve</em></div>
+          </div>
+          <div class="tw-ps-hero">
+            <div class="tw-ps-h">Discover world-class<br>stays with <em>SnapReserve.</em></div>
+            <div class="tw-ps-search">
+              <div class="tw-ps-sf"><span>📍</span><span>Barcelona, Spain</span></div>
+              <div class="tw-ps-sf"><span>📅</span><span>Mar 27 → Mar 29</span></div>
+              <div class="tw-ps-sf" style="border:none;"><span>👥</span><span>2 adults</span></div>
+              <div class="tw-ps-btn">🔍 Search</div>
+            </div>
+          </div>
+          <div style="padding:5px;">
+            <div class="tw-ps-card">
+              <div class="tw-ps-card-img">🏨</div>
+              <div class="tw-ps-card-body">
+                <div class="tw-ps-card-name">The Harbour View Suite</div>
+                <div class="tw-ps-card-loc">📍 El Born, Barcelona</div>
+                <div class="tw-ps-card-foot">
+                  <div class="tw-ps-price">$185/night</div>
+                  <div class="tw-ps-stars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+            <div class="tw-ps-card" style="margin-top:4px;">
+              <div class="tw-ps-card-img" style="background:linear-gradient(135deg,#c4d4e8,#a0b4d4);">🌊</div>
+              <div class="tw-ps-card-body">
+                <div class="tw-ps-card-name">Barceloneta Sea Loft</div>
+                <div class="tw-ps-card-loc">📍 Barceloneta Beach</div>
+                <div class="tw-ps-card-foot">
+                  <div class="tw-ps-price">$175/night</div>
+                  <div class="tw-ps-stars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- laptop -->
+      <div class="tw-laptop">
+        <div class="tw-laptop-screen">
+          <div class="tw-laptop-content">
+            <div class="tw-lc-nav">
+              <div class="tw-lc-dots">
+                <div class="tw-lc-dot" style="background:#FF5F57;"></div>
+                <div class="tw-lc-dot" style="background:#FEBC2E;"></div>
+                <div class="tw-lc-dot" style="background:#28C840;"></div>
+              </div>
+              <div class="tw-lc-logo">Snap<em>Reserve</em></div>
+            </div>
+            <div class="tw-lc-hero">
+              <div class="tw-lc-h">Discover world-class stays with <em>SnapReserve.</em></div>
+              <div class="tw-lc-search">
+                <div class="tw-lc-sf"><div class="tw-lc-sf-l">Destination</div><div class="tw-lc-sf-v">Barcelona</div></div>
+                <div class="tw-lc-sf"><div class="tw-lc-sf-l">Check in</div><div class="tw-lc-sf-v">Mar 27</div></div>
+                <div class="tw-lc-sf"><div class="tw-lc-sf-l">Check out</div><div class="tw-lc-sf-v">Mar 29</div></div>
+                <div class="tw-lc-btn">Search</div>
+              </div>
+            </div>
+            <div class="tw-lc-cards">
+              <div class="tw-lc-card"><div class="tw-lc-card-img" style="background:linear-gradient(135deg,#e8d5b7,#d4b894);">🏨</div><div class="tw-lc-card-body"><div class="tw-lc-card-name">Harbour View Suite</div><div class="tw-lc-card-price">$185/night ★4.9</div></div></div>
+              <div class="tw-lc-card"><div class="tw-lc-card-img" style="background:linear-gradient(135deg,#c4d4e8,#a0b4d4);">🌊</div><div class="tw-lc-card-body"><div class="tw-lc-card-name">Barceloneta Loft</div><div class="tw-lc-card-price">$175/night ★4.9</div></div></div>
+              <div class="tw-lc-card"><div class="tw-lc-card-img" style="background:linear-gradient(135deg,#d4e8c4,#b4d4a0);">🌿</div><div class="tw-lc-card-body"><div class="tw-lc-card-name">Eixample Garden</div><div class="tw-lc-card-price">$130/night ★4.9</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tw-laptop-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CARD 3 — LINKEDIN ══════════════ -->
+<div class="mockup-wrap" id="wrap-linkedin">
+  <h2>in LinkedIn Banner <span>1584 × 396 · Wide</span></h2>
+  <p class="hint">Screenshot this card · Use as your LinkedIn company page banner</p>
+
+  <div class="card-linkedin">
+    <div class="li-left">
+      <div class="li-tag">Travel platform · Launching soon</div>
+      <div class="li-h">Book in a snap.<br><em>Stay anywhere.</em></div>
+      <div class="li-sub">Hotels, private stays, car rental and curated experiences — all in one beautifully simple platform. Built for modern travellers.</div>
+      <div class="li-stats">
+        <div class="li-stat"><div class="li-stat-num">🇺🇸</div><div class="li-stat-lbl">US Launch</div></div>
+        <div class="li-stat"><div class="li-stat-num">Soon</div><div class="li-stat-lbl">Global expansion</div></div>
+        <div class="li-stat"><div class="li-stat-num">3.2%</div><div class="li-stat-lbl">Platform fee</div></div>
+      </div>
+    </div>
+    <div class="li-right">
+      <!-- back phone -->
+      <div class="li-phone-back">
+        <div class="li-phone-screen">
+          <div class="li-ps-nav">
+            <div class="li-ps-logo">Snap<em>Reserve</em></div>
+          </div>
+          <div class="li-ps-hero">
+            <div class="li-ps-pill-row">
+              <div class="li-ps-pill on">🏨 Hotels</div>
+              <div class="li-ps-pill off">🏠 Stays</div>
+            </div>
+            <div class="li-ps-h">Discover world-class<br>stays with <em>SnapReserve.</em></div>
+            <div class="li-ps-search">
+              <div class="li-ps-row"><span>📍</span><span>Barcelona</span></div>
+              <div class="li-ps-row"><span>📅</span><span>Mar 27–29</span></div>
+              <div class="li-ps-row" style="border:none;"><span>👥</span><span>2 adults</span></div>
+              <div class="li-ps-btn2">🔍 Search hotels</div>
+            </div>
+          </div>
+          <div style="padding:4px;">
+            <div class="li-ps-card">
+              <div class="li-ps-cimg">🏨</div>
+              <div class="li-ps-cbody">
+                <div class="li-ps-cname">The Harbour View Suite</div>
+                <div class="li-ps-cloc">📍 El Born, Barcelona</div>
+                <div class="li-ps-cfoot">
+                  <div class="li-ps-cprice">$185/night</div>
+                  <div class="li-ps-cstars">★★★★★</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- front phone (confirmation) -->
+      <div class="li-phone-front">
+        <div class="li-phone-screen">
+          <div class="li-ps-nav">
+            <div class="li-ps-logo">Snap<em>Reserve</em></div>
+          </div>
+          <div style="padding:14px 12px;text-align:center;background:linear-gradient(135deg,#FFFBF8,#F0FFF4);">
+            <div style="width:52px;height:52px;border-radius:50%;background:rgba(34,197,94,.15);border:2px solid #22C55E;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px;color:#22C55E;font-weight:700;">✓</div>
+            <div style="font-size:.5rem;font-weight:700;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.2);border-radius:100px;padding:2px 8px;color:#16A34A;margin-bottom:8px;display:inline-block;">✅ Booking confirmed</div>
+            <div style="font-family:'Playfair Display',serif;font-size:.85rem;font-weight:700;color:#1A1410;margin-bottom:4px;">You're going to<br><em style="color:#F4601A;">Barcelona.</em></div>
+            <div style="font-size:.42rem;font-weight:700;color:#F4601A;background:rgba(244,96,26,.08);border-radius:100px;padding:2px 7px;margin-bottom:10px;display:inline-block;">SNP-2026-BCN-7841</div>
+            <div style="background:#F0EDE8;border-radius:7px;padding:7px 9px;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;font-size:.42rem;color:#6B5F54;margin-bottom:3px;"><span>Room</span><span style="font-weight:700;color:#1A1410;">Standard King</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:.42rem;color:#6B5F54;margin-bottom:3px;"><span>Check-in</span><span style="font-weight:700;color:#1A1410;">Mar 27</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:.42rem;color:#6B5F54;margin-bottom:3px;"><span>Check-out</span><span style="font-weight:700;color:#1A1410;">Mar 29</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:.44rem;font-weight:700;border-top:1px solid #E8E2D9;padding-top:4px;margin-top:2px;"><span>Total paid</span><span style="color:#1A6EF4;">$354.00</span></div>
+            </div>
+            <div style="background:#F4601A;border-radius:7px;padding:7px;font-size:.52rem;font-weight:700;color:white;">View itinerary →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CARD 4 — YOUTUBE ══════════════ -->
+<div class="mockup-wrap" id="wrap-youtube">
+  <h2>▶ YouTube Thumbnail <span>1280 × 720 · 16:9</span></h2>
+  <p class="hint">Screenshot this card · Use as YouTube video thumbnail</p>
+
+  <div class="card-youtube">
+    <div class="yt-inner">
+      <div class="yt-left">
+        <div class="yt-eyebrow">🚀 Launching soon</div>
+        <div class="yt-h">
+          Book in a snap.
+          <em><br>Stay anywhere.</em>
+          <span class="line2">snapreserve.app</span>
+        </div>
+        <div class="yt-sub">Hotels · Private Stays · Car Rental · Experiences. One platform. One snap. The future of travel booking.</div>
+        <div class="yt-tags">
+          <div class="yt-tag or">🏨 Hotels</div>
+          <div class="yt-tag bl">🏠 Private Stays</div>
+          <div class="yt-tag wh">🚗 Cars · Soon</div>
+          <div class="yt-tag gr">✨ Experiences · Soon</div>
+        </div>
+      </div>
+      <div class="yt-right">
+        <!-- laptop -->
+        <div class="yt-laptop">
+          <div class="yt-laptop-screen">
+            <div class="yt-laptop-content">
+              <div class="yt-lc-bar">
+                <div class="yt-lc-dots">
+                  <div class="yt-lc-dot" style="background:#FF5F57;"></div>
+                  <div class="yt-lc-dot" style="background:#FEBC2E;"></div>
+                  <div class="yt-lc-dot" style="background:#28C840;"></div>
+                </div>
+                <div class="yt-lc-logo" style="margin-left:8px;">Snap<em>Reserve</em></div>
+                <div class="yt-lc-cta">List Property</div>
+              </div>
+              <div class="yt-lc-hero">
+                <div class="yt-lc-mode">
+                  <div class="yt-lc-m on">🏨 Hotels</div>
+                  <div class="yt-lc-m off">🏠 Private Stays</div>
+                </div>
+                <div class="yt-lc-h">Discover world-class stays with <em>SnapReserve.</em></div>
+                <div class="yt-lc-search">
+                  <div class="yt-lc-sf"><div class="yt-lc-sf-l">Destination</div><div class="yt-lc-sf-v">Barcelona, Spain</div></div>
+                  <div class="yt-lc-sf"><div class="yt-lc-sf-l">Check in</div><div class="yt-lc-sf-v">Mar 27</div></div>
+                  <div class="yt-lc-sf"><div class="yt-lc-sf-l">Check out</div><div class="yt-lc-sf-v">Mar 29</div></div>
+                  <div class="yt-lc-sbtn">Search</div>
+                </div>
+              </div>
+              <div class="yt-lc-cards">
+                <div class="yt-lc-card"><div class="yt-lc-card-img" style="background:linear-gradient(135deg,#e8d5b7,#d4b894);">🏨</div><div class="yt-lc-card-body"><div class="yt-lc-card-name">Harbour View Suite</div><div class="yt-lc-card-loc">El Born, Barcelona</div><div class="yt-lc-card-foot"><div class="yt-lc-card-price">$185/night</div><div class="yt-lc-card-stars">★4.9</div></div></div></div>
+                <div class="yt-lc-card"><div class="yt-lc-card-img" style="background:linear-gradient(135deg,#c4d4e8,#a0b4d4);">🌊</div><div class="yt-lc-card-body"><div class="yt-lc-card-name">Barceloneta Loft</div><div class="yt-lc-card-loc">Barceloneta Beach</div><div class="yt-lc-card-foot"><div class="yt-lc-card-price">$175/night</div><div class="yt-lc-card-stars">★4.9</div></div></div></div>
+                <div class="yt-lc-card"><div class="yt-lc-card-img" style="background:linear-gradient(135deg,#d4e8c4,#b4d4a0);">🌿</div><div class="yt-lc-card-body"><div class="yt-lc-card-name">Eixample Garden</div><div class="yt-lc-card-loc">Eixample District</div><div class="yt-lc-card-foot"><div class="yt-lc-card-price">$130/night</div><div class="yt-lc-card-stars">★4.9</div></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="yt-laptop-body"></div>
+        </div>
+        <!-- floating phone -->
+        <div class="yt-float-phone">
+          <div class="yt-fp-screen">
+            <div class="yt-fp-nav">
+              <div class="yt-fp-logo">Snap<em>Reserve</em></div>
+            </div>
+            <div class="yt-fp-confirm">
+              <div class="yt-fp-check">✓</div>
+              <div class="yt-fp-badge">✅ Booking confirmed</div>
+              <div class="yt-fp-dest">You're going to<br><em style="color:#F4601A;font-style:italic;">Barcelona.</em></div>
+              <div class="yt-fp-ref">SNP-2026-BCN-7841</div>
+              <div class="yt-fp-detail">
+                <div class="yt-fp-row"><span>Room</span><span>Standard King</span></div>
+                <div class="yt-fp-row"><span>Check-in</span><span>Mar 27</span></div>
+                <div class="yt-fp-row"><span>Guests</span><span>2 adults</span></div>
+                <div class="yt-fp-row total"><span>Total paid</span><span style="color:#1A6EF4;">$354.00</span></div>
+              </div>
+              <div class="yt-fp-btn">View itinerary →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="yt-logo">
+      <div class="yt-logo-text">Snap<em>Reserve</em></div>
+      <div class="yt-url">snapreserve.app</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showCard(id){
+  var all=['instagram','twitter','linkedin','youtube'];
+  document.querySelectorAll('.ctrl-btn').forEach(function(b){b.classList.remove('active');});
+  event.currentTarget.classList.add('active');
+  if(id==='all'){
+    all.forEach(function(c){
+      var w=document.getElementById('wrap-'+c);
+      if(w) w.style.display='block';
+    });
+  } else {
+    all.forEach(function(c){
+      var w=document.getElementById('wrap-'+c);
+      if(w) w.style.display=(c===id)?'block':'none';
+    });
+  }
+}
+</script>
+</body>
+</html>

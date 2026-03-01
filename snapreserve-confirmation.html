@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Confirmed — SnapReserve</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F4601A;--orange-light:#FF7A35;--orange-dim:rgba(244,96,26,.1);--orange-glow:rgba(244,96,26,.2);
+  --blue:#1A6EF4;--blue-dim:rgba(26,110,244,.1);
+  --green:#16A34A;--green-light:#22C55E;--green-dim:rgba(22,197,94,.1);
+  --gold:#D97706;--gold-dim:rgba(217,119,6,.1);
+  --bg:#FAF8F5;--surface:#FFFFFF;--card:#F3F0EB;--card2:#EAE6DF;
+  --border:#E8E2D9;--border2:#D4CEC5;
+  --dark:#1A1410;--mid:#6B5F54;--light:#C4BAB0;--xlight:#F0EDE8;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --shadow:0 4px 16px rgba(0,0,0,.09);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.13);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--dark);line-height:1.6;overflow-x:hidden;}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 40px;
+  height:64px;background:white;border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;}
+.logo{font-family:var(--serif);font-size:1.25rem;font-weight:900;text-decoration:none;color:var(--dark);}
+.logo span{color:var(--orange);}
+.nav-r{display:flex;align-items:center;gap:10px;}
+.nav-btn{background:none;border:1px solid var(--border2);border-radius:100px;padding:7px 16px;
+  font-size:.82rem;font-weight:600;color:var(--mid);cursor:pointer;font-family:var(--sans);
+  transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.nav-btn:hover{border-color:var(--dark);color:var(--dark);}
+
+/* ── CELEBRATION HERO ── */
+.hero{
+  background:linear-gradient(160deg,#fff9f6 0%,#fff5f0 40%,#f0f7ff 100%);
+  border-bottom:1px solid var(--border);
+  padding:60px 40px 48px;text-align:center;position:relative;overflow:hidden;
+}
+/* confetti dots */
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    radial-gradient(circle,var(--orange) 1.5px,transparent 1.5px),
+    radial-gradient(circle,var(--blue) 1.5px,transparent 1.5px),
+    radial-gradient(circle,var(--green-light) 1.5px,transparent 1.5px),
+    radial-gradient(circle,var(--gold) 1.5px,transparent 1.5px);
+  background-size:80px 80px,120px 120px,100px 100px,90px 90px;
+  background-position:10px 15px,40px 60px,70px 20px,20px 70px;
+  opacity:.18;pointer-events:none;
+}
+
+/* success icon */
+.success-ring{
+  width:88px;height:88px;border-radius:50%;background:white;
+  border:3px solid var(--green-light);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-size:38px;
+  box-shadow:0 0 0 12px rgba(34,197,94,.1),0 8px 28px rgba(22,163,74,.2);
+  animation:popIn .5s cubic-bezier(.175,.885,.32,1.275) both;
+}
+@keyframes popIn{
+  from{transform:scale(0);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--green-dim);border:1px solid rgba(34,197,94,.25);
+  border-radius:100px;padding:5px 16px;
+  font-size:.72rem;font-weight:700;color:var(--green);
+  margin-bottom:16px;animation:fadeUp .4s .2s ease both;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.hero h1{
+  font-family:var(--serif);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;
+  letter-spacing:-.8px;line-height:1.1;margin-bottom:12px;
+  animation:fadeUp .4s .3s ease both;
+}
+.hero h1 em{font-style:italic;color:var(--orange);}
+.hero-sub{
+  font-size:.92rem;color:var(--mid);max-width:480px;margin:0 auto 24px;
+  line-height:1.75;animation:fadeUp .4s .4s ease both;
+}
+.ref-pill{
+  display:inline-flex;align-items:center;gap:10px;
+  background:white;border:1px solid var(--border2);border-radius:100px;
+  padding:8px 20px;font-size:.82rem;font-weight:600;
+  box-shadow:var(--shadow);animation:fadeUp .4s .5s ease both;cursor:pointer;
+  transition:all .18s;
+}
+.ref-pill:hover{border-color:var(--orange);}
+.ref-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--light);}
+.ref-num{font-family:var(--serif);font-size:.95rem;font-weight:700;color:var(--orange);letter-spacing:1px;}
+.ref-copy{font-size:.7rem;color:var(--light);margin-left:4px;}
+
+@keyframes fadeUp{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:900px;margin:0 auto;padding:44px 40px 80px;
+  display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start;}
+
+/* ── LEFT ── */
+/* Section wrapper */
+.section{background:white;border:1px solid var(--border);border-radius:18px;
+  overflow:hidden;margin-bottom:20px;}
+.section-head{padding:20px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;}
+.sh-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:17px;flex-shrink:0;}
+.sh-t{font-family:var(--serif);font-size:1rem;font-weight:700;}
+.sh-s{font-size:.74rem;color:var(--mid);margin-top:1px;}
+.section-body{padding:20px 24px;}
+
+/* Booking summary */
+.prop-row{display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;}
+.prop-thumb{width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#e8d5b7,#d4c4a0);
+  display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;}
+.prop-info{}
+.prop-type-tag{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--orange);margin-bottom:3px;}
+.prop-name{font-family:var(--serif);font-size:1.05rem;font-weight:700;margin-bottom:3px;line-height:1.3;}
+.prop-loc{font-size:.78rem;color:var(--mid);display:flex;align-items:center;gap:4px;}
+
+.dates-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.dg-item{background:var(--xlight);border-radius:11px;padding:13px 15px;}
+.dgi-l{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--light);margin-bottom:4px;}
+.dgi-v{font-size:.9rem;font-weight:700;}
+.dgi-s{font-size:.7rem;color:var(--mid);margin-top:2px;}
+
+.guests-row{display:flex;align-items:center;justify-content:space-between;
+  background:var(--xlight);border-radius:11px;padding:13px 15px;margin-bottom:16px;}
+.gr-l{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--light);margin-bottom:3px;}
+.gr-v{font-size:.88rem;font-weight:700;}
+.gr-badge{font-size:.68rem;font-weight:700;background:var(--green-dim);
+  border:1px solid rgba(34,197,94,.2);border-radius:100px;padding:3px 10px;color:var(--green);}
+
+.room-row{display:flex;align-items:center;gap:12px;padding:13px 15px;
+  background:var(--xlight);border-radius:11px;}
+.room-ico{font-size:22px;}
+.room-info{}
+.room-name{font-size:.86rem;font-weight:700;margin-bottom:2px;}
+.room-tier{font-size:.68rem;font-weight:700;border-radius:100px;padding:2px 9px;
+  border:1px solid;display:inline-flex;align-items:center;gap:4px;}
+
+/* What's next timeline */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:16px;position:relative;}
+.tl-item::before{content:'';position:absolute;left:17px;top:36px;
+  width:2px;height:calc(100% - 8px);background:var(--border);}
+.tl-item:last-child::before{display:none;}
+.tl-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0;border:2px solid;z-index:1;}
+.tl-dot.done{background:var(--green);border-color:var(--green);color:white;}
+.tl-dot.pending{background:white;border-color:var(--border2);color:var(--mid);}
+.tl-dot.future{background:var(--xlight);border-color:var(--border);color:var(--light);}
+.tl-body{padding:6px 0 24px;}
+.tl-title{font-size:.88rem;font-weight:700;margin-bottom:3px;}
+.tl-desc{font-size:.78rem;color:var(--mid);line-height:1.65;}
+.tl-time{font-size:.68rem;font-weight:700;color:var(--orange);margin-top:4px;
+  display:flex;align-items:center;gap:4px;}
+
+/* Receipt breakdown */
+.receipt-rows{display:flex;flex-direction:column;gap:0;}
+.rr{display:flex;justify-content:space-between;padding:11px 0;
+  border-bottom:1px solid var(--border);font-size:.85rem;}
+.rr:last-child{border-bottom:none;}
+.rr-l{color:var(--mid);}
+.rr-v{font-weight:600;}
+.rr.total{font-weight:700;font-size:.95rem;}
+.rr.total .rr-l{color:var(--dark);}
+.rr.discount .rr-v{color:var(--green);}
+.paid-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);
+  border:1px solid rgba(34,197,94,.2);border-radius:100px;padding:3px 10px;
+  font-size:.68rem;font-weight:700;color:var(--green);margin-top:14px;}
+
+/* Actions */
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.act-btn{background:white;border:1px solid var(--border2);border-radius:12px;
+  padding:14px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  cursor:pointer;font-family:var(--sans);transition:all .2s;text-decoration:none;color:inherit;}
+.act-btn:hover{border-color:var(--orange);background:var(--orange-dim);transform:translateY(-2px);}
+.act-ico{font-size:24px;}
+.act-l{font-size:.75rem;font-weight:700;}
+.act-s{font-size:.65rem;color:var(--mid);}
+.act-btn.primary{background:var(--orange);border-color:var(--orange);color:white;grid-column:1/-1;}
+.act-btn.primary:hover{background:var(--orange-light);border-color:var(--orange-light);}
+.act-btn.primary .act-s{color:rgba(255,255,255,.7);}
+
+/* ── RIGHT COLUMN ── */
+/* Host card */
+.host-card{background:white;border:1px solid var(--border);border-radius:18px;
+  padding:20px;margin-bottom:20px;}
+.hc-top{display:flex;gap:13px;align-items:center;margin-bottom:14px;}
+.hc-avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#e8d5b7,#d4c4a0);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  flex-shrink:0;position:relative;}
+.hc-verified{position:absolute;bottom:0;right:0;width:18px;height:18px;
+  background:var(--green);border-radius:50%;border:2px solid white;
+  display:flex;align-items:center;justify-content:center;font-size:8px;color:white;}
+.hc-name{font-size:.9rem;font-weight:700;margin-bottom:2px;}
+.hc-resp{font-size:.72rem;color:var(--mid);}
+.hc-tip{background:var(--xlight);border-radius:11px;padding:12px 14px;
+  font-size:.78rem;color:var(--mid);line-height:1.65;margin-bottom:14px;
+  border-left:3px solid var(--orange);}
+.msg-btn{width:100%;background:var(--dark);border:none;border-radius:11px;
+  padding:12px;font-size:.84rem;font-weight:700;color:white;cursor:pointer;
+  font-family:var(--sans);transition:all .18s;display:flex;align-items:center;
+  justify-content:center;gap:7px;}
+.msg-btn:hover{background:#2d2420;}
+
+/* Add-ons upsell */
+.upsell-card{background:white;border:1px solid var(--border);border-radius:18px;
+  overflow:hidden;margin-bottom:20px;}
+.uc-head{padding:16px 18px;border-bottom:1px solid var(--border);}
+.uc-title{font-size:.86rem;font-weight:700;display:flex;align-items:center;gap:7px;}
+.uc-sub{font-size:.72rem;color:var(--mid);margin-top:2px;}
+.upsell-item{display:flex;align-items:center;gap:12px;padding:14px 18px;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.upsell-item:last-child{border-bottom:none;}
+.upsell-item:hover{background:var(--xlight);}
+.ui-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;font-size:19px;flex-shrink:0;}
+.ui-info{flex:1;}
+.ui-name{font-size:.82rem;font-weight:700;margin-bottom:2px;}
+.ui-desc{font-size:.7rem;color:var(--mid);}
+.ui-price{font-size:.82rem;font-weight:700;color:var(--orange);white-space:nowrap;}
+.ui-arrow{color:var(--light);font-size:12px;}
+
+/* Map card */
+.map-card{background:white;border:1px solid var(--border);border-radius:18px;
+  overflow:hidden;margin-bottom:20px;}
+.map-preview{height:140px;background:linear-gradient(135deg,#e8ede8,#d4ddd4);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;transition:opacity .18s;}
+.map-preview:hover{opacity:.85;}
+.map-body{padding:14px 16px;}
+.map-addr{font-size:.82rem;font-weight:600;margin-bottom:3px;}
+.map-sub{font-size:.72rem;color:var(--mid);}
+.map-actions{display:flex;gap:8px;margin-top:12px;}
+.ma-btn{flex:1;background:var(--xlight);border:1px solid var(--border);
+  border-radius:9px;padding:9px;font-size:.74rem;font-weight:700;
+  text-align:center;cursor:pointer;font-family:var(--sans);transition:all .18s;}
+.ma-btn:hover{background:var(--dark);color:white;border-color:var(--dark);}
+
+/* Share card */
+.share-card{background:linear-gradient(135deg,#fff5f0,#fff9f5);
+  border:1px solid rgba(244,96,26,.15);border-radius:18px;padding:18px;margin-bottom:20px;}
+.sc-title{font-size:.86rem;font-weight:700;margin-bottom:4px;}
+.sc-sub{font-size:.72rem;color:var(--mid);margin-bottom:14px;line-height:1.6;}
+.share-btns{display:flex;gap:8px;}
+.sb{flex:1;border:1px solid var(--border2);border-radius:9px;padding:9px;
+  font-size:.7rem;font-weight:700;text-align:center;cursor:pointer;
+  font-family:var(--sans);background:white;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:5px;}
+.sb:hover{border-color:var(--orange);background:var(--orange-dim);}
+
+/* Confirmation email notice */
+.email-notice{background:var(--blue-dim);border:1px solid rgba(26,110,244,.15);
+  border-radius:12px;padding:14px 16px;display:flex;gap:11px;align-items:flex-start;
+  margin-bottom:20px;}
+.en-ico{font-size:20px;flex-shrink:0;margin-top:1px;}
+.en-t{font-size:.8rem;font-weight:700;margin-bottom:2px;}
+.en-d{font-size:.74rem;color:var(--mid);line-height:1.6;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;
+  border-radius:12px;padding:13px 18px;font-size:.8rem;font-weight:500;z-index:9999;
+  transform:translateY(80px);opacity:0;transition:all .3s ease;
+  max-width:280px;box-shadow:var(--shadow-lg);}
+#toast.show{transform:translateY(0);opacity:1;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:760px){
+  .main{grid-template-columns:1fr;padding:24px 20px 60px;}
+  .hero{padding:44px 20px 36px;}
+  .dates-grid{grid-template-columns:1fr;}
+  .actions-grid{grid-template-columns:1fr;}
+  .act-btn.primary{grid-column:1;}
+  .nav{padding:0 20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="snapreserve.html" class="logo">Snap<span>Reserve</span></a>
+  <div class="nav-r">
+    <a href="snapreserve.html" class="nav-btn">🏠 Back to home</a>
+  </div>
+</nav>
+
+<!-- CELEBRATION HERO -->
+<div class="hero">
+  <div class="success-ring">✓</div>
+  <div class="hero-badge">✅ Booking confirmed</div>
+  <h1>You're going to<br><em>Barcelona.</em></h1>
+  <p class="hero-sub">Your booking is confirmed and Marcos has been notified. A full confirmation has been sent to your email address.</p>
+  <div class="ref-pill" onclick="copyRef()">
+    <div>
+      <div class="ref-label">Booking reference</div>
+      <div class="ref-num">SNP-2026-BCN-7841</div>
+    </div>
+    <span class="ref-copy">📋 Copy</span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- ══ LEFT COLUMN ══ -->
+  <div class="left">
+
+    <!-- Email notice -->
+    <div class="email-notice">
+      <div class="en-ico">📧</div>
+      <div>
+        <div class="en-t">Confirmation sent to your email</div>
+        <div class="en-d">Check your inbox for the full itinerary, host contact details, and check-in instructions. Also check spam if you don't see it within 5 minutes.</div>
+      </div>
+    </div>
+
+    <!-- Booking summary -->
+    <div class="section">
+      <div class="section-head">
+        <div class="sh-ico" style="background:var(--orange-dim);">🏨</div>
+        <div>
+          <div class="sh-t">Your booking</div>
+          <div class="sh-s">The Harbour View Suite — El Born, Barcelona</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="prop-row">
+          <div class="prop-thumb">🏨</div>
+          <div class="prop-info">
+            <div class="prop-type-tag">🏨 Boutique Hotel</div>
+            <div class="prop-name">The Harbour View Suite — Barcelona</div>
+            <div class="prop-loc">📍 El Born, Barcelona, Spain</div>
+          </div>
+        </div>
+
+        <div class="dates-grid">
+          <div class="dg-item">
+            <div class="dgi-l">Check-in</div>
+            <div class="dgi-v">Thursday, Mar 27</div>
+            <div class="dgi-s">From 2:00 PM · Flexible</div>
+          </div>
+          <div class="dg-item">
+            <div class="dgi-l">Check-out</div>
+            <div class="dgi-v">Saturday, Mar 29</div>
+            <div class="dgi-s">By 11:00 AM · Late on request</div>
+          </div>
+        </div>
+
+        <div class="guests-row">
+          <div>
+            <div class="gr-l">Guests</div>
+            <div class="gr-v">2 adults · 2 nights</div>
+          </div>
+          <div class="gr-badge">✓ Confirmed</div>
+        </div>
+
+        <div class="room-row" style="margin-top:0;">
+          <div class="room-ico">🛏️</div>
+          <div class="room-info">
+            <div class="room-name">Standard King Room</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap;">
+              <span class="room-tier" style="background:rgba(107,95,84,.08);border-color:rgba(107,95,84,.2);color:#6B5F54;">🏷️ Standard tier</span>
+              <span style="font-size:.7rem;color:var(--mid);">King bed · 180m² · City view</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What's next timeline -->
+    <div class="section">
+      <div class="section-head">
+        <div class="sh-ico" style="background:var(--blue-dim);">📋</div>
+        <div>
+          <div class="sh-t">What happens next</div>
+          <div class="sh-s">Your journey to check-in</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="timeline">
+
+          <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-body">
+              <div class="tl-title">Booking confirmed</div>
+              <div class="tl-desc">Your payment was processed securely via Stripe. Reference SNP-2026-BCN-7841 is locked in.</div>
+              <div class="tl-time">✅ Just now</div>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-dot done">✓</div>
+            <div class="tl-body">
+              <div class="tl-title">Confirmation email sent</div>
+              <div class="tl-desc">Full itinerary, receipt, and host contact details sent to your inbox.</div>
+              <div class="tl-time">✅ Just now</div>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-dot pending">💬</div>
+            <div class="tl-body">
+              <div class="tl-title">Marcos sends a welcome message</div>
+              <div class="tl-desc">Your host will typically reach out within 1 hour with personalised check-in details, local tips, and their direct number.</div>
+              <div class="tl-time">⏳ Within 1 hour</div>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-dot future">📱</div>
+            <div class="tl-body">
+              <div class="tl-title">Reminder 48h before check-in</div>
+              <div class="tl-desc">We'll send you a reminder with everything you need — check-in code, parking info, and how to reach Marcos on the day.</div>
+              <div class="tl-time">📅 Mar 25, 2026</div>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-dot future">🗝️</div>
+            <div class="tl-body">
+              <div class="tl-title">Check in to The Harbour View Suite</div>
+              <div class="tl-desc">Arrive from 2PM. Flexible check-in available — just message Marcos the day before if you need an early or late arrival.</div>
+              <div class="tl-time">📅 Mar 27, 2026 · 2:00 PM</div>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-dot future">⭐</div>
+            <div class="tl-body">
+              <div class="tl-title">Leave a review after checkout</div>
+              <div class="tl-desc">Help future guests by sharing your experience. Takes 2 minutes and means the world to hosts like Marcos.</div>
+              <div class="tl-time">📅 After Mar 29, 2026</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Receipt -->
+    <div class="section">
+      <div class="section-head">
+        <div class="sh-ico" style="background:var(--gold-dim);">🧾</div>
+        <div>
+          <div class="sh-t">Payment receipt</div>
+          <div class="sh-s">Charged to card ending ••• 4242</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="receipt-rows">
+          <div class="rr"><span class="rr-l">Standard King Room × 2 nights</span><span class="rr-v">$370.00</span></div>
+          <div class="rr discount"><span class="rr-l">Early bird discount (16%)</span><span class="rr-v">−$70.00</span></div>
+          <div class="rr"><span class="rr-l">Cleaning fee</span><span class="rr-v">$35.00</span></div>
+          <div class="rr"><span class="rr-l">SnapReserve service fee (3.2%)</span><span class="rr-v">$13.00</span></div>
+          <div class="rr"><span class="rr-l">Barcelona tourist tax</span><span class="rr-v">$6.00</span></div>
+          <div class="rr total"><span class="rr-l">Total paid</span><span class="rr-v">$354.00</span></div>
+        </div>
+        <div class="paid-badge">✓ Paid in full · Mar 27, 2026 · Stripe</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="section">
+      <div class="section-head">
+        <div class="sh-ico" style="background:var(--green-dim);">⚡</div>
+        <div>
+          <div class="sh-t">Manage your trip</div>
+          <div class="sh-s">Everything you need in one place</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="actions-grid">
+          <button class="act-btn primary" onclick="toast('Opening trip wallet...')">
+            <div class="act-ico">🗂️</div>
+            <div class="act-l">View full itinerary</div>
+            <div class="act-s">All details in your trip wallet</div>
+          </button>
+          <button class="act-btn" onclick="addToCalendar()">
+            <div class="act-ico">📅</div>
+            <div class="act-l">Add to calendar</div>
+            <div class="act-s">Google, Apple, Outlook</div>
+          </button>
+          <button class="act-btn" onclick="toast('Downloading PDF receipt...')">
+            <div class="act-ico">📄</div>
+            <div class="act-l">Download receipt</div>
+            <div class="act-s">PDF for expenses</div>
+          </button>
+          <button class="act-btn" onclick="toast('Opening cancellation policy...')">
+            <div class="act-ico">🌿</div>
+            <div class="act-l">Cancellation policy</div>
+            <div class="act-s">Free until Mar 25</div>
+          </button>
+          <button class="act-btn" onclick="toast('Opening SnapReserve support...')">
+            <div class="act-ico">🛎️</div>
+            <div class="act-l">Get help</div>
+            <div class="act-s">24/7 support team</div>
+          </button>
+          <a class="act-btn" href="snapreserve.html">
+            <div class="act-ico">🔍</div>
+            <div class="act-l">Find more stays</div>
+            <div class="act-s">Browse SnapReserve</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end left -->
+
+  <!-- ══ RIGHT COLUMN ══ -->
+  <div class="right">
+
+    <!-- Host card -->
+    <div class="host-card">
+      <div class="hc-top">
+        <div class="hc-avatar">🧑‍💼<div class="hc-verified">✓</div></div>
+        <div>
+          <div class="hc-name">Marcos Delgado</div>
+          <div class="hc-resp">Responds within 1 hour · Verified host</div>
+        </div>
+      </div>
+      <div class="hc-tip">
+        "Welcome! I'll send over the door code and parking details closer to your arrival. Can't wait to host you — Barcelona in late March is absolutely beautiful. 🌸"
+      </div>
+      <button class="msg-btn" onclick="toast('Opening message thread with Marcos...')">
+        💬 Message Marcos
+      </button>
+    </div>
+
+    <!-- Upsell — add car or experience -->
+    <div class="upsell-card">
+      <div class="uc-head">
+        <div class="uc-title">🎒 Complete your trip</div>
+        <div class="uc-sub">Add these to your Barcelona booking</div>
+      </div>
+      <div class="upsell-item" onclick="toast('Opening SnapReserve Car — Coming Soon!')">
+        <div class="ui-ico" style="background:var(--orange-dim);">🚗</div>
+        <div class="ui-info">
+          <div class="ui-name">Rent a car in Barcelona</div>
+          <div class="ui-desc">From $38/day · Airport pickup available</div>
+        </div>
+        <div class="ui-price">Coming soon</div>
+        <div class="ui-arrow">›</div>
+      </div>
+      <div class="upsell-item" onclick="toast('Opening SnapReserve EXP — Coming Soon!')">
+        <div class="ui-ico" style="background:var(--blue-dim);">🎭</div>
+        <div class="ui-info">
+          <div class="ui-name">Sagrada Família skip-the-line</div>
+          <div class="ui-desc">Top-rated · 2h · Guided tour</div>
+        </div>
+        <div class="ui-price">Coming soon</div>
+        <div class="ui-arrow">›</div>
+      </div>
+      <div class="upsell-item" onclick="toast('Opening SnapReserve EXP — Coming Soon!')">
+        <div class="ui-ico" style="background:rgba(217,119,6,.1);">🍽️</div>
+        <div class="ui-info">
+          <div class="ui-name">Tapas food tour · El Born</div>
+          <div class="ui-desc">Local guide · 3h · Max 8 guests</div>
+        </div>
+        <div class="ui-price">Coming soon</div>
+        <div class="ui-arrow">›</div>
+      </div>
+    </div>
+
+    <!-- Map card -->
+    <div class="map-card">
+      <div class="map-preview" onclick="toast('Opening in Google Maps...')">
+        <div style="font-size:36px;">🗺️</div>
+        <div style="font-size:.8rem;font-weight:600;color:var(--mid);">El Born, Barcelona</div>
+        <div style="font-size:.7rem;color:var(--light);">Click to open in Maps</div>
+      </div>
+      <div class="map-body">
+        <div class="map-addr">📍 El Born, Barcelona, Spain</div>
+        <div class="map-sub">0.4 km to city centre · 28 min from BCN Airport</div>
+        <div class="map-actions">
+          <button class="ma-btn" onclick="toast('Opening Google Maps...')">🗺️ Google Maps</button>
+          <button class="ma-btn" onclick="toast('Opening Apple Maps...')">🍎 Apple Maps</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share card -->
+    <div class="share-card">
+      <div class="sc-title">📸 Share your trip</div>
+      <div class="sc-sub">Let your friends know where you're headed and inspire them to travel</div>
+      <div class="share-btns">
+        <button class="sb" onclick="toast('Sharing to X / Twitter...')">𝕏 X</button>
+        <button class="sb" onclick="toast('Sharing to Instagram...')">📸 IG</button>
+        <button class="sb" onclick="toast('Copying link...')">🔗 Copy</button>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- end main -->
+
+<!-- SOCIAL FOOTER -->
+<footer style="background:#1A1410;color:#A89880;padding:32px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;font-family:var(--sans);">
+  <div style="font-family:var(--serif);font-size:1rem;font-weight:700;color:#F5EFE8;">Snap<span style="color:#F4601A;">Reserve</span></div>
+  <div style="display:flex;gap:10px;">
+    <a href="https://x.com/snapreserve" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:13px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'">𝕏</a>
+    <a href="https://www.instagram.com/snapreserve/" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:11px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'">IG</a>
+    <a href="https://www.youtube.com/@SnapReserve" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:13px;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'">▶</a>
+    <a href="https://www.linkedin.com/company/snapreserve/" target="_blank" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;text-decoration:none;color:#A89880;font-size:11px;font-weight:700;transition:all .18s;" onmouseover="this.style.background='#F4601A';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#A89880'">in</a>
+  </div>
+  <div style="font-size:.72rem;">© 2026 SnapReserve · snapreserve.app</div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+function copyRef(){
+  navigator.clipboard && navigator.clipboard.writeText('SNP-2026-BCN-7841');
+  toast('📋 Booking reference copied!');
+}
+
+function addToCalendar(){
+  var options=['Google Calendar','Apple Calendar','Outlook'];
+  toast('📅 Calendar options: Google · Apple · Outlook');
+}
+
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(function(){t.classList.remove('show');},3200);
+}
+</script>
+<div id="sr-nav" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#0E0C0A;border:1px solid rgba(255,255,255,0.15);border-radius:100px;padding:7px 9px;display:flex;align-items:center;gap:3px;box-shadow:0 8px 32px rgba(0,0,0,0.6);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;overflow-x:auto;max-width:95vw;">
+<span style="font-size:0.58rem;font-weight:700;color:#665A4E;text-transform:uppercase;letter-spacing:.1em;padding:0 7px;flex-shrink:0;">Test nav</span>
+<a href="snapreserve.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🏠 Home</a>
+<a href="snapreserve-property.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🏨 Property</a>
+<a href="snapreserve-confirmation.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">✅ Confirmation</a>
+<a href="snapreserve-list-property.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📋 List Property</a>
+<a href="snapreserve-admin.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📊 Dashboard</a>
+<a href="snapreserve-cars.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">🚗 Cars</a>
+<a href="snapreserve-experiences.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">✨ Experiences</a>
+<a href="snapreserve-app.html" style="text-decoration:none;padding:6px 11px;border-radius:100px;font-size:0.7rem;font-weight:600;color:#A89880;transition:all .18s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#F5EFE8'" onmouseout="this.style.background='';this.style.color='#A89880'">📱 App</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapReserve — Technical Launch Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #F4601A;
+  --orange-dim: rgba(244,96,26,0.12);
+  --green: #22C55E;
+  --green-dim: rgba(34,197,94,0.12);
+  --blue: #3B82F6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --purple: #8B5CF6;
+  --purple-dim: rgba(139,92,246,0.12);
+  --yellow: #F59E0B;
+  --yellow-dim: rgba(245,158,11,0.12);
+  --red: #EF4444;
+
+  --bg: #0E0C0A;
+  --surface: #161310;
+  --card: #1C1916;
+  --border: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.13);
+  --text: #F5F0EB;
+  --text-2: #A89B8C;
+  --text-3: #6B5E52;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* ── LAYOUT ── */
+.container { max-width: 960px; margin: 0 auto; padding: 60px 32px 100px; }
+
+/* ── HEADER ── */
+.doc-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 40px;
+  margin-bottom: 52px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+.logo span { color: var(--orange); }
+
+.doc-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.badge-green  { background: var(--green-dim);  color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.badge-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(244,96,26,0.2); }
+.badge-blue   { background: var(--blue-dim);   color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+
+.doc-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+
+.doc-title em { font-style: normal; color: var(--orange); }
+
+.doc-subtitle {
+  font-size: 1rem;
+  color: var(--text-2);
+  font-weight: 300;
+  max-width: 620px;
+  line-height: 1.7;
+}
+
+/* ── TOC ── */
+.toc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--orange);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin-bottom: 52px;
+}
+
+.toc-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  margin-bottom: 14px;
+}
+
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 32px; }
+
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.83rem;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.18s;
+  padding: 4px 0;
+}
+
+.toc-item:hover { color: var(--orange); }
+.toc-num { font-size: 0.68rem; color: var(--text-3); font-weight: 600; min-width: 20px; }
+
+/* ── SECTION ── */
+.section { margin-bottom: 60px; scroll-margin-top: 24px; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.section-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--orange);
+  background: var(--orange-dim);
+  border: 1px solid rgba(244,96,26,0.2);
+  border-radius: 8px;
+  padding: 4px 10px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.section-sub {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  margin-top: 4px;
+  font-weight: 300;
+}
+
+/* ── STACK CARDS ── */
+.stack-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+
+.stack-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.stack-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+
+.sc-icon { font-size: 28px; margin-bottom: 12px; display: block; }
+.sc-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+.sc-role { font-size: 0.7rem; color: var(--orange); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.sc-desc { font-size: 0.75rem; color: var(--text-2); line-height: 1.6; }
+.sc-free { display: inline-block; margin-top: 8px; font-size: 0.65rem; background: var(--green-dim); color: var(--green); border-radius: 100px; padding: 2px 8px; font-weight: 600; }
+
+/* ── ARCH DIAGRAM ── */
+.arch-diagram {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 20px;
+  font-size: 0.78rem;
+}
+
+.arch-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.arch-box {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-align: center;
+  border: 1px solid;
+}
+
+.ab-orange { background: var(--orange-dim); color: var(--orange); border-color: rgba(244,96,26,0.25); }
+.ab-blue   { background: var(--blue-dim);   color: var(--blue);   border-color: rgba(59,130,246,0.25); }
+.ab-green  { background: var(--green-dim);  color: var(--green);  border-color: rgba(34,197,94,0.25); }
+.ab-purple { background: var(--purple-dim); color: var(--purple); border-color: rgba(139,92,246,0.25); }
+.ab-yellow { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(245,158,11,0.25); }
+.ab-gray   { background: var(--surface);    color: var(--text-2); border-color: var(--border); }
+
+.arch-arrow {
+  color: var(--text-3);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.arch-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+.arch-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* ── STEPS ── */
+.steps { display: flex; flex-direction: column; gap: 0; }
+
+.step {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.step::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 40px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.step:last-child::before { display: none; }
+
+.step-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  border: 2px solid;
+}
+
+.sm-orange { background: var(--orange-dim); color: var(--orange); border-color: var(--orange); }
+.sm-blue   { background: var(--blue-dim);   color: var(--blue);   border-color: var(--blue); }
+.sm-green  { background: var(--green-dim);  color: var(--green);  border-color: var(--green); }
+.sm-purple { background: var(--purple-dim); color: var(--purple); border-color: var(--purple); }
+
+.step-content { flex: 1; padding-top: 6px; }
+
+.step-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.2px; }
+.step-desc  { font-size: 0.82rem; color: var(--text-2); margin-bottom: 12px; line-height: 1.65; }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: #0A0806;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  font-size: 0;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.code-lang {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.code-file {
+  font-size: 0.68rem;
+  color: var(--orange);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+pre {
+  padding: 16px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre;
+}
+
+.kw  { color: #FF79C6; }
+.fn  { color: #50FA7B; }
+.str { color: #F1FA8C; }
+.cmt { color: var(--text-3); font-style: italic; }
+.var { color: #8BE9FD; }
+.num { color: #BD93F9; }
+.op  { color: #FF79C6; }
+
+/* ── INFO BOX ── */
+.info-box {
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid;
+}
+
+.ib-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+.ib-text { flex: 1; }
+.ib-title { font-weight: 600; margin-bottom: 3px; font-size: 0.83rem; }
+.ib-desc  { color: var(--text-2); font-size: 0.78rem; }
+
+.ib-tip    { background: var(--blue-dim);   border-color: rgba(59,130,246,0.2); }
+.ib-warn   { background: var(--yellow-dim); border-color: rgba(245,158,11,0.2); }
+.ib-good   { background: var(--green-dim);  border-color: rgba(34,197,94,0.2); }
+.ib-orange { background: var(--orange-dim); border-color: rgba(244,96,26,0.2); }
+
+/* ── PHASE TIMELINE ── */
+.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 24px; position: relative; }
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 20px; left: 10%; right: 10%;
+  height: 2px;
+  background: linear-gradient(to right, var(--orange), var(--blue), var(--green), var(--purple));
+  z-index: 0;
+}
+
+.phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.phase-dot {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  border: 2px solid;
+  background: var(--bg);
+}
+
+.pd-1 { border-color: var(--orange); background: var(--orange-dim); }
+.pd-2 { border-color: var(--blue);   background: var(--blue-dim); }
+.pd-3 { border-color: var(--green);  background: var(--green-dim); }
+.pd-4 { border-color: var(--purple); background: var(--purple-dim); }
+
+.phase-label { font-size: 0.72rem; font-weight: 600; }
+.phase-time  { font-size: 0.65rem; color: var(--text-3); }
+.phase-items { font-size: 0.68rem; color: var(--text-2); line-height: 1.6; }
+
+/* ── CHECK LIST ── */
+.checklist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.check-icon { flex-shrink: 0; margin-top: 1px; }
+.check-done { color: var(--green); }
+.check-todo { color: var(--text-3); }
+
+/* ── ENV TABLE ── */
+.env-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.env-table th { text-align: left; padding: 8px 12px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); border-bottom: 1px solid var(--border); }
+.env-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: top; }
+.env-table tr:last-child td { border-bottom: none; }
+.env-key  { font-family: 'JetBrains Mono', monospace; color: var(--orange); font-size: 0.75rem; }
+.env-val  { font-family: 'JetBrains Mono', monospace; color: var(--text-3); font-size: 0.72rem; }
+.env-desc { color: var(--text-2); }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(--border); margin: 48px 0; }
+
+/* ── COST TABLE ── */
+.cost-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.cost-table th { text-align: left; padding: 8px 14px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); border-bottom: 1px solid var(--border); }
+.cost-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.cost-table tr:last-child td { border-bottom: none; }
+.cost-free  { color: var(--green); font-weight: 600; }
+.cost-paid  { color: var(--orange); font-weight: 600; }
+.cost-total { font-weight: 700; color: var(--text); }
+
+/* ── FOOTER ── */
+.doc-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+  margin-top: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 900; }
+.footer-logo span { color: var(--orange); }
+.footer-note { font-size: 0.72rem; color: var(--text-3); }
+
+@media (max-width: 700px) {
+  .stack-grid { grid-template-columns: 1fr 1fr; }
+  .toc-grid { grid-template-columns: 1fr; }
+  .timeline { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .timeline::before { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <div class="header-top">
+      <div class="logo">Snap<span>Reserve</span>.com</div>
+      <div class="doc-badges">
+        <span class="badge badge-green">Developer Guide</span>
+        <span class="badge badge-orange">Full Stack</span>
+        <span class="badge badge-blue">v1.0 — 2026</span>
+      </div>
+    </div>
+    <h1 class="doc-title">Technical <em>Launch</em><br>Roadmap</h1>
+    <p class="doc-subtitle">A complete step-by-step guide for deploying the SnapReserve platform — launching on <strong style="color:var(--orange)">snapreserve.co</strong> with a planned migration to <strong style="color:var(--text-2)">snapreserve.com</strong> when acquired. Covers real user accounts, hotel &amp; host listings, bookings, and Stripe payments.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-grid">
+      <a href="#stack" class="toc-item"><span class="toc-num">01</span> Recommended Tech Stack</a>
+      <a href="#arch" class="toc-item"><span class="toc-num">02</span> System Architecture</a>
+      <a href="#phase1" class="toc-item"><span class="toc-num">03</span> Phase 1 — Setup & Deploy</a>
+      <a href="#phase2" class="toc-item"><span class="toc-num">04</span> Phase 2 — Auth & Database</a>
+      <a href="#phase3" class="toc-item"><span class="toc-num">05</span> Phase 3 — Bookings & Payments</a>
+      <a href="#phase4" class="toc-item"><span class="toc-num">06</span> Phase 4 — Host Dashboard</a>
+      <a href="#envvars" class="toc-item"><span class="toc-num">07</span> Environment Variables</a>
+      <a href="#costs" class="toc-item"><span class="toc-num">08</span> Costs & Timeline</a>
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: STACK ── -->
+  <div class="section" id="stack">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div>
+        <div class="section-title">Recommended Tech Stack</div>
+        <div class="section-sub">The exact same tools already named in your Privacy Policy — Vercel, Supabase, and Stripe.</div>
+      </div>
+    </div>
+
+    <div class="stack-grid">
+      <div class="stack-card">
+        <span class="sc-icon">▲</span>
+        <div class="sc-name">Next.js + Vercel</div>
+        <div class="sc-role">Frontend + Hosting</div>
+        <div class="sc-desc">React framework for the public site, host dashboard, and API routes. Vercel deploys in seconds with zero config.</div>
+        <span class="sc-free">Free tier available</span>
+      </div>
+      <div class="stack-card">
+        <span class="sc-icon">⚡</span>
+        <div class="sc-name">Supabase</div>
+        <div class="sc-role">Database + Auth</div>
+        <div class="sc-desc">PostgreSQL database, row-level security, magic link and OAuth login — all in one. Already in your Privacy Policy.</div>
+        <span class="sc-free">Free up to 50K users</span>
+      </div>
+      <div class="stack-card">
+        <span class="sc-icon">💳</span>
+        <div class="sc-name">Stripe</div>
+        <div class="sc-role">Payments + Payouts</div>
+        <div class="sc-desc">Guest checkout, host payouts via Stripe Connect, and webhooks to confirm bookings. Already in your Privacy Policy.</div>
+        <span class="sc-free">2.9% + 30¢ per charge</span>
+      </div>
+      <div class="stack-card">
+        <span class="sc-icon">📦</span>
+        <div class="sc-name">TypeScript</div>
+        <div class="sc-role">Language</div>
+        <div class="sc-desc">Strongly typed codebase. Prevents runtime bugs in booking logic, payment flows, and Supabase queries.</div>
+        <span class="sc-free">Free</span>
+      </div>
+      <div class="stack-card">
+        <span class="sc-icon">🎨</span>
+        <div class="sc-name">Tailwind CSS</div>
+        <div class="sc-role">Styling</div>
+        <div class="sc-desc">Implement your existing HTML designs quickly in React components. Matches the aesthetic already built.</div>
+        <span class="sc-free">Free</span>
+      </div>
+      <div class="stack-card">
+        <span class="sc-icon">📧</span>
+        <div class="sc-name">Resend</div>
+        <div class="sc-role">Transactional Email</div>
+        <div class="sc-desc">Booking confirmations, host payout alerts, and guest check-in reminders. Simple API, generous free tier.</div>
+        <span class="sc-free">3,000 emails/mo free</span>
+      </div>
+    </div>
+
+    <div class="info-box ib-tip">
+      <span class="ib-icon">💡</span>
+      <div class="ib-text">
+        <div class="ib-title">Why this stack?</div>
+        <div class="ib-desc">Vercel + Supabase + Stripe is the fastest path to a production-ready marketplace. All three have excellent free tiers to get you live with zero upfront cost, and scale seamlessly as you grow. Your Privacy Policy already names all three, so your legal docs are already aligned.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 2: ARCHITECTURE ── -->
+  <div class="section" id="arch">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div>
+        <div class="section-title">System Architecture</div>
+        <div class="section-sub">How the pieces connect end-to-end.</div>
+      </div>
+    </div>
+
+    <div class="arch-diagram">
+      <div class="arch-label">Client Layer</div>
+      <div class="arch-row">
+        <div class="arch-box ab-orange">Public Site<br><small style="font-weight:400;opacity:0.7">snapreserve.co</small></div>
+        <div class="arch-arrow">|</div>
+        <div class="arch-box ab-orange">Host Dashboard<br><small style="font-weight:400;opacity:0.7">/dashboard</small></div>
+        <div class="arch-arrow">|</div>
+        <div class="arch-box ab-orange">Booking Flow<br><small style="font-weight:400;opacity:0.7">/book/[id]</small></div>
+      </div>
+
+      <div class="arch-divider"></div>
+      <div class="arch-label">Next.js API Routes — /api/*</div>
+      <div class="arch-row">
+        <div class="arch-box ab-blue">/api/auth</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box ab-blue">/api/listings</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box ab-blue">/api/bookings</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box ab-blue">/api/stripe/webhook</div>
+      </div>
+
+      <div class="arch-divider"></div>
+      <div class="arch-label">Service Layer</div>
+      <div class="arch-row">
+        <div class="arch-box ab-green">Supabase Auth<br><small style="font-weight:400;opacity:0.7">Users / Sessions</small></div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ab-green">Supabase DB<br><small style="font-weight:400;opacity:0.7">PostgreSQL + RLS</small></div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ab-purple">Stripe Connect<br><small style="font-weight:400;opacity:0.7">Payments + Payouts</small></div>
+        <div class="arch-arrow">↔</div>
+        <div class="arch-box ab-yellow">Resend<br><small style="font-weight:400;opacity:0.7">Emails</small></div>
+      </div>
+
+      <div class="arch-divider"></div>
+      <div class="arch-label">Infrastructure</div>
+      <div class="arch-row">
+        <div class="arch-box ab-gray">Vercel (Deploy + Edge)</div>
+        <div class="arch-arrow">|</div>
+        <div class="arch-box ab-gray">Supabase Storage (Images)</div>
+        <div class="arch-arrow">|</div>
+        <div class="arch-box ab-gray">Vercel Analytics</div>
+      </div>
+    </div>
+
+    <div class="info-box ib-orange">
+      <span class="ib-icon">🔑</span>
+      <div class="ib-text">
+        <div class="ib-title">Key security principle: Row Level Security (RLS)</div>
+        <div class="ib-desc">Supabase's RLS means hosts can only read/write their own listings and bookings. Guests can only see their own bookings. This is enforced at the database level — not just in your app code — so it's bulletproof.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 3: PHASE 1 ── -->
+  <div class="section" id="phase1">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div>
+        <div class="section-title">Phase 1 — Project Setup & First Deploy</div>
+        <div class="section-sub">Get the codebase running locally and deployed to a live URL in under an hour.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-marker sm-orange">1</div>
+        <div class="step-content">
+          <div class="step-title">Scaffold Next.js project</div>
+          <div class="step-desc">Create the project with the App Router, TypeScript, and Tailwind pre-configured.</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">bash</span>
+              <span class="code-file">terminal</span>
+            </div>
+            <pre><code><span class="fn">npx</span> create-next-app@latest snapreserve \
+  <span class="str">--typescript</span> \
+  <span class="str">--tailwind</span> \
+  <span class="str">--app</span> \
+  <span class="str">--src-dir</span>
+
+<span class="fn">cd</span> snapreserve
+<span class="fn">npm install</span> @supabase/supabase-js @supabase/ssr \
+  stripe @stripe/stripe-js resend</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-orange">2</div>
+        <div class="step-content">
+          <div class="step-title">Set up your folder structure</div>
+          <div class="step-desc">This structure maps exactly to the pages and features you already have designed.</div>
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">text</span>
+              <span class="code-file">project structure</span>
+            </div>
+            <pre><code>src/
+├── app/
+│   ├── <span class="cmt">(public)/</span>
+│   │   ├── page.tsx               <span class="cmt">← Landing page (Hotels / Private Stays)</span>
+│   │   ├── search/page.tsx        <span class="cmt">← Search results</span>
+│   │   └── listing/[id]/page.tsx  <span class="cmt">← Individual listing</span>
+│   ├── <span class="cmt">(auth)/</span>
+│   │   ├── login/page.tsx
+│   │   └── signup/page.tsx
+│   ├── <span class="cmt">(dashboard)/</span>
+│   │   └── dashboard/
+│   │       ├── page.tsx           <span class="cmt">← Host Admin Dashboard</span>
+│   │       ├── properties/
+│   │       ├── bookings/
+│   │       ├── earnings/
+│   │       └── settings/
+│   ├── book/[listingId]/page.tsx  <span class="cmt">← Booking checkout flow</span>
+│   └── api/
+│       ├── listings/route.ts
+│       ├── bookings/route.ts
+│       └── stripe/
+│           ├── checkout/route.ts
+│           └── webhook/route.ts
+├── components/
+│   ├── ui/                        <span class="cmt">← Buttons, cards, modals</span>
+│   ├── listings/                  <span class="cmt">← ListingCard, ListingGrid</span>
+│   └── dashboard/                 <span class="cmt">← Stats, Charts, BookingTable</span>
+└── lib/
+    ├── supabase/
+    │   ├── client.ts
+    │   └── server.ts
+    └── stripe.ts</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-orange">3</div>
+        <div class="step-content">
+          <div class="step-title">Connect to Vercel and deploy</div>
+          <div class="step-desc">Push to GitHub, then import into Vercel. Your site goes live automatically on every push to <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--orange);">main</code>.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-file">terminal</span></div>
+            <pre><code><span class="cmt"># Push to GitHub</span>
+<span class="fn">git</span> init && git add . && git commit -m <span class="str">"initial commit"</span>
+<span class="fn">gh</span> repo create snapreserve --public --push
+
+<span class="cmt"># Deploy to Vercel (also available via vercel.com UI)</span>
+<span class="fn">npm</span> i -g vercel
+<span class="fn">vercel</span>  <span class="cmt"># Follow prompts → your URL is live in ~60 seconds</span>
+
+<span class="cmt"># Add custom domain</span>
+<span class="fn">vercel</span> domains add snapreserve.co</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 4: PHASE 2 ── -->
+  <div class="section" id="phase2">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div>
+        <div class="section-title">Phase 2 — Auth & Database</div>
+        <div class="section-sub">Supabase handles both. Users sign up as guests or hosts. Row Level Security protects all data.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-marker sm-blue">1</div>
+        <div class="step-content">
+          <div class="step-title">Create Supabase project & database schema</div>
+          <div class="step-desc">Go to <strong>supabase.com</strong> → New Project. Then run this SQL in the Supabase SQL editor to create your core tables.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">sql</span><span class="code-file">supabase/schema.sql</span></div>
+            <pre><code><span class="cmt">-- Users (extends Supabase auth.users)</span>
+<span class="kw">CREATE TABLE</span> profiles (
+  id          <span class="var">uuid</span> <span class="kw">REFERENCES</span> auth.users <span class="kw">ON DELETE CASCADE</span>,
+  full_name   <span class="var">text</span>,
+  avatar_url  <span class="var">text</span>,
+  role        <span class="var">text</span> <span class="kw">CHECK</span> (role <span class="kw">IN</span> (<span class="str">'guest'</span>, <span class="str">'host'</span>, <span class="str">'both'</span>)),
+  is_superhost <span class="var">boolean</span> <span class="kw">DEFAULT</span> <span class="num">false</span>,
+  stripe_account_id <span class="var">text</span>,           <span class="cmt">-- For host payouts</span>
+  created_at  <span class="var">timestamptz</span> <span class="kw">DEFAULT</span> now(),
+  <span class="kw">PRIMARY KEY</span> (id)
+);
+
+<span class="cmt">-- Listings (Hotels + Private Stays)</span>
+<span class="kw">CREATE TABLE</span> listings (
+  id           <span class="var">uuid</span> <span class="kw">DEFAULT</span> gen_random_uuid() <span class="kw">PRIMARY KEY</span>,
+  host_id      <span class="var">uuid</span> <span class="kw">REFERENCES</span> profiles(id) <span class="kw">ON DELETE CASCADE</span>,
+  type         <span class="var">text</span> <span class="kw">CHECK</span> (type <span class="kw">IN</span> (<span class="str">'hotel'</span>, <span class="str">'private'</span>)),
+  title        <span class="var">text</span> <span class="kw">NOT NULL</span>,
+  description  <span class="var">text</span>,
+  location     <span class="var">text</span>,
+  price_per_night <span class="var">numeric</span> <span class="kw">NOT NULL</span>,
+  max_guests   <span class="var">int</span>,
+  images       <span class="var">text[]</span>,
+  amenities    <span class="var">text[]</span>,
+  status       <span class="var">text</span> <span class="kw">CHECK</span> (status <span class="kw">IN</span> (<span class="str">'live'</span>, <span class="str">'draft'</span>, <span class="str">'paused'</span>)) <span class="kw">DEFAULT</span> <span class="str">'draft'</span>,
+  created_at   <span class="var">timestamptz</span> <span class="kw">DEFAULT</span> now()
+);
+
+<span class="cmt">-- Bookings</span>
+<span class="kw">CREATE TABLE</span> bookings (
+  id             <span class="var">uuid</span> <span class="kw">DEFAULT</span> gen_random_uuid() <span class="kw">PRIMARY KEY</span>,
+  listing_id     <span class="var">uuid</span> <span class="kw">REFERENCES</span> listings(id),
+  guest_id       <span class="var">uuid</span> <span class="kw">REFERENCES</span> profiles(id),
+  check_in       <span class="var">date</span> <span class="kw">NOT NULL</span>,
+  check_out      <span class="var">date</span> <span class="kw">NOT NULL</span>,
+  guests         <span class="var">int</span>,
+  total_price    <span class="var">numeric</span>,
+  status         <span class="var">text</span> <span class="kw">CHECK</span> (status <span class="kw">IN</span> (<span class="str">'pending'</span>,<span class="str">'confirmed'</span>,<span class="str">'cancelled'</span>,<span class="str">'completed'</span>)),
+  stripe_payment_intent_id <span class="var">text</span>,
+  created_at     <span class="var">timestamptz</span> <span class="kw">DEFAULT</span> now()
+);
+
+<span class="cmt">-- Row Level Security</span>
+<span class="kw">ALTER TABLE</span> listings <span class="kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="kw">CREATE POLICY</span> <span class="str">"Hosts manage own listings"</span> <span class="kw">ON</span> listings
+  <span class="kw">FOR ALL USING</span> (host_id <span class="op">=</span> auth.uid());
+<span class="kw">CREATE POLICY</span> <span class="str">"Public can view live listings"</span> <span class="kw">ON</span> listings
+  <span class="kw">FOR SELECT USING</span> (status <span class="op">=</span> <span class="str">'live'</span>);
+
+<span class="kw">ALTER TABLE</span> bookings <span class="kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="kw">CREATE POLICY</span> <span class="str">"Guests see own bookings"</span> <span class="kw">ON</span> bookings
+  <span class="kw">FOR SELECT USING</span> (guest_id <span class="op">=</span> auth.uid());
+<span class="kw">CREATE POLICY</span> <span class="str">"Hosts see bookings for their listings"</span> <span class="kw">ON</span> bookings
+  <span class="kw">FOR SELECT USING</span> (
+    listing_id <span class="kw">IN</span> (<span class="kw">SELECT</span> id <span class="kw">FROM</span> listings <span class="kw">WHERE</span> host_id <span class="op">=</span> auth.uid())
+  );</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-blue">2</div>
+        <div class="step-content">
+          <div class="step-title">Set up Supabase client in Next.js</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/lib/supabase/server.ts</span></div>
+            <pre><code><span class="kw">import</span> { createServerClient } <span class="kw">from</span> <span class="str">'@supabase/ssr'</span>
+<span class="kw">import</span> { cookies } <span class="kw">from</span> <span class="str">'next/headers'</span>
+
+<span class="kw">export function</span> <span class="fn">createClient</span>() {
+  <span class="kw">const</span> cookieStore <span class="op">=</span> <span class="fn">cookies</span>()
+  <span class="kw">return</span> <span class="fn">createServerClient</span>(
+    process.env.<span class="var">NEXT_PUBLIC_SUPABASE_URL</span><span class="op">!</span>,
+    process.env.<span class="var">NEXT_PUBLIC_SUPABASE_ANON_KEY</span><span class="op">!</span>,
+    { cookies: { <span class="fn">getAll</span>() { <span class="kw">return</span> cookieStore.<span class="fn">getAll</span>() } } }
+  )
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/app/(auth)/login/page.tsx</span></div>
+            <pre><code><span class="kw">export default function</span> <span class="fn">LoginPage</span>() {
+  <span class="kw">async function</span> <span class="fn">signIn</span>(formData: FormData) {
+    <span class="str">'use server'</span>
+    <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createClient</span>()
+    <span class="kw">const</span> { error } <span class="op">=</span> <span class="kw">await</span> supabase.auth.<span class="fn">signInWithPassword</span>({
+      email: formData.<span class="fn">get</span>(<span class="str">'email'</span>) <span class="kw">as</span> <span class="var">string</span>,
+      password: formData.<span class="fn">get</span>(<span class="str">'password'</span>) <span class="kw">as</span> <span class="var">string</span>,
+    })
+    <span class="kw">if</span> (<span class="op">!</span>error) <span class="fn">redirect</span>(<span class="str">'/dashboard'</span>)
+  }
+  <span class="cmt">// Also support: signInWithOAuth({ provider: 'google' })</span>
+  <span class="kw">return</span> <span class="str">&lt;form action={signIn}&gt;...&lt;/form&gt;</span>
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 5: PHASE 3 ── -->
+  <div class="section" id="phase3">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div>
+        <div class="section-title">Phase 3 — Bookings & Stripe Payments</div>
+        <div class="section-sub">Stripe Checkout for guests. Stripe Connect for host payouts. Webhooks to confirm bookings in your DB.</div>
+      </div>
+    </div>
+
+    <div class="info-box ib-warn">
+      <span class="ib-icon">⚠️</span>
+      <div class="ib-text">
+        <div class="ib-title">Use Stripe Connect — not just Stripe Checkout</div>
+        <div class="ib-desc">Because you're a marketplace (money flows from guests → SnapReserve → hosts), you need <strong>Stripe Connect</strong>. This lets you collect a platform fee and transfer the remainder to each host's bank account automatically.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-marker sm-green">1</div>
+        <div class="step-content">
+          <div class="step-title">Create Stripe Checkout session</div>
+          <div class="step-desc">When a guest clicks "Book Now", call this API route to create a payment session with your platform fee split off.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/app/api/stripe/checkout/route.ts</span></div>
+            <pre><code><span class="kw">import</span> { stripe } <span class="kw">from</span> <span class="str">'@/lib/stripe'</span>
+<span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'@/lib/supabase/server'</span>
+
+<span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> { listingId, checkIn, checkOut, guests } <span class="op">=</span> <span class="kw">await</span> req.<span class="fn">json</span>()
+  <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createClient</span>()
+
+  <span class="cmt">// Fetch listing + host's Stripe account</span>
+  <span class="kw">const</span> { data: listing } <span class="op">=</span> <span class="kw">await</span> supabase
+    .<span class="fn">from</span>(<span class="str">'listings'</span>)
+    .<span class="fn">select</span>(<span class="str">'*, profiles(stripe_account_id)'</span>)
+    .<span class="fn">eq</span>(<span class="str">'id'</span>, listingId)
+    .<span class="fn">single</span>()
+
+  <span class="kw">const</span> nights <span class="op">=</span> <span class="fn">daysBetween</span>(checkIn, checkOut)
+  <span class="kw">const</span> subtotal <span class="op">=</span> listing.price_per_night <span class="op">*</span> nights <span class="op">*</span> <span class="num">100</span> <span class="cmt">// cents</span>
+  <span class="kw">const</span> platformFee <span class="op">=</span> Math.<span class="fn">round</span>(subtotal <span class="op">*</span> <span class="num">0.032</span>) <span class="cmt">// 3.2% fee</span>
+
+  <span class="kw">const</span> session <span class="op">=</span> <span class="kw">await</span> stripe.checkout.sessions.<span class="fn">create</span>({
+    mode: <span class="str">'payment'</span>,
+    line_items: [{
+      price_data: {
+        currency: <span class="str">'usd'</span>,
+        product_data: { name: listing.title },
+        unit_amount: subtotal,
+      },
+      quantity: <span class="num">1</span>,
+    }],
+    payment_intent_data: {
+      application_fee_amount: platformFee,
+      transfer_data: {
+        destination: listing.profiles.stripe_account_id,
+      },
+    },
+    metadata: { listingId, checkIn, checkOut, guests },
+    success_url: <span class="str">`</span><span class="var">${process.env.NEXT_PUBLIC_URL}</span><span class="str">/booking/success?session_id={CHECKOUT_SESSION_ID}`</span>,
+    cancel_url:  <span class="str">`</span><span class="var">${process.env.NEXT_PUBLIC_URL}</span><span class="str">/listing/</span><span class="var">${listingId}</span><span class="str">`</span>,
+  })
+
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ url: session.url })
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-green">2</div>
+        <div class="step-content">
+          <div class="step-title">Handle Stripe webhooks to confirm bookings</div>
+          <div class="step-desc">When payment succeeds, Stripe pings this endpoint. You write the confirmed booking to Supabase and send confirmation emails.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/app/api/stripe/webhook/route.ts</span></div>
+            <pre><code><span class="kw">export async function</span> <span class="fn">POST</span>(req: Request) {
+  <span class="kw">const</span> sig <span class="op">=</span> req.headers.<span class="fn">get</span>(<span class="str">'stripe-signature'</span>)<span class="op">!</span>
+  <span class="kw">const</span> event <span class="op">=</span> stripe.webhooks.<span class="fn">constructEvent</span>(
+    <span class="kw">await</span> req.<span class="fn">text</span>(),
+    sig,
+    process.env.<span class="var">STRIPE_WEBHOOK_SECRET</span><span class="op">!</span>
+  )
+
+  <span class="kw">if</span> (event.type <span class="op">===</span> <span class="str">'checkout.session.completed'</span>) {
+    <span class="kw">const</span> { listingId, checkIn, checkOut, guests } <span class="op">=</span> event.data.object.metadata
+    <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createAdminClient</span>() <span class="cmt">// service role — bypasses RLS</span>
+
+    <span class="kw">await</span> supabase.<span class="fn">from</span>(<span class="str">'bookings'</span>).<span class="fn">insert</span>({
+      listing_id: listingId, check_in: checkIn, check_out: checkOut,
+      guests: <span class="fn">Number</span>(guests), status: <span class="str">'confirmed'</span>,
+      stripe_payment_intent_id: event.data.object.payment_intent
+    })
+
+    <span class="kw">await</span> resend.emails.<span class="fn">send</span>({
+      from: <span class="str">'<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4c2e23232725222b3f0c3f222d3c3e293f293e3a29622f23">[email&#160;protected]</a>'</span>,
+      to: guestEmail,
+      subject: <span class="str">'Your booking is confirmed! 🎉'</span>,
+      react: <span class="op">&lt;</span>BookingConfirmEmail <span class="op">{</span>...details<span class="op">}</span> <span class="op">/&gt;</span>
+    })
+  }
+
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ received: <span class="num">true</span> })
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-green">3</div>
+        <div class="step-content">
+          <div class="step-title">Host onboarding — Stripe Connect</div>
+          <div class="step-desc">When a new host signs up, redirect them to create a Stripe Express account so they can receive payouts directly to their bank.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/app/api/stripe/connect/route.ts</span></div>
+            <pre><code><span class="cmt">// Called when host clicks "Connect Bank Account" in Settings</span>
+<span class="kw">export async function</span> <span class="fn">POST</span>() {
+  <span class="kw">const</span> account <span class="op">=</span> <span class="kw">await</span> stripe.accounts.<span class="fn">create</span>({ type: <span class="str">'express'</span> })
+
+  <span class="cmt">// Save account ID to host's profile</span>
+  <span class="kw">await</span> supabase.<span class="fn">from</span>(<span class="str">'profiles'</span>).<span class="fn">update</span>({
+    stripe_account_id: account.id
+  }).<span class="fn">eq</span>(<span class="str">'id'</span>, userId)
+
+  <span class="cmt">// Redirect host to Stripe's onboarding UI</span>
+  <span class="kw">const</span> link <span class="op">=</span> <span class="kw">await</span> stripe.accountLinks.<span class="fn">create</span>({
+    account: account.id,
+    refresh_url: <span class="str">`</span><span class="var">${url}</span><span class="str">/dashboard/settings`</span>,
+    return_url:  <span class="str">`</span><span class="var">${url}</span><span class="str">/dashboard/settings?connected=true`</span>,
+    type: <span class="str">'account_onboarding'</span>,
+  })
+
+  <span class="kw">return</span> Response.<span class="fn">json</span>({ url: link.url })
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 6: PHASE 4 ── -->
+  <div class="section" id="phase4">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div>
+        <div class="section-title">Phase 4 — Wire Up the Host Dashboard</div>
+        <div class="section-sub">Connect your existing admin HTML to live Supabase data. The heavy lifting is already done design-wise.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-marker sm-purple">1</div>
+        <div class="step-content">
+          <div class="step-title">Protect the dashboard with middleware</div>
+          <div class="step-desc">This middleware redirects unauthenticated users to login before they can access any dashboard route.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/middleware.ts</span></div>
+            <pre><code><span class="kw">import</span> { createServerClient } <span class="kw">from</span> <span class="str">'@supabase/ssr'</span>
+<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">'next/server'</span>
+
+<span class="kw">export async function</span> <span class="fn">middleware</span>(request: Request) {
+  <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createServerClient</span>(...)
+  <span class="kw">const</span> { data: { user } } <span class="op">=</span> <span class="kw">await</span> supabase.auth.<span class="fn">getUser</span>()
+
+  <span class="kw">if</span> (<span class="op">!</span>user <span class="op">&amp;&amp;</span> request.nextUrl.pathname.<span class="fn">startsWith</span>(<span class="str">'/dashboard'</span>)) {
+    <span class="kw">return</span> NextResponse.<span class="fn">redirect</span>(<span class="kw">new</span> URL(<span class="str">'/login'</span>, request.url))
+  }
+}
+
+<span class="kw">export const</span> config <span class="op">=</span> { matcher: [<span class="str">'/dashboard/:path*'</span>] }</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-purple">2</div>
+        <div class="step-content">
+          <div class="step-title">Fetch real dashboard stats</div>
+          <div class="step-desc">Replace hardcoded numbers in your dashboard with live Supabase queries. Run these server-side for instant load.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/app/(dashboard)/dashboard/page.tsx</span></div>
+            <pre><code><span class="kw">export default async function</span> <span class="fn">DashboardPage</span>() {
+  <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createClient</span>()
+  <span class="kw">const</span> { data: { user } } <span class="op">=</span> <span class="kw">await</span> supabase.auth.<span class="fn">getUser</span>()
+
+  <span class="cmt">// Fetch all host's data in parallel</span>
+  <span class="kw">const</span> [listings, bookings, reviews] <span class="op">=</span> <span class="kw">await</span> Promise.<span class="fn">all</span>([
+    supabase.<span class="fn">from</span>(<span class="str">'listings'</span>).<span class="fn">select</span>(<span class="str">'*'</span>).<span class="fn">eq</span>(<span class="str">'host_id'</span>, user.id),
+    supabase.<span class="fn">from</span>(<span class="str">'bookings'</span>)
+      .<span class="fn">select</span>(<span class="str">'*, listings!inner(*), profiles(*)'</span>)
+      .<span class="fn">eq</span>(<span class="str">'listings.host_id'</span>, user.id)
+      .<span class="fn">order</span>(<span class="str">'created_at'</span>, { ascending: <span class="num">false</span> }),
+    supabase.<span class="fn">from</span>(<span class="str">'reviews'</span>)
+      .<span class="fn">select</span>(<span class="str">'*'</span>)
+      .<span class="fn">eq</span>(<span class="str">'host_id'</span>, user.id),
+  ])
+
+  <span class="cmt">// Compute stats</span>
+  <span class="kw">const</span> totalRevenue <span class="op">=</span> bookings.data
+    ?.<span class="fn">filter</span>(b <span class="op">=&gt;</span> b.status <span class="op">===</span> <span class="str">'confirmed'</span>)
+    .<span class="fn">reduce</span>((sum, b) <span class="op">=&gt;</span> sum <span class="op">+</span> b.total_price, <span class="num">0</span>)
+
+  <span class="kw">return</span> <span class="op">&lt;</span>DashboardClient
+    listings<span class="op">={</span>listings.data<span class="op">}</span>
+    bookings<span class="op">={</span>bookings.data<span class="op">}</span>
+    totalRevenue<span class="op">={</span>totalRevenue<span class="op">}</span>
+  <span class="op">/&gt;</span>
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-marker sm-purple">3</div>
+        <div class="step-content">
+          <div class="step-title">Real-time booking notifications with Supabase Realtime</div>
+          <div class="step-desc">Show new bookings in the dashboard instantly — no refresh needed. One line of setup.</div>
+          <div class="code-block">
+            <div class="code-header"><span class="code-lang">typescript</span><span class="code-file">src/components/dashboard/RealtimeBookings.tsx</span></div>
+            <pre><code><span class="str">'use client'</span>
+<span class="kw">import</span> { useEffect } <span class="kw">from</span> <span class="str">'react'</span>
+<span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'@/lib/supabase/client'</span>
+
+<span class="kw">export function</span> <span class="fn">RealtimeBookings</span>({ hostId, onNew }) {
+  <span class="fn">useEffect</span>(() <span class="op">=&gt;</span> {
+    <span class="kw">const</span> supabase <span class="op">=</span> <span class="fn">createClient</span>()
+    <span class="kw">const</span> channel <span class="op">=</span> supabase
+      .<span class="fn">channel</span>(<span class="str">'new-bookings'</span>)
+      .<span class="fn">on</span>(<span class="str">'postgres_changes'</span>, {
+        event: <span class="str">'INSERT'</span>,
+        schema: <span class="str">'public'</span>,
+        table: <span class="str">'bookings'</span>,
+        filter: <span class="str">`listing_id=in.(</span><span class="var">${hostListingIds}</span><span class="str">)`</span>
+      }, payload <span class="op">=&gt;</span> <span class="fn">onNew</span>(payload.new))
+      .<span class="fn">subscribe</span>()
+
+    <span class="kw">return</span> () <span class="op">=&gt;</span> supabase.<span class="fn">removeChannel</span>(channel)
+  }, [])
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 7: ENV VARS ── -->
+  <div class="section" id="envvars">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div>
+        <div class="section-title">Environment Variables</div>
+        <div class="section-sub">All secrets go in <code style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--orange);">.env.local</code> locally and in Vercel's dashboard for production.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-lang">env</span><span class="code-file">.env.local</span></div>
+      <pre><code><span class="cmt"># ── Supabase ────────────────────────────────────────</span>
+<span class="var">NEXT_PUBLIC_SUPABASE_URL</span>=https://xxxx.supabase.co
+<span class="var">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>=eyJh...          <span class="cmt"># Safe to expose to browser</span>
+<span class="var">SUPABASE_SERVICE_ROLE_KEY</span>=eyJh...              <span class="cmt"># SECRET — server-side only</span>
+
+<span class="cmt"># ── Stripe ──────────────────────────────────────────</span>
+<span class="var">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</span>=pk_live_...  <span class="cmt"># Safe to expose</span>
+<span class="var">STRIPE_SECRET_KEY</span>=sk_live_...                  <span class="cmt"># SECRET — never expose</span>
+<span class="var">STRIPE_WEBHOOK_SECRET</span>=whsec_...               <span class="cmt"># From Stripe dashboard</span>
+
+<span class="cmt"># ── Resend ──────────────────────────────────────────</span>
+<span class="var">RESEND_API_KEY</span>=re_...
+
+<span class="cmt"># ── App ─────────────────────────────────────────────</span>
+<span class="var">NEXT_PUBLIC_URL</span>=https://snapreserve.co</code></pre>
+    </div>
+
+    <div class="info-box ib-tip">
+      <span class="ib-icon">🔒</span>
+      <div class="ib-text">
+        <div class="ib-title">Never commit .env.local to Git</div>
+        <div class="ib-desc">Add <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;">.env.local</code> to your <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;">.gitignore</code>. Add the same keys to Vercel via the dashboard: Project → Settings → Environment Variables.</div>
+      </div>
+    </div>
+
+    <table class="env-table">
+      <tr><th>Variable</th><th>Where to find it</th><th>Notes</th></tr>
+      <tr><td class="env-key">NEXT_PUBLIC_SUPABASE_URL</td><td class="env-desc">Supabase → Project Settings → API</td><td class="env-desc">Safe to expose</td></tr>
+      <tr><td class="env-key">SUPABASE_SERVICE_ROLE_KEY</td><td class="env-desc">Supabase → Project Settings → API</td><td class="env-desc" style="color:var(--red);">Server only — full DB access</td></tr>
+      <tr><td class="env-key">STRIPE_SECRET_KEY</td><td class="env-desc">Stripe Dashboard → Developers → API Keys</td><td class="env-desc" style="color:var(--red);">Server only</td></tr>
+      <tr><td class="env-key">STRIPE_WEBHOOK_SECRET</td><td class="env-desc">Stripe → Webhooks → signing secret</td><td class="env-desc">Use <code style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;">stripe listen</code> locally</td></tr>
+      <tr><td class="env-key">RESEND_API_KEY</td><td class="env-desc">resend.com → API Keys</td><td class="env-desc">Server only</td></tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── SECTION 8: COSTS ── -->
+  <div class="section" id="costs">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div>
+        <div class="section-title">Costs & Launch Timeline</div>
+        <div class="section-sub">You can launch for $0/month until you're generating real revenue.</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <div class="phase">
+        <div class="phase-dot pd-1">🚀</div>
+        <div class="phase-label" style="color:var(--orange)">Phase 1</div>
+        <div class="phase-time">Week 1–2</div>
+        <div class="phase-items">Setup, deploy, domain, Supabase & Stripe accounts</div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot pd-2">🔐</div>
+        <div class="phase-label" style="color:var(--blue)">Phase 2</div>
+        <div class="phase-time">Week 2–3</div>
+        <div class="phase-items">Auth, DB schema, listing pages, search</div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot pd-3">💳</div>
+        <div class="phase-label" style="color:var(--green)">Phase 3</div>
+        <div class="phase-time">Week 3–5</div>
+        <div class="phase-items">Booking flow, Stripe payments, webhooks, emails</div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot pd-4">📊</div>
+        <div class="phase-label" style="color:var(--purple)">Phase 4</div>
+        <div class="phase-time">Week 5–7</div>
+        <div class="phase-items">Host dashboard live data, calendar, payouts</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:24px; overflow-x:auto;">
+      <table class="cost-table">
+        <tr>
+          <th>Service</th>
+          <th>What it covers</th>
+          <th>Free tier</th>
+          <th>Paid (when you scale)</th>
+        </tr>
+        <tr>
+          <td>Vercel</td>
+          <td>Hosting, deploys, CDN, edge functions</td>
+          <td class="cost-free">$0 — unlimited hobby projects</td>
+          <td class="cost-paid">$20/mo Pro</td>
+        </tr>
+        <tr>
+          <td>Supabase</td>
+          <td>Database, auth, storage, realtime</td>
+          <td class="cost-free">$0 — 2 projects, 50K users</td>
+          <td class="cost-paid">$25/mo Pro</td>
+        </tr>
+        <tr>
+          <td>Stripe</td>
+          <td>Payments, Connect, payouts</td>
+          <td class="cost-free">$0 — pay per transaction</td>
+          <td class="cost-paid">2.9% + 30¢ per charge</td>
+        </tr>
+        <tr>
+          <td>Resend</td>
+          <td>Transactional emails</td>
+          <td class="cost-free">$0 — 3,000 emails/mo</td>
+          <td class="cost-paid">$20/mo</td>
+        </tr>
+        <tr>
+          <td>Domain (snapreserve.co)</td>
+          <td>Current live domain + future .com redirect</td>
+          <td>—</td>
+          <td class="cost-paid">~$30/yr (.co) + ~$12/yr (.com when acquired)</td>
+        </tr>
+        <tr style="background:rgba(34,197,94,0.05);">
+          <td colspan="2" class="cost-total">Total to launch (first revenue)</td>
+          <td class="cost-free" colspan="2">$12/year (domain only) + Stripe transaction fees</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- .co → .com migration box -->
+    <div class="info-box ib-orange" style="margin-bottom:24px;">
+      <span class="ib-icon">🌐</span>
+      <div class="ib-text">
+        <div class="ib-title">Launching on .co — migrating to .com later</div>
+        <div class="ib-desc">
+          This is totally fine and a common path. When you're ready to switch, the migration is painless on Vercel:
+          <br><br>
+          <strong>Step 1 —</strong> Buy snapreserve.com and add it to your Vercel project (Project → Domains → Add).<br>
+          <strong>Step 2 —</strong> Set snapreserve.com as your <em>primary</em> domain in Vercel.<br>
+          <strong>Step 3 —</strong> Keep snapreserve.co in Vercel as a redirect (301) → snapreserve.com. Vercel handles this in one click.<br>
+          <strong>Step 4 —</strong> Update <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;">NEXT_PUBLIC_URL</code> env var to snapreserve.com in Vercel dashboard.<br>
+          <strong>Step 5 —</strong> Update your Stripe webhook URL and Supabase redirect URLs to .com.<br>
+          <br>
+          <strong style="color:var(--green);">SEO note:</strong> A 301 redirect from .co → .com passes full link equity — you won't lose any Google ranking you've built up on the .co domain.
+        </div>
+      </div>
+    </div>
+
+    <!-- Launch checklist -->
+    <div style="font-size:0.85rem;font-weight:600;margin-bottom:12px;">Pre-launch checklist</div>
+    <div class="checklist">
+      <div class="check-item"><span class="check-icon check-done">✅</span> Public website (landing page, hotel + private stay modes)</div>
+      <div class="check-item"><span class="check-icon check-done">✅</span> Host admin dashboard UI designed</div>
+      <div class="check-item"><span class="check-icon check-done">✅</span> Privacy Policy and Terms of Service drafted</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Next.js project scaffolded and deployed to Vercel</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Supabase project created, schema migrated</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Supabase Auth set up (email + Google OAuth)</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Stripe account live (not test mode)</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Stripe Connect enabled for host payouts</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Webhook endpoint registered and tested</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Booking confirmation emails working</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Dashboard wired to real Supabase data</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> Custom domain connected to Vercel</div>
+      <div class="check-item"><span class="check-icon check-todo">○</span> End-to-end test: guest books → host gets paid → email sent</div>
+    </div>
+
+    <div class="info-box ib-good">
+      <span class="ib-icon">🎯</span>
+      <div class="ib-text">
+        <div class="ib-title">Recommended first milestone</div>
+        <div class="ib-desc">Get one real booking end-to-end before building more features — guest searches, books, Stripe charge goes through, host receives payout, both get emails. Once that works, everything else is an extension of the same pattern.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    <div class="footer-logo">Snap<span>Reserve</span>.com</div>
+    <div cl
