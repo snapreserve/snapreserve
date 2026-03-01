@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapReserve — Private Access</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#0A0806;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+
+/* Background glow */
+body::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%,rgba(244,96,26,.15),transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 20%,rgba(26,110,244,.1),transparent 60%);
+  pointer-events:none;
+}
+
+/* Dot pattern */
+body::after{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(244,96,26,.15) 1px,transparent 1px);
+  background-size:48px 48px;
+  opacity:.4;pointer-events:none;
+}
+
+.card{
+  position:relative;z-index:10;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:28px;
+  padding:52px 48px;
+  width:100%;max-width:440px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);
+  text-align:center;
+}
+
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:1.8rem;font-weight:900;
+  color:white;margin-bottom:6px;
+}
+.logo span{color:#F4601A;}
+
+.tagline{
+  font-size:.78rem;color:rgba(255,255,255,.3);
+  margin-bottom:36px;letter-spacing:.04em;
+}
+
+.lock-icon{
+  width:64px;height:64px;
+  background:rgba(244,96,26,.12);
+  border:1px solid rgba(244,96,26,.25);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-size:28px;
+}
+
+.card-title{
+  font-family:'Playfair Display',serif;
+  font-size:1.4rem;font-weight:700;
+  color:white;margin-bottom:8px;
+}
+.card-sub{
+  font-size:.8rem;color:rgba(255,255,255,.35);
+  line-height:1.7;margin-bottom:28px;
+}
+
+.input-wrap{position:relative;margin-bottom:14px;}
+.pw-input{
+  width:100%;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:16px 50px 16px 18px;
+  font-size:.92rem;font-family:'DM Sans',sans-serif;
+  color:white;outline:none;
+  transition:all .2s;letter-spacing:.08em;
+}
+.pw-input::placeholder{color:rgba(255,255,255,.2);letter-spacing:0;}
+.pw-input:focus{
+  border-color:rgba(244,96,26,.5);
+  background:rgba(255,255,255,.1);
+  box-shadow:0 0 0 3px rgba(244,96,26,.1);
+}
+
+.toggle-pw{
+  position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:rgba(255,255,255,.3);font-size:18px;transition:color .18s;
+  padding:4px;
+}
+.toggle-pw:hover{color:rgba(255,255,255,.6);}
+
+.submit-btn{
+  width:100%;
+  background:linear-gradient(135deg,#F4601A,#FF7A35);
+  border:none;border-radius:14px;
+  padding:16px;
+  font-size:.92rem;font-weight:700;
+  color:white;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:all .2s;
+  box-shadow:0 8px 24px rgba(244,96,26,.3);
+}
+.submit-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 32px rgba(244,96,26,.4);
+}
+.submit-btn:active{transform:translateY(0);}
+
+.error-msg{
+  display:none;
+  background:rgba(220,38,38,.12);
+  border:1px solid rgba(220,38,38,.2);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:.76rem;color:#FCA5A5;
+  margin-top:12px;
+}
+.error-msg.show{display:block;}
+
+.footer-note{
+  margin-top:28px;
+  font-size:.7rem;color:rgba(255,255,255,.15);
+  line-height:1.7;
+}
+.footer-note a{color:rgba(244,96,26,.4);text-decoration:none;}
+
+/* Shake animation */
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+.shake{animation:shake .4s ease;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">Snap<span>Reserve</span></div>
+  <div class="tagline">snapreserve.app · Private access only</div>
+
+  <div class="lock-icon">🔒</div>
+  <div class="card-title">Team access only</div>
+  <div class="card-sub">This site is currently in private preview. Enter the access password to continue.</div>
+
+  <div class="input-wrap">
+    <input
+      class="pw-input"
+      type="password"
+      id="pwInput"
+      placeholder="Enter access password"
+      onkeydown="if(event.key==='Enter') checkPassword()"
+      autocomplete="off"
+    >
+    <button class="toggle-pw" onclick="toggleVisibility()" title="Show/hide password">👁</button>
+  </div>
+
+  <button class="submit-btn" onclick="checkPassword()">Enter SnapReserve →</button>
+
+  <div class="error-msg" id="errorMsg">
+    ❌ Incorrect password. Please try again or contact the team.
+  </div>
+
+  <div class="footer-note">
+    Need access? Email <a href="mailto:hello@snapreserve.co">hello@snapreserve.co</a><br>
+    © 2026 SnapReserve · snapreserve.app
+  </div>
+</div>
+
+<script>
+// ── SET YOUR PASSWORD HERE ──
+const PASSWORD = 'snapreserve2026';
+
+// ── SESSION: stay unlocked after correct password ──
+if(sessionStorage.getItem('sr_auth') === 'true'){
+  window.location.href = 'snapreserve.html';
+}
+
+function checkPassword(){
+  var input = document.getElementById('pwInput').value;
+  var error = document.getElementById('errorMsg');
+  var card  = document.querySelector('.card');
+
+  if(input === PASSWORD){
+    sessionStorage.setItem('sr_auth','true');
+    document.querySelector('.submit-btn').textContent = '✅ Unlocking...';
+    setTimeout(()=>{ window.location.href = 'snapreserve.html'; }, 600);
+  } else {
+    error.classList.add('show');
+    card.classList.remove('shake');
+    void card.offsetWidth; // trigger reflow
+    card.classList.add('shake');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function toggleVisibility(){
+  var input = document.getElementById('pwInput');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+</script>
+</body>
+</html>
