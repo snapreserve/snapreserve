@@ -85,10 +85,21 @@ export default function HomePage() {
   // Load Google Places script once
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY
-    if (!apiKey || window.google) return
+    if (!apiKey) return
+
+    // Already loaded (e.g. React Strict Mode re-mount) — just re-init the service
+    if (window.google?.maps?.places) {
+      autocompleteService.current = new window.google.maps.places.AutocompleteService()
+      return
+    }
+
+    // Avoid adding duplicate script tags if loading is already in progress
+    if (document.querySelector('script[data-google-places]')) return
+
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
     script.async = true
+    script.dataset.googlePlaces = '1'
     script.onload = () => {
       autocompleteService.current = new window.google.maps.places.AutocompleteService()
     }
@@ -125,7 +136,7 @@ export default function HomePage() {
       autocompleteService.current.getPlacePredictions(
         {
           input: val,
-          types: ['(regions)'], // cities, regions, countries — no streets/addresses
+          types: ['(cities)'], // cities only — no streets/addresses
         },
         (predictions, status) => {
           setSearchLoading(false)
