@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
 const cityImages = {
@@ -46,11 +45,9 @@ const privateSteps = [
 ]
 
 export default function HomePage() {
-  const router = useRouter()
   const [mode, setMode] = useState('hotel')
   const [listings, setListings] = useState([])
   const [stats, setStats] = useState({ hotels: 0, private_stays: 0, cities: 0, hosts: 0 })
-  const [authorized, setAuthorized] = useState(false)
   const [activeChip, setActiveChip] = useState(null)
   const [destination, setDestination] = useState('')
   const [checkIn, setCheckIn] = useState('')
@@ -65,9 +62,6 @@ export default function HomePage() {
   const debounceRef = useRef(null)
 
   useEffect(() => {
-    const access = sessionStorage.getItem('admin_access')
-    if (access !== 'true') { router.push('/'); return }
-    setAuthorized(true)
     fetchData()
   }, [])
 
@@ -202,8 +196,6 @@ export default function HomePage() {
   const chips = isHotel ? hotelChips : privateChips
   const steps = isHotel ? hotelSteps : privateSteps
   const filteredListings = listings.filter(l => l.type === mode).slice(0, 4)
-
-  if (!authorized) return null
 
   return (
     <>

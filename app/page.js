@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
+import { checkPreviewPassword } from './actions/preview'
 
 export default function ComingSoonHome() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function ComingSoonHome() {
   const [submitted, setSubmitted] = useState(false)
   const [notifyLoading, setNotifyLoading] = useState(false)
   const [notifyError, setNotifyError] = useState('')
+  const [isPending, startTransition] = useTransition()
 
   function handleLogoClick() {
     const next = clickCount + 1
@@ -25,12 +27,20 @@ export default function ComingSoonHome() {
 
   function handleAdminLogin(e) {
     e.preventDefault()
-    if (password === 'snapreserve2026') {
-      sessionStorage.setItem('admin_access', 'true')
-      router.push('/home')
-    } else {
-      setError('Incorrect password')
-    }
+    setError('')
+    startTransition(async () => {
+      const result = await checkPreviewPassword(password)
+      if (result.success) {
+        router.push('/home')
+      } else if (result.locked) {
+        setError(`Too many failed attempts. Try again in ${result.minutesLeft} minute${result.minutesLeft !== 1 ? 's' : ''}.`)
+      } else {
+        const left = result.attemptsLeft
+        setError(left > 0
+          ? `Incorrect password. ${left} attempt${left !== 1 ? 's' : ''} remaining.`
+          : 'Incorrect password.')
+      }
+    })
   }
 
   async function handleNotify(e) {
@@ -182,7 +192,9 @@ export default function ComingSoonHome() {
                 onChange={e => setPassword(e.target.value)}
                 autoFocus
               />
-              <button className="modal-btn" type="submit">Enter site →</button>
+              <button className="modal-btn" type="submit" disabled={isPending}>
+                {isPending ? 'Checking…' : 'Enter site →'}
+              </button>
             </form>
           </div>
         </div>

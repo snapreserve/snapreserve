@@ -1,4 +1,6 @@
 import { createAdminClient } from '@/lib/supabase-admin'
+import { getAdminSession } from '@/lib/get-admin-session'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 async function getStats() {
@@ -26,6 +28,13 @@ async function getStats() {
 }
 
 export default async function AdminOverview() {
+  // Defense-in-depth: verify session and role even though middleware also checks.
+  // Catches any middleware bypass and ensures the page never renders for unauthenticated requests.
+  const { role, error } = await getAdminSession()
+  if (error === 'unauthenticated') redirect('/login?next=/admin')
+  if (error === 'mfa_required') redirect('/admin/mfa-verify?next=/admin')
+  if (!role) redirect('/login?error=no_admin_role')
+
   const { pendingCount, approvedCount, rejectedCount, totalUsers, activeListings, recentApprovals } = await getStats()
 
   return (

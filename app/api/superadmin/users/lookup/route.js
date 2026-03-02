@@ -13,12 +13,15 @@ export async function GET(request) {
   if (!email) return NextResponse.json({ error: 'email required' }, { status: 400 })
 
   const adminClient = createAdminClient()
-  const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers()
 
-  if (listError) return NextResponse.json({ error: listError.message }, { status: 500 })
+  // Use SECURITY DEFINER function — O(1) index seek on auth.users.email
+  // instead of listUsers() which dumps the entire user table into memory.
+  const { data, error: lookupError } = await adminClient
+    .rpc('find_user_by_email', { p_email: email })
+    .maybeSingle()
 
-  const found = users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
-  if (!found) return NextResponse.json({ error: 'No user found with that email' }, { status: 404 })
+  if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'No user found with that email' }, { status: 404 })
 
-  return NextResponse.json({ user_id: found.id, email: found.email })
+  return NextResponse.json({ user_id: data.user_id, email: data.user_email })
 }

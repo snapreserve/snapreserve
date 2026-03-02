@@ -109,6 +109,17 @@ export async function middleware(request) {
   }
 
   // ----------------------------------------------------------------
+  // /home — preview access gate (httpOnly cookie set by Server Action)
+  // ----------------------------------------------------------------
+  if (path === '/home' || path.startsWith('/home/')) {
+    if (!request.cookies.get('preview_access')?.value) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // ----------------------------------------------------------------
   // Main site — /admin and /superadmin route protection
   // ----------------------------------------------------------------
   const isAdminRoute = path.startsWith('/admin')
