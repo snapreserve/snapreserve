@@ -136,11 +136,13 @@ export default function HomePage() {
       autocompleteService.current.getPlacePredictions(
         {
           input: val,
-          types: ['(cities)'], // cities only — no streets/addresses
+          types: ['locality', 'administrative_area_level_1', 'country'],
         },
         (predictions, status) => {
           setSearchLoading(false)
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          const OK = window.google.maps.places.PlacesServiceStatus.OK
+          const ZERO = window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
+          if (status === OK && predictions) {
             setSuggestions(predictions.map(p => ({
               place_id: p.place_id,
               description: p.description,
@@ -150,7 +152,10 @@ export default function HomePage() {
               isFallback: false,
             })))
             setShowSuggestions(true)
+          } else if (status === ZERO) {
+            setSuggestions([])
           } else {
+            console.warn('Places API status:', status)
             setSuggestions([])
           }
         }
