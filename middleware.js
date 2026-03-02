@@ -45,6 +45,13 @@ export async function middleware(request) {
   // console.snapreserve.app — entire subdomain requires admin role
   // ----------------------------------------------------------------
   if (isConsoleSubdomain) {
+    // Root of console subdomain → admin dashboard
+    if (path === '/') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin'
+      return NextResponse.redirect(url)
+    }
+
     const isMfaPage = path === '/admin/mfa-setup' || path === '/admin/mfa-verify'
 
     if (!user) {
