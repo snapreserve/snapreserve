@@ -17,32 +17,35 @@ export async function POST(request) {
     return NextResponse.json({ error: 'target_user_id and role required' }, { status: 400 })
   }
 
-  const validRoles = ['super_admin', 'admin', 'support', 'finance', 'trust_safety']
-  if (!validRoles.includes(grantRole)) {
-    return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+  // ── super_admin cannot be granted through any normal interface ───────────
+  // It must be seeded directly in the DB by a postgres superuser/migration.
+  const grantableRoles = ['admin', 'support', 'finance', 'trust_safety']
+  if (!grantableRoles.includes(grantRole)) {
+    const h = await headers()
+    await logAction({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: role,
+      action: 'role.grant_blocked_super_admin',
+      targetType: 'role',
+      targetId: target_user_id,
+      beforeData: null,
+      afterData: { attempted_role: grantRole },
+      ipAddress: h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
+      userAgent: h.get('user-agent') ?? 'unknown',
+    })
+    return NextResponse.json(
+      { error: 'super_admin role cannot be assigned through this interface' },
+      { status: 403 }
+    )
   }
-
-  const adminClient = createAdminClient()
-
-  // Enforce super_admin email allowlist at API layer
-  if (grantRole === 'super_admin') {
-    const allowed = (process.env.SUPER_ADMIN_EMAILS || '')
-      .split(',')
-      .map(e => e.trim().toLowerCase())
-      .filter(Boolean)
-
-    const { data: { user: targetUser } } = await adminClient.auth.admin.getUserById(target_user_id)
-    if (!targetUser || !allowed.includes(targetUser.email?.toLowerCase())) {
-      return NextResponse.json(
-        { error: 'Email is not in the super_admin allowlist' },
-        { status: 403 }
-      )
-    }
-  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const h = await headers()
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const ua = h.get('user-agent') ?? 'unknown'
+
+  const adminClient = createAdminClient()
 
   const { error: upsertError } = await adminClient
     .from('admin_roles')
@@ -87,6 +90,27 @@ export async function DELETE(request) {
   const h = await headers()
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const ua = h.get('user-agent') ?? 'unknown'
+
+  // ── Block revocation of super_admin role ─────────────────────────────────
+  if (revokeRole === 'super_admin') {
+    await logAction({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: role,
+      action: 'role.revoke_blocked_super_admin',
+      targetType: 'role',
+      targetId: target_user_id,
+      beforeData: { role: 'super_admin', target_user_id },
+      afterData: null,
+      ipAddress: ip,
+      userAgent: ua,
+    })
+    return NextResponse.json(
+      { error: 'The Super Admin role cannot be revoked through this interface' },
+      { status: 403 }
+    )
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const adminClient = createAdminClient()
 

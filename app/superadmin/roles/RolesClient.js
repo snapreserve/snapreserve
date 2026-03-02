@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const ALL_ROLES = ['admin', 'support', 'finance', 'trust_safety', 'super_admin']
+// super_admin is intentionally excluded — it cannot be granted via UI.
+// To assign super_admin, run a DB migration directly.
+const ALL_ROLES = ['admin', 'support', 'finance', 'trust_safety']
 const ROLE_COLORS = {
   super_admin: '#F4601A',
   admin: '#6EA4F4',
@@ -217,7 +219,10 @@ export default function RolesClient({ initialRoles, emailMap }) {
                       {r.granted_at ? new Date(r.granted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     </div>
                     <div>
-                      {r.is_active && (
+                      {r.is_active && r.role === 'super_admin' && (
+                        <span style={{fontSize:'0.7rem',color:'#6B5E52',display:'flex',alignItems:'center',gap:'4px'}}>🔒 protected</span>
+                      )}
+                      {r.is_active && r.role !== 'super_admin' && (
                         <button
                           className="revoke-btn"
                           onClick={() => handleRevoke(r.user_id, r.role)}

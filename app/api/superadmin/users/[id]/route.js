@@ -30,16 +30,43 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
+  // ── Server-side super_admin protection ──────────────────────────────────
+  // Check BEFORE hitting the DB so we can log the attempt cleanly.
+  const { data: isSuperAdmin } = await adminClient
+    .from('admin_roles')
+    .select('role')
+    .eq('user_id', id)
+    .eq('role', 'super_admin')
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (isSuperAdmin) {
+    await logAction({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: role,
+      action: 'user.delete_blocked_super_admin',
+      targetType: 'user',
+      targetId: id,
+      beforeData: { email: targetUser.email, reason: 'Super Admin accounts cannot be deleted' },
+      afterData: null,
+      ipAddress: ip,
+      userAgent: ua,
+    })
+    return NextResponse.json(
+      { error: 'The Super Admin account cannot be deleted' },
+      { status: 403 }
+    )
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   if (hard) {
-    // Hard delete: remove from auth + users table
     const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(id)
     if (authDeleteError) {
       return NextResponse.json({ error: authDeleteError.message }, { status: 500 })
     }
-    // users row will cascade-delete via FK, but delete explicitly to be safe
     await adminClient.from('users').delete().eq('id', id)
   } else {
-    // Soft delete: set deleted_at
     const { error: softDeleteError } = await adminClient
       .from('users')
       .update({ deleted_at: new Date().toISOString() })

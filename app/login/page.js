@@ -9,6 +9,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetMode, setResetMode] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  async function handleReset(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/admin`,
+    })
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    setResetSent(true)
+  }
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -69,6 +83,9 @@ export default function LoginPage() {
 
         .back-link { display: block; text-align: center; font-size: 0.8rem; color: #A89880; text-decoration: none; margin-top: 20px; }
         .back-link:hover { color: #6B5F54; }
+        .forgot-link { font-size: 0.78rem; color: #A89880; text-decoration: none; float: right; margin-top: -2px; }
+        .forgot-link:hover { color: #F4601A; }
+        .reset-success { background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,0.15); border-radius: 10px; padding: 14px; font-size: 0.84rem; color: #16A34A; margin-bottom: 16px; }
       `}</style>
 
       <div className="page">
@@ -79,43 +96,83 @@ export default function LoginPage() {
           <div className="title">Welcome back</div>
           <div className="subtitle">Sign in to your SnapReserve account</div>
 
-          <form onSubmit={handleLogin}>
-            {error && <div className="error">⚠️ {error}</div>}
+          {!resetMode ? (
+            <form onSubmit={handleLogin}>
+              {error && <div className="error">⚠️ {error}</div>}
 
-            <div className="form-group">
-              <label className="label">Email address</label>
-              <input
-                className="input"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label className="label">Email address</label>
+                <input
+                  className="input"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label className="label">Password</label>
-              <input
-                className="input"
-                type="password"
-                placeholder="Your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label className="label">
+                  Password
+                  <button type="button" className="forgot-link" onClick={() => { setResetMode(true); setError('') }}>
+                    Forgot password?
+                  </button>
+                </label>
+                <input
+                  className="input"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <button className="submit-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in →'}
-            </button>
-          </form>
+              <button className="submit-btn" type="submit" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in →'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleReset}>
+              {resetSent ? (
+                <div className="reset-success">
+                  ✓ Reset link sent — check your inbox. After resetting your password, you'll need to verify MFA to access the admin console.
+                </div>
+              ) : (
+                <>
+                  {error && <div className="error">⚠️ {error}</div>}
+                  <div className="subtitle" style={{marginBottom:'16px'}}>Enter your email and we'll send a reset link.</div>
+                  <div className="form-group">
+                    <label className="label">Email address</label>
+                    <input
+                      className="input"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button className="submit-btn" type="submit" disabled={loading}>
+                    {loading ? 'Sending...' : 'Send reset link →'}
+                  </button>
+                </>
+              )}
+              <button type="button" onClick={() => { setResetMode(false); setResetSent(false); setError('') }} style={{width:'100%',background:'none',border:'none',color:'#A89880',fontSize:'0.82rem',cursor:'pointer',marginTop:'12px',fontFamily:'inherit'}}>
+                ← Back to sign in
+              </button>
+            </form>
+          )}
 
-          <div className="divider"><span>or</span></div>
-
-          <div className="signup-link">
-            Don't have an account? <a href="/signup">Sign up free</a>
-          </div>
+          {!resetMode && (
+            <>
+              <div className="divider"><span>or</span></div>
+              <div className="signup-link">
+                Don't have an account? <a href="/signup">Sign up free</a>
+              </div>
+            </>
+          )}
 
           <a href="/" className="back-link">← Back to SnapReserve</a>
         </div>
