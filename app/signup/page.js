@@ -12,6 +12,17 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  async function handleGoogleSignUp() {
+    setGoogleLoading(true)
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+  }
 
   async function handleSignup(e) {
     e.preventDefault()
@@ -112,6 +123,10 @@ export default function SignupPage() {
         .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(244,96,26,0.3); }
         .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+        .divider { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 16px; position: relative; }
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #E8E2D9; }
+        .divider span { background: white; padding: 0 12px; position: relative; }
+
         .terms { font-size: 0.72rem; color: #A89880; text-align: center; margin-bottom: 16px; line-height: 1.6; }
         .terms a { color: #F4601A; text-decoration: none; }
 
@@ -119,6 +134,11 @@ export default function SignupPage() {
         .login-link a { color: #F4601A; font-weight: 700; text-decoration: none; }
 
         .back-link { display: block; text-align: center; font-size: 0.8rem; color: #A89880; text-decoration: none; margin-top: 20px; }
+
+        .google-btn { width: 100%; background: white; border: 1.5px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-weight: 600; color: #1A1410; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.18s; margin-bottom: 16px; }
+        .google-btn:hover { border-color: #D4CEC5; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .google-note { font-size: 0.72rem; color: #A89880; text-align: center; margin-top: -8px; margin-bottom: 16px; }
       `}</style>
 
       <div className="page">
@@ -128,6 +148,19 @@ export default function SignupPage() {
 
           <div className="title">Create your account</div>
           <div className="subtitle">Join thousands of guests and hosts on SnapReserve</div>
+
+          <button className="google-btn" onClick={handleGoogleSignUp} disabled={googleLoading} type="button">
+            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+          </button>
+          <p className="google-note">No password needed — we'll use your Google account</p>
+
+          <div className="divider"><span>or sign up with email</span></div>
 
           <form onSubmit={handleSignup}>
             {error && <div className="error">⚠️ {error}</div>}
