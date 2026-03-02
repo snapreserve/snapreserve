@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Link from 'next/link'
 
@@ -17,11 +18,12 @@ const typeColors = {
 }
 
 export default function ListingsPage() {
+  const searchParams = useSearchParams()
   const [listings, setListings] = useState([])
   const [filtered, setFiltered] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('all')
+  const [search, setSearch] = useState(searchParams.get('destination') || '')
+  const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all')
   const [priceFilter, setPriceFilter] = useState('all')
   const [sortBy, setSortBy] = useState('rating')
 

@@ -447,7 +447,19 @@ export default function HomePage() {
             <div className="sf-label">Guests</div>
             <input className="sf-input" placeholder={isHotel ? '2 adults' : '2 guests'} value={guests} onChange={e => setGuests(e.target.value)} />
           </div>
-          <button className="search-btn" style={{background: accent}}>🔍 Search</button>
+          <button
+            className="search-btn"
+            style={{background: accent}}
+            onClick={() => {
+              const params = new URLSearchParams()
+              if (destination) params.set('destination', destination)
+              if (mode) params.set('type', mode)
+              if (checkIn) params.set('checkIn', checkIn)
+              if (checkOut) params.set('checkOut', checkOut)
+              if (guests) params.set('guests', guests)
+              router.push(`/listings?${params.toString()}`)
+            }}
+          >🔍 Search</button>
         </div>
 
         {/* FILTER CHIPS */}
