@@ -12,14 +12,20 @@ export async function PATCH(request, { params }) {
 
   const { id } = await params
   const body = await request.json()
-  const { action, rejection_reason } = body
+  const { action, rejection_reason, reason, notes } = body
 
-  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete']
+  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
   if (action === 'reject' && !rejection_reason?.trim()) {
     return NextResponse.json({ error: 'rejection_reason required' }, { status: 400 })
+  }
+  if (action === 'request_changes' && !notes?.trim()) {
+    return NextResponse.json({ error: 'notes required for request_changes' }, { status: 400 })
+  }
+  if (action === 'suspend' && !body.reason?.trim()) {
+    return NextResponse.json({ error: 'reason required for suspend' }, { status: 400 })
   }
 
   const h = await headers()
@@ -44,7 +50,7 @@ export async function PATCH(request, { params }) {
 
   if (action === 'approve') {
     updatePayload.status = 'approved'
-    updatePayload.is_active = true
+    // NOT setting is_active — host must go live themselves
     approvalUpdate = { status: 'approved', reviewed_at: now }
   } else if (action === 'reject') {
     updatePayload.status = 'rejected'
@@ -58,6 +64,15 @@ export async function PATCH(request, { params }) {
   } else if (action === 'soft_delete') {
     updatePayload.deleted_at = now
     updatePayload.is_active = false
+  } else if (action === 'suspend') {
+    updatePayload.suspended_at = now
+    updatePayload.suspension_reason = reason
+    updatePayload.is_active = false
+  } else if (action === 'reactivate') {
+    updatePayload.suspended_at = null
+    updatePayload.suspension_reason = null
+    updatePayload.is_active = true
+    updatePayload.status = 'approved'
   }
 
   const { error: updateError } = await adminClient
@@ -67,6 +82,17 @@ export async function PATCH(request, { params }) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
+  }
+
+  // Save change request notes for host to see
+  if (action === 'request_changes') {
+    await adminClient.from('listing_change_requests').insert({
+      listing_id:  id,
+      admin_id:    user.id,
+      admin_email: user.email,
+      notes:       notes.trim(),
+      status:      'open',
+    })
   }
 
   // Sync listing_approvals if needed
@@ -103,6 +129,22 @@ export async function PATCH(request, { params }) {
     ipAddress: ip,
     userAgent: ua,
   })
+
+  // Append to listing_change_history (non-blocking)
+  try {
+    await adminClient.from('listing_change_history').insert({
+      listing_id:    id,
+      action,
+      actor_id:      user.id,
+      actor_email:   user.email,
+      actor_role:    role,
+      reason:        notes ?? reason ?? rejection_reason ?? null,
+      before_status: listing.status ?? null,
+      after_status:  updatePayload.status ?? listing.status ?? null,
+    })
+  } catch (histErr) {
+    console.error('[listing-history] insert failed:', histErr)
+  }
 
   return NextResponse.json({ success: true })
 }

@@ -47,6 +47,17 @@ export async function POST(request) {
 
   const adminClient = createAdminClient()
 
+  // Verify the target user actually exists before granting any role
+  const { data: targetUser } = await adminClient
+    .from('users')
+    .select('id')
+    .eq('id', target_user_id)
+    .maybeSingle()
+
+  if (!targetUser) {
+    return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
+  }
+
   const { error: upsertError } = await adminClient
     .from('admin_roles')
     .upsert(

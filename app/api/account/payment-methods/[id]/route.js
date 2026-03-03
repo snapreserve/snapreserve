@@ -21,13 +21,6 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const stripeKey = process.env.STRIPE_SECRET_KEY
-  if (stripeKey) {
-    const Stripe = (await import('stripe')).default
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' })
-    await stripe.paymentMethods.detach(pm.stripe_payment_method_id).catch(() => null)
-  }
-
   const { error } = await admin.from('payment_methods').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

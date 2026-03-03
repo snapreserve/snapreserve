@@ -24,7 +24,6 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}))
   const { host_type, display_name, phone } = body
 
-  // Validate
   if (!VALID_TYPES.includes(host_type)) {
     return NextResponse.json({ error: 'Invalid host_type' }, { status: 400 })
   }
@@ -39,23 +38,55 @@ export async function POST(request) {
 
   const admin = createAdminClient()
 
-  // Set is_host = true on the user's profile
-  const { error: profileErr } = await admin
+  // Ensure public.users row exists
+  await admin.from('users').upsert(
+    {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
+      avatar_url: user.user_metadata?.avatar_url ?? '',
+      is_host: false,
+      is_verified: false,
+      user_role: 'user',
+    },
+    { onConflict: 'id', ignoreDuplicates: true }
+  )
+
+  // Check current role — block if already host or already pending
+  const { data: profile } = await admin
     .from('users')
-    .update({ is_host: true })
+    .select('user_role')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile?.user_role === 'host') {
+    return NextResponse.json({ error: 'You are already an approved host.' }, { status: 400 })
+  }
+  if (profile?.user_role === 'pending_host') {
+    return NextResponse.json({ error: 'Your application is already under review.' }, { status: 400 })
+  }
+
+  // Set role to pending_host
+  const { error: roleErr } = await admin
+    .from('users')
+    .update({ user_role: 'pending_host' })
     .eq('id', user.id)
 
-  if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
+  if (roleErr) return NextResponse.json({ error: roleErr.message }, { status: 500 })
 
-  // Upsert hosts row with all fields
-  const { error: hostErr } = await admin
-    .from('hosts')
+  // Insert host application (upsert in case of retry)
+  const { error: appErr } = await admin
+    .from('host_applications')
     .upsert(
-      { user_id: user.id, host_status: 'pending', host_type, display_name: name, phone: ph },
+      { user_id: user.id, status: 'pending', host_type, display_name: name, phone: ph },
       { onConflict: 'user_id' }
     )
 
-  if (hostErr) return NextResponse.json({ error: hostErr.message }, { status: 500 })
+  if (appErr) {
+    // Rollback role on failure
+    await admin.from('users').update({ user_role: 'user' }).eq('id', user.id)
+    return NextResponse.json({ error: appErr.message }, { status: 500 })
+  }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, status: 'pending_host' })
 }

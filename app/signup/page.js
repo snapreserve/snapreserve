@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function SignupPage() {
@@ -53,130 +53,138 @@ export default function SignupPage() {
     setLoading(false)
   }
 
-  if (success) {
-    return (
-      <>
-        <style>{`
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; }
-          .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-          .card { background: white; border: 1px solid #E8E2D9; border-radius: 24px; padding: 48px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
-          .success-icon { font-size: 3rem; margin-bottom: 16px; }
-          .title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 10px; }
-          .sub { font-size: 0.86rem; color: #6B5F54; line-height: 1.7; margin-bottom: 24px; }
-          .btn { display: inline-block; background: #F4601A; color: white; padding: 12px 28px; border-radius: 100px; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
-        `}</style>
-        <div className="page">
-          <div className="card">
-            <div className="success-icon">✅</div>
-            <div className="title">Check your email!</div>
-            <div className="sub">We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</div>
-            <a href="/login" className="btn">Go to login →</a>
-          </div>
-        </div>
-      </>
-    )
-  }
-
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; }
-
-        .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow: hidden; }
-        .page::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 20% 80%, rgba(244,96,26,0.08), transparent 60%), radial-gradient(ellipse 50% 40% at 80% 20%, rgba(26,110,244,0.06), transparent 60%); pointer-events: none; }
-
-        .card { background: white; border: 1px solid #E8E2D9; border-radius: 24px; padding: 48px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); position: relative; z-index: 1; }
-
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; text-decoration: none; color: #1A1410; display: block; text-align: center; margin-bottom: 8px; }
-        .logo span { color: #F4601A; }
-        .tagline { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 32px; }
-
-        .title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
-        .subtitle { font-size: 0.84rem; color: #6B5F54; margin-bottom: 24px; }
-
-        .google-btn { width: 100%; background: white; border: 1.5px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-weight: 600; color: #1A1410; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.18s; margin-bottom: 16px; }
-        .google-btn:hover { border-color: #D4CEC5; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .divider { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 20px; position: relative; }
-        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #E8E2D9; }
-        .divider span { background: white; padding: 0 12px; position: relative; }
-
-        .form-group { margin-bottom: 16px; }
-        .label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6B5F54; margin-bottom: 6px; display: block; }
-        .input { width: 100%; background: #FAF8F5; border: 1px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-family: inherit; outline: none; color: #1A1410; transition: all 0.18s; }
-        .input:focus { border-color: #F4601A; background: white; box-shadow: 0 0 0 3px rgba(244,96,26,0.08); }
-
-        .error { background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.15); border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; color: #DC2626; margin-bottom: 16px; }
-
-        .submit-btn { width: 100%; background: linear-gradient(135deg, #F4601A, #FF7A35); border: none; border-radius: 12px; padding: 14px; font-size: 0.94rem; font-weight: 700; color: white; cursor: pointer; font-family: inherit; transition: all 0.2s; margin-bottom: 16px; }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(244,96,26,0.3); }
-        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .terms { font-size: 0.72rem; color: #A89880; text-align: center; margin-bottom: 16px; line-height: 1.6; }
-        .terms a { color: #F4601A; text-decoration: none; }
-
-        .login-link { text-align: center; font-size: 0.84rem; color: #6B5F54; }
-        .login-link a { color: #F4601A; font-weight: 700; text-decoration: none; }
-
-        .back-link { display: block; text-align: center; font-size: 0.8rem; color: #A89880; text-decoration: none; margin-top: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',-apple-system,sans-serif; }
+        input,button { font-family:'DM Sans',-apple-system,sans-serif; }
+        .input-field { width:100%; background:white; border:1.5px solid #E8E2D9; border-radius:12px; padding:12px 16px; font-size:13px; color:#1A1410; outline:none; transition:border-color 0.18s; }
+        .input-field:focus { border-color:#F4601A; }
+        .social-btn { background:white; border:1.5px solid #E8E2D9; border-radius:12px; padding:11px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:13px; cursor:pointer; transition:border-color 0.18s; font-family:inherit; }
+        .social-btn:hover { border-color:#1A1410; }
+        .social-btn:disabled { opacity:0.6; cursor:not-allowed; }
       `}</style>
 
-      <div className="page">
-        <div className="card">
-          <a href="/" className="logo">Snap<span>Reserve</span></a>
-          <div className="tagline">Book in a snap. Stay anywhere.</div>
+      <div style={{ display:'flex', height:'100vh', overflow:'hidden' }}>
 
-          <div className="title">Create your account</div>
-          <div className="subtitle">Join SnapReserve — it's free</div>
+        {/* LEFT PANEL */}
+        <div style={{ flex:'0 0 48%', background:'linear-gradient(135deg, #0F0D0A 0%, #1A1208 50%, #0F0D0A 100%)', display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'44px 48px', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 25% 65%, rgba(244,96,26,0.22) 0%, transparent 58%)', pointerEvents:'none' }} />
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 85% 15%, rgba(26,110,244,0.07) 0%, transparent 50%)', pointerEvents:'none' }} />
 
-          <button className="google-btn" onClick={handleGoogleSignUp} disabled={googleLoading} type="button">
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-            </svg>
-            {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-          </button>
-
-          <div className="divider"><span>or sign up with email</span></div>
-
-          <form onSubmit={handleSignup}>
-            {error && <div className="error">⚠️ {error}</div>}
-
-            <div className="form-group">
-              <label className="label">Full name</label>
-              <input className="input" type="text" placeholder="Your full name" value={fullName} onChange={e => setFullName(e.target.value)} required />
-            </div>
-
-            <div className="form-group">
-              <label className="label">Email address</label>
-              <input className="input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-
-            <div className="form-group">
-              <label className="label">Password</label>
-              <input className="input" type="password" placeholder="Minimum 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-            </div>
-
-            <div className="terms">
-              By signing up you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
-            </div>
-
-            <button className="submit-btn" type="submit" disabled={loading}>
-              {loading ? 'Creating account…' : 'Create account →'}
-            </button>
-          </form>
-
-          <div className="login-link">
-            Already have an account? <a href="/login">Sign in</a>
+          <div style={{ position:'relative' }}>
+            <a href="/home" style={{ fontFamily:'Playfair Display,serif', fontWeight:900, fontSize:22, color:'white', textDecoration:'none' }}>
+              Snap<span style={{ color:'#F4601A' }}>Reserve™</span>
+            </a>
           </div>
 
-          <a href="/" className="back-link">← Back to SnapReserve</a>
+          <div style={{ position:'relative' }}>
+            <div style={{ display:'inline-block', background:'rgba(244,96,26,0.12)', border:'1px solid rgba(244,96,26,0.25)', borderRadius:100, padding:'5px 14px', fontSize:11, fontWeight:800, color:'#F4601A', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:22 }}>Join for free</div>
+            <div style={{ fontFamily:'Playfair Display,serif', fontSize:36, fontWeight:700, color:'white', lineHeight:1.12, marginBottom:16 }}>
+              Start your<br />journey with<br /><em style={{ color:'#F4601A' }}>SnapReserve.</em>
+            </div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.42)', lineHeight:1.8, marginBottom:36, maxWidth:320 }}>
+              Book world-class hotels or list your own property. No hidden fees, no surprises.
+            </div>
+            <div style={{ display:'flex', gap:32 }}>
+              {[['Free','To sign up'],['3.2%','Platform fee'],['24/7','Support']].map(([val, label]) => (
+                <div key={label}>
+                  <div style={{ fontSize:20, fontWeight:800, color:'#F4601A', marginBottom:3 }}>{val}</div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.3)' }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ position:'relative' }}>
+            {[
+              ['✓', 'Book hotels and private stays worldwide'],
+              ['✓', 'List your property with zero upfront cost'],
+              ['✓', 'SnapGuarantee™ protection on every booking'],
+              ['✓', 'Instant payouts via Stripe Connect'],
+            ].map(([icon, text]) => (
+              <div key={text} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(244,96,26,0.2)', border:'1px solid rgba(244,96,26,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, color:'#F4601A', fontWeight:900, flexShrink:0 }}>{icon}</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)' }}>{text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div style={{ flex:1, background:'#FAF8F5', display:'flex', alignItems:'center', justifyContent:'center', padding:'40px', overflowY:'auto' }}>
+          <div style={{ width:'100%', maxWidth:380 }}>
+
+            {/* Login / Sign up toggle */}
+            <div style={{ display:'flex', background:'#EDEBE7', borderRadius:100, padding:4, marginBottom:30 }}>
+              <a href="/login" style={{ flex:1, padding:'10px', borderRadius:100, textAlign:'center', fontWeight:700, fontSize:13, color:'#6B5F54', textDecoration:'none' }}>Log in</a>
+              <div style={{ flex:1, padding:'10px', borderRadius:100, background:'white', textAlign:'center', fontWeight:700, fontSize:13, boxShadow:'0 2px 10px rgba(0,0,0,0.08)', color:'#1A1410' }}>Sign up</div>
+            </div>
+
+            {success ? (
+              <div style={{ textAlign:'center', padding:'20px 0' }}>
+                <div style={{ fontSize:40, marginBottom:16 }}>🎉</div>
+                <div style={{ fontFamily:'Playfair Display,serif', fontSize:24, fontWeight:700, marginBottom:10, color:'#1A1410' }}>Check your email!</div>
+                <div style={{ fontSize:13, color:'#6B5F54', lineHeight:1.7, marginBottom:24 }}>
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+                </div>
+                <a href="/login" style={{ background:'#F4601A', color:'white', padding:'12px 28px', borderRadius:100, fontWeight:700, fontSize:13, textDecoration:'none', display:'inline-block' }}>Back to login →</a>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontFamily:'Playfair Display,serif', fontSize:27, fontWeight:700, marginBottom:6, color:'#1A1410' }}>Create your account</div>
+                <div style={{ fontSize:13, color:'#6B5F54', marginBottom:24, lineHeight:1.65 }}>Join 180,000+ hosts and travellers on SnapReserve.</div>
+
+                {error && (
+                  <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:12, padding:'12px 16px', fontSize:12, color:'#EF4444', marginBottom:16 }}>{error}</div>
+                )}
+
+                {/* Google */}
+                <button className="social-btn" style={{ width:'100%', marginBottom:14, borderRadius:12, padding:'12px 16px' }} onClick={handleGoogleSignUp} disabled={googleLoading} type="button">
+                  <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.909-2.259c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                    <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                  </svg>
+                  {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+                </button>
+
+                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+                  <div style={{ flex:1, height:1, background:'#E8E2D9' }} />
+                  <span style={{ fontSize:12, color:'#A89880' }}>or sign up with email</span>
+                  <div style={{ flex:1, height:1, background:'#E8E2D9' }} />
+                </div>
+
+                <form onSubmit={handleSignup}>
+                  <div style={{ marginBottom:14 }}>
+                    <label style={{ fontSize:12, fontWeight:700, display:'block', marginBottom:6, color:'#1A1410' }}>Full name</label>
+                    <input className="input-field" type="text" required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
+                  </div>
+                  <div style={{ marginBottom:14 }}>
+                    <label style={{ fontSize:12, fontWeight:700, display:'block', marginBottom:6, color:'#1A1410' }}>Email address</label>
+                    <input className="input-field" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+                  </div>
+                  <div style={{ marginBottom:14 }}>
+                    <label style={{ fontSize:12, fontWeight:700, display:'block', marginBottom:6, color:'#1A1410' }}>Password</label>
+                    <input className="input-field" type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="Min. 8 characters" />
+                  </div>
+                  <div style={{ fontSize:11, color:'#A89880', textAlign:'center', marginBottom:16, lineHeight:1.6 }}>
+                    By signing up you agree to our <a href="/terms" style={{ color:'#F4601A', textDecoration:'none' }}>Terms of Service</a> and <a href="/refund-policy" style={{ color:'#F4601A', textDecoration:'none' }}>Privacy Policy</a>.
+                  </div>
+                  <button type="submit" disabled={loading} style={{ width:'100%', background: loading ? '#E8E2D9' : '#F4601A', color:'white', padding:'13px', borderRadius:100, fontWeight:700, fontSize:14, border:'none', cursor: loading ? 'not-allowed' : 'pointer', marginBottom:18, transition:'opacity 0.18s' }}>
+                    {loading ? 'Creating account...' : 'Create Account →'}
+                  </button>
+                </form>
+
+                <div style={{ textAlign:'center', fontSize:13, color:'#6B5F54' }}>
+                  Already have an account? <a href="/login" style={{ color:'#F4601A', fontWeight:700, textDecoration:'none' }}>Log in →</a>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>

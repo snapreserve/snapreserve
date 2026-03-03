@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
@@ -10,7 +10,7 @@ function getSupabase() {
   )
 }
 
-export default function MfaSetupPage() {
+function MfaSetupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/admin'
@@ -154,5 +154,13 @@ export default function MfaSetupPage() {
         <div className="hint">MFA is required for all SnapReserve admin accounts. You will need your authenticator app every time you log in.</div>
       </div>
     </>
+  )
+}
+
+export default function MfaSetupPage() {
+  return (
+    <Suspense fallback={null}>
+      <MfaSetupContent />
+    </Suspense>
   )
 }

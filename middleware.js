@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 
 const MAIN_SITE = 'https://snapreserve.app'
 const CONSOLE_HOST = 'console.snapreserve.app'
+const STATUS_HOST = 'status.snapreserve.app'
 
 // Inline base64url decode — works in Edge Runtime (no Buffer)
 function decodeJwtPayload(token) {
@@ -40,6 +41,39 @@ export async function middleware(request) {
   const path = request.nextUrl.pathname
   const hostname = request.headers.get('host') ?? ''
   const isConsoleSubdomain = hostname === CONSOLE_HOST
+  const isStatusSubdomain = hostname === STATUS_HOST
+
+  // ----------------------------------------------------------------
+  // status.snapreserve.app — serve /status, no auth required
+  // ----------------------------------------------------------------
+  if (isStatusSubdomain) {
+    const url = request.nextUrl.clone()
+    url.pathname = path === '/' ? '/status' : path
+    return NextResponse.rewrite(url)
+  }
+
+  // ----------------------------------------------------------------
+  // Maintenance mode — redirect all non-admin traffic
+  // ----------------------------------------------------------------
+  const isAdminOrSuperAdmin = path.startsWith('/admin') || path.startsWith('/superadmin')
+  const isMaintenancePage = path === '/maintenance'
+  const isApiAdminRoute = path.startsWith('/api/admin') || path.startsWith('/api/superadmin')
+  // These API routes must work even during maintenance
+  const isPaymentApiRoute = path.startsWith('/api/webhooks') || path.startsWith('/api/checkout')
+
+  if (!isAdminOrSuperAdmin && !isMaintenancePage && !isConsoleSubdomain && !isStatusSubdomain && !isApiAdminRoute && !isPaymentApiRoute) {
+    const { data: maintenanceSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'maintenance_mode')
+      .maybeSingle()
+
+    if (maintenanceSetting?.value === true) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/maintenance'
+      return NextResponse.redirect(url)
+    }
+  }
 
   // ----------------------------------------------------------------
   // console.snapreserve.app — entire subdomain requires admin role
@@ -109,17 +143,6 @@ export async function middleware(request) {
   }
 
   // ----------------------------------------------------------------
-  // /home — preview access gate (httpOnly cookie set by Server Action)
-  // ----------------------------------------------------------------
-  if (path === '/home' || path.startsWith('/home/')) {
-    if (!request.cookies.get('preview_access')?.value) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // ----------------------------------------------------------------
   // Main site — /admin and /superadmin route protection
   // ----------------------------------------------------------------
   const isAdminRoute = path.startsWith('/admin')
@@ -127,6 +150,20 @@ export async function middleware(request) {
 
   if (isAdminRoute || isSuperAdminRoute) {
     const isMfaPage = path === '/admin/mfa-setup' || path === '/admin/mfa-verify'
+    // Waitlist page is gated by preview_access cookie only — no MFA needed
+    const isWaitlistPage = path === '/admin/waitlist'
+
+    if (isWaitlistPage) {
+      if (!request.cookies.get('preview_access')?.value && !user) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        return NextResponse.redirect(url)
+      }
+      return supabaseResponse
+    }
+
+    // Accept-invite page is publicly reachable (no session or MFA required)
+    if (path === '/admin/accept-invite') return supabaseResponse
 
     if (!user) {
       const url = request.nextUrl.clone()

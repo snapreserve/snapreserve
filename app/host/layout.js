@@ -20,11 +20,12 @@ export default async function HostLayout({ children }) {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('is_host')
+    .select('user_role')
     .eq('id', user.id)
     .maybeSingle()
 
-  if (!profile?.is_host) redirect('/become-a-host')
+  if (profile?.user_role === 'pending_host') redirect('/become-a-host?status=pending')
+  if (profile?.user_role !== 'host') redirect('/become-a-host')
 
   return <>{children}</>
 }

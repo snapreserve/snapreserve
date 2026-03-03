@@ -1,6 +1,8 @@
 'use client'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const pageConfig = {
   cars: {
@@ -25,8 +27,32 @@ const pageConfig = {
 
 function ComingSoonContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const page = searchParams.get('page') || 'cars'
   const config = pageConfig[page] || pageConfig.cars
+
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'waitlist_enabled')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && data.value === false) router.replace('/')
+      })
+  }, [])
+
+  async function handleNotify(e) {
+    e.preventDefault()
+    setLoading(true)
+    const { error } = await supabase.from('waitlist').insert({ email })
+    if (!error || error.code === '23505') setSubmitted(true)
+    setLoading(false)
+  }
 
   return (
     <>
@@ -70,10 +96,26 @@ function ComingSoonContent() {
           <div className="title">{config.title}</div>
           <p className="description">{config.description}</p>
 
-          <div className="notify-form">
-            <input className="notify-input" type="email" placeholder="your@email.com" />
-            <button className="notify-btn" style={{background: config.color}}>Notify me</button>
-          </div>
+          {!submitted ? (
+            <form className="notify-form" onSubmit={handleNotify}>
+              <input
+                className="notify-input"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+              <button className="notify-btn" style={{background: config.color}} disabled={loading}>
+                {loading ? '...' : 'Notify me'}
+              </button>
+            </form>
+          ) : (
+            <p style={{fontSize:'0.88rem',color:'#4ADE80',marginBottom:'24px',padding:'12px 20px',background:'rgba(74,222,128,0.08)',border:'1px solid rgba(74,222,128,0.2)',borderRadius:'12px'}}>
+              ✅ You're on the list! We'll email you at launch.
+            </p>
+          )}
+
 
           <a href="/" className="back-link">← Back to SnapReserve™</a>
         </div>

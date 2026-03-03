@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
@@ -10,7 +10,7 @@ function getSupabase() {
   )
 }
 
-export default function MfaVerifyPage() {
+function MfaVerifyContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/admin'
@@ -112,5 +112,13 @@ export default function MfaVerifyPage() {
         <div className="hint">Lost access to your authenticator? Contact your super admin.</div>
       </div>
     </>
+  )
+}
+
+export default function MfaVerifyPage() {
+  return (
+    <Suspense fallback={null}>
+      <MfaVerifyContent />
+    </Suspense>
   )
 }

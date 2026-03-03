@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 const HOST_TYPES = [
   {
@@ -49,9 +49,12 @@ export default function BecomeAHostPage() {
         router.replace('/login?next=/become-a-host')
         return
       }
-      supabase.from('users').select('is_host').eq('id', user.id).maybeSingle().then(({ data }) => {
-        if (data?.is_host) {
+      supabase.from('users').select('user_role').eq('id', user.id).maybeSingle().then(({ data }) => {
+        if (data?.user_role === 'host') {
           router.replace('/host/dashboard')
+        } else if (data?.user_role === 'pending_host') {
+          setStep('pending')
+          setChecking(false)
         } else {
           setChecking(false)
         }
@@ -91,7 +94,7 @@ export default function BecomeAHostPage() {
       return
     }
 
-    router.push('/host/dashboard')
+    setStep('submitted')
   }
 
   const inp = {
@@ -110,6 +113,45 @@ export default function BecomeAHostPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAF8F5' }}>
       <div style={{ color: '#A89880', fontSize: '0.9rem', fontFamily: 'sans-serif' }}>Loading…</div>
     </div>
+  )
+
+  const pendingOrSubmitted = step === 'pending' || step === 'submitted'
+  if (pendingOrSubmitted) return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900&family=DM+Sans:wght@400;500;600;700&display=swap');
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',-apple-system,sans-serif; background:#FAF8F5; color:#1A1410; }
+        .topbar { background:white; border-bottom:1px solid #E8E2D9; padding:0 40px; height:64px; display:flex; align-items:center; }
+        .logo { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; text-decoration:none; color:#1A1410; }
+        .logo span { color:#F4601A; }
+      `}</style>
+      <div className="topbar">
+        <a href="/home" className="logo">Snap<span>Reserve</span></a>
+      </div>
+      <div style={{ maxWidth: '520px', margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: '3.5rem', marginBottom: '20px' }}>⏳</div>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.8rem', fontWeight: 900, marginBottom: '14px' }}>
+          {step === 'submitted' ? 'Application submitted!' : 'Application under review'}
+        </h1>
+        <p style={{ fontSize: '0.92rem', color: '#6B5F54', lineHeight: 1.75, marginBottom: '32px' }}>
+          {step === 'submitted'
+            ? 'Thank you! Our team will review your host application and get back to you within 1–3 business days.'
+            : 'Your host application is currently being reviewed. We\'ll notify you once it\'s approved.'
+          }
+        </p>
+        <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', padding: '24px', marginBottom: '28px', textAlign: 'left' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A89880', marginBottom: '8px' }}>Status</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: '100px', padding: '6px 16px' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FCD34D', display: 'inline-block' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#D97706' }}>Pending Review</span>
+          </div>
+        </div>
+        <a href="/dashboard" style={{ display: 'inline-block', padding: '12px 28px', background: 'linear-gradient(135deg,#F4601A,#FF7A35)', color: 'white', borderRadius: '12px', fontWeight: 700, fontSize: '0.92rem', textDecoration: 'none' }}>
+          Back to Dashboard
+        </a>
+      </div>
+    </>
   )
 
   return (
@@ -145,7 +187,7 @@ export default function BecomeAHostPage() {
       <div style={{ background: 'white', borderBottom: '1px solid #E8E2D9', padding: '0 40px' }}>
         <div style={{ maxWidth: '560px', margin: '0 auto', display: 'flex', gap: '0', height: '4px' }}>
           <div style={{ flex: 1, background: '#F4601A', borderRadius: '0 0 0 4px' }} />
-          <div style={{ flex: 1, background: step === 2 ? '#F4601A' : '#E8E2D9', borderRadius: '0 0 4px 0' }} />
+          <div style={{ flex: 1, background: step === 2 || step === 'submitted' ? '#F4601A' : '#E8E2D9', borderRadius: '0 0 4px 0' }} />
         </div>
       </div>
 
@@ -286,7 +328,7 @@ export default function BecomeAHostPage() {
               />
               <span style={{ fontSize: '0.84rem', color: '#6B5F54', lineHeight: 1.6 }}>
                 I have read and agree to SnapReserve's{' '}
-                <a href="/coming-soon?page=host-terms" style={{ color: '#F4601A', fontWeight: 600 }}>Host Terms & Conditions</a>,
+                <a href="/host-agreement" style={{ color: '#F4601A', fontWeight: 600 }}>Host Terms & Conditions</a>,
                 including the host service fee of 3.2% and the cancellation policy framework.
                 I confirm that I have the right to list any properties on this platform.
               </span>

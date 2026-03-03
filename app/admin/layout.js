@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import SignOutButton from './_components/SignOutButton'
 
 async function getCurrentRole() {
   try {
@@ -73,6 +74,14 @@ export default async function AdminLayout({ children }) {
             <div className="nav-label">Main</div>
             <Link href="/admin" className="nav-link"><span className="icon">📊</span>Overview</Link>
             <Link href="/admin/listings" className="nav-link"><span className="icon">🏨</span>Listings</Link>
+            <Link href="/admin/hosts" className="nav-link"><span className="icon">👤</span>Hosts</Link>
+            <Link href="/admin/host-applications" className="nav-link"><span className="icon">📝</span>Host Applications</Link>
+            <Link href="/admin/guests" className="nav-link"><span className="icon">🧳</span>Guests</Link>
+            <Link href="/admin/bookings" className="nav-link"><span className="icon">📅</span>Bookings</Link>
+            <Link href="/admin/reports" className="nav-link"><span className="icon">🚩</span>Reports</Link>
+            <Link href="/admin/refunds" className="nav-link"><span className="icon">💸</span>Refunds</Link>
+            <Link href="/admin/waitlist" className="nav-link"><span className="icon">📩</span>Waitlist</Link>
+            <Link href="/admin/status" className="nav-link"><span className="icon">🟢</span>Status</Link>
           </div>
           {isSuperAdmin && (
             <div className="nav-section">
@@ -83,7 +92,8 @@ export default async function AdminLayout({ children }) {
             </div>
           )}
           <div className="sidebar-footer">
-            <small>Role: {role ?? 'unknown'}</small>
+            <small style={{display:'block', marginBottom:'10px'}}>Role: {role ?? 'unknown'}</small>
+            <SignOutButton />
           </div>
         </aside>
         <div className="admin-main">

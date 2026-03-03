@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import SignOutButton from '../admin/_components/SignOutButton'
 
 export default function SuperAdminLayout({ children }) {
   return (
@@ -17,6 +18,7 @@ export default function SuperAdminLayout({ children }) {
         .nav-link:hover { background:#2A2420; color:#F5F0EB; }
         .icon { font-size:1rem; width:20px; text-align:center; }
         .sa-badge { margin:12px 20px 0; background:rgba(244,96,26,0.12); border:1px solid rgba(244,96,26,0.25); border-radius:8px; padding:8px 12px; font-size:0.7rem; font-weight:700; color:#F4601A; text-transform:uppercase; letter-spacing:0.08em; text-align:center; }
+        .sa-footer { margin-top:auto; padding:16px 12px; border-top:1px solid #2A2420; }
         .sa-main { flex:1; overflow:auto; }
         @media(max-width:768px) { .sa-sidebar{display:none} }
       `}</style>
@@ -30,14 +32,25 @@ export default function SuperAdminLayout({ children }) {
             <div className="nav-label">Admin</div>
             <Link href="/admin" className="nav-link"><span className="icon">📊</span>Overview</Link>
             <Link href="/admin/listings" className="nav-link"><span className="icon">🏨</span>Listings</Link>
+            <Link href="/admin/hosts" className="nav-link"><span className="icon">👤</span>Hosts</Link>
+            <Link href="/admin/guests" className="nav-link"><span className="icon">🧳</span>Guests</Link>
+            <Link href="/admin/bookings" className="nav-link"><span className="icon">📅</span>Bookings</Link>
+            <Link href="/admin/reports" className="nav-link"><span className="icon">🚩</span>Reports</Link>
+            <Link href="/admin/refunds" className="nav-link"><span className="icon">💸</span>Refunds</Link>
+            <Link href="/admin/waitlist" className="nav-link"><span className="icon">📩</span>Waitlist</Link>
           </div>
           <div className="nav-section">
             <div className="nav-label">Super Admin</div>
             <Link href="/superadmin" className="nav-link"><span className="icon">⚡</span>Dashboard</Link>
             <Link href="/superadmin/roles" className="nav-link"><span className="icon">🔑</span>Roles</Link>
             <Link href="/superadmin/audit" className="nav-link"><span className="icon">📋</span>Audit Log</Link>
+            <Link href="/superadmin/invites" className="nav-link"><span className="icon">✉️</span>Invites</Link>
+            <Link href="/superadmin/settings" className="nav-link"><span className="icon">⚙️</span>Settings</Link>
           </div>
           <div className="sa-badge">super_admin</div>
+          <div className="sa-footer">
+            <SignOutButton />
+          </div>
         </aside>
         <div className="sa-main">{children}</div>
       </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 
 export async function GET(request) {
@@ -33,24 +34,20 @@ export async function GET(request) {
     return NextResponse.redirect(`${origin}/login?error=oauth_failed`)
   }
 
-  // Create a profile row for new OAuth users (existing users are left untouched)
+  // Upsert a profile row for OAuth users — use admin client to bypass RLS
   const { user } = data
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (!existing) {
-    await supabase.from('users').insert({
+  const admin = createAdminClient()
+  await admin.from('users').upsert(
+    {
       id: user.id,
       email: user.email,
       full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
       avatar_url: user.user_metadata?.avatar_url ?? '',
       is_host: false,
       is_verified: false,
-    })
-  }
+    },
+    { onConflict: 'id', ignoreDuplicates: true }
+  )
 
   return NextResponse.redirect(`${origin}${next}`)
 }

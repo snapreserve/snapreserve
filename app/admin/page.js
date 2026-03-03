@@ -11,6 +11,10 @@ async function getStats() {
     { count: rejectedCount },
     { count: totalUsers },
     { count: activeListings },
+    { count: waitlistCount },
+    { count: hostsCount },
+    { count: bookingsCount },
+    { count: openReportsCount },
     { data: recentApprovals },
   ] = await Promise.all([
     supabase.from('listing_approvals').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -18,13 +22,17 @@ async function getStats() {
     supabase.from('listing_approvals').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
     supabase.from('users').select('*', { count: 'exact', head: true }).is('deleted_at', null),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),
+    supabase.from('waitlist').select('*', { count: 'exact', head: true }),
+    supabase.from('hosts').select('*', { count: 'exact', head: true }),
+    supabase.from('bookings').select('*', { count: 'exact', head: true }),
+    supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     supabase.from('listing_approvals')
       .select('id, listing_title, host_name, status, submitted_at, listings(type, city)')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: false })
       .limit(6),
   ])
-  return { pendingCount: pendingCount ?? 0, approvedCount: approvedCount ?? 0, rejectedCount: rejectedCount ?? 0, totalUsers: totalUsers ?? 0, activeListings: activeListings ?? 0, recentApprovals: recentApprovals ?? [] }
+  return { pendingCount: pendingCount ?? 0, approvedCount: approvedCount ?? 0, rejectedCount: rejectedCount ?? 0, totalUsers: totalUsers ?? 0, activeListings: activeListings ?? 0, waitlistCount: waitlistCount ?? 0, hostsCount: hostsCount ?? 0, bookingsCount: bookingsCount ?? 0, openReportsCount: openReportsCount ?? 0, recentApprovals: recentApprovals ?? [] }
 }
 
 export default async function AdminOverview() {
@@ -35,7 +43,7 @@ export default async function AdminOverview() {
   if (error === 'mfa_required') redirect('/admin/mfa-verify?next=/admin')
   if (!role) redirect('/login?error=no_admin_role')
 
-  const { pendingCount, approvedCount, rejectedCount, totalUsers, activeListings, recentApprovals } = await getStats()
+  const { pendingCount, approvedCount, rejectedCount, totalUsers, activeListings, waitlistCount, hostsCount, bookingsCount, openReportsCount, recentApprovals } = await getStats()
 
   return (
     <>
@@ -44,7 +52,7 @@ export default async function AdminOverview() {
         .topbar { background:#1A1712; border-bottom:1px solid #2A2420; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
         .topbar h1 { font-size:1.05rem; font-weight:700; color:#F5F0EB; }
         .content { padding:32px; }
-        .stat-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:32px; }
+        .stat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px; margin-bottom:32px; }
         .stat-card { background:#1A1712; border:1px solid #2A2420; border-radius:12px; padding:20px; }
         .stat-num { font-size:1.9rem; font-weight:800; color:#F5F0EB; line-height:1; margin-bottom:6px; }
         .stat-label { font-size:0.74rem; color:#A89880; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; }
@@ -53,6 +61,9 @@ export default async function AdminOverview() {
         .red    { color:#F87171 !important; }
         .blue   { color:#6EA4F4 !important; }
         .yellow { color:#FCD34D !important; }
+        .purple { color:#C084FC !important; }
+        .teal   { color:#2DD4BF !important; }
+        .indigo { color:#818CF8 !important; }
         .section-title { font-size:0.75rem; font-weight:700; color:#6B5E52; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:14px; }
         .table-wrap { background:#1A1712; border:1px solid #2A2420; border-radius:12px; overflow:hidden; margin-bottom:24px; }
         .table-row { display:grid; grid-template-columns:1.5fr 120px 100px 110px 100px; gap:12px; padding:13px 20px; border-bottom:1px solid #2A2420; align-items:center; }
@@ -69,14 +80,15 @@ export default async function AdminOverview() {
         .view-link { font-size:0.76rem; color:#F4601A; text-decoration:none; font-weight:600; }
         .view-link:hover { text-decoration:underline; }
         .empty-row { padding:36px; text-align:center; color:#6B5E52; font-size:0.84rem; }
-        .shortcut-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .shortcut-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
         .shortcut { background:#1A1712; border:1px solid #2A2420; border-radius:12px; padding:20px; text-decoration:none; display:flex; align-items:center; gap:14px; transition:border-color 0.15s; }
         .shortcut:hover { border-color:#F4601A; }
         .sc-icon { width:40px; height:40px; border-radius:10px; background:#2A2420; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
         .sc-label { font-size:0.88rem; font-weight:600; color:#F5F0EB; }
         .sc-desc { font-size:0.74rem; color:#A89880; margin-top:2px; }
-        @media(max-width:1200px) { .stat-grid{grid-template-columns:repeat(3,1fr);} }
+        @media(max-width:1400px) { .stat-grid{grid-template-columns:repeat(3,1fr);} }
         @media(max-width:768px) { .stat-grid{grid-template-columns:repeat(2,1fr);} .content{padding:20px;} .table-row{grid-template-columns:1fr 80px 80px;} .table-row>*:nth-child(4),.table-row>*:nth-child(5){display:none;} .shortcut-grid{grid-template-columns:1fr 1fr;} }
+        @media(max-width:1100px) { .shortcut-grid{grid-template-columns:repeat(2,1fr);} }
       `}</style>
 
       <div className="topbar">
@@ -105,6 +117,22 @@ export default async function AdminOverview() {
             <div className="stat-num blue">{totalUsers}</div>
             <div className="stat-label">Total Users</div>
           </div>
+          <div className="stat-card">
+            <div className="stat-num purple">{waitlistCount}</div>
+            <div className="stat-label">Waitlist</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-num teal">{hostsCount}</div>
+            <div className="stat-label">Total Hosts</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-num indigo">{bookingsCount}</div>
+            <div className="stat-label">Bookings</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-num red">{openReportsCount}</div>
+            <div className="stat-label">Open Reports</div>
+          </div>
         </div>
 
         <div className="section-title">Quick Actions</div>
@@ -120,6 +148,26 @@ export default async function AdminOverview() {
           <Link href="/superadmin/audit" className="shortcut">
             <div className="sc-icon">📋</div>
             <div><div className="sc-label">Audit Log</div><div className="sc-desc">View all admin actions</div></div>
+          </Link>
+          <Link href="/admin/waitlist" className="shortcut">
+            <div className="sc-icon">📩</div>
+            <div><div className="sc-label">Waitlist</div><div className="sc-desc">{waitlistCount} signup{waitlistCount !== 1 ? 's' : ''} so far</div></div>
+          </Link>
+          <Link href="/admin/hosts" className="shortcut">
+            <div className="sc-icon">👤</div>
+            <div><div className="sc-label">Manage Hosts</div><div className="sc-desc">Verify or suspend hosts</div></div>
+          </Link>
+          <Link href="/admin/reports" className="shortcut">
+            <div className="sc-icon">🚩</div>
+            <div><div className="sc-label">Open Reports</div><div className="sc-desc">{openReportsCount} report{openReportsCount !== 1 ? 's' : ''} pending</div></div>
+          </Link>
+          <Link href="/admin/bookings" className="shortcut">
+            <div className="sc-icon">📅</div>
+            <div><div className="sc-label">Bookings</div><div className="sc-desc">View and cancel bookings</div></div>
+          </Link>
+          <Link href="/admin/refunds" className="shortcut">
+            <div className="sc-icon">💸</div>
+            <div><div className="sc-label">Refunds</div><div className="sc-desc">Process refund requests</div></div>
           </Link>
         </div>
 

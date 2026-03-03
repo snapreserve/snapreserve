@@ -1,4 +1,6 @@
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '@/lib/supabase'
+import ReportButton from './ReportButton'
+import BookingSidebar from './BookingSidebar'
 
 const cityImages = {
   'New York': 'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=1200&q=80',
@@ -279,63 +281,12 @@ export default async function PropertyPage({ params }) {
 
         {/* SIDEBAR */}
         <div className="sidebar">
-          <div className="booking-card">
-            <div className="bc-price">${listing.price_per_night} <span>/night</span></div>
-            <div className="bc-rating">★ {listing.rating} · {listing.review_count} reviews</div>
-
-            <div className="date-grid">
-              <div className="date-field">
-                <div className="df-label">Check-in</div>
-                <input className="df-input" type="date" />
-              </div>
-              <div className="date-field">
-                <div className="df-label">Checkout</div>
-                <input className="df-input" type="date" />
-              </div>
-            </div>
-
-            <div className="guests-field">
-              <div className="df-label">Guests</div>
-              <select className="guests-select">
-                {[...Array(listing.max_guests)].map((_, i) => (
-                  <option key={i+1} value={i+1}>{i+1} guest{i > 0 ? 's' : ''}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="price-breakdown">
-              <div className="pb-row">
-                <span className="pb-label">${listing.price_per_night} × 3 nights</span>
-                <span>${listing.price_per_night * 3}</span>
-              </div>
-              <div className="pb-row">
-                <span className="pb-label">Cleaning fee</span>
-                <span>${listing.cleaning_fee}</span>
-              </div>
-              <div className="pb-row">
-                <span className="pb-label">
-                  Service fee <span className="pb-fee">(3.2%)</span>
-                </span>
-                <span>${Math.round(listing.price_per_night * 3 * serviceFeePct)}</span>
-              </div>
-              <div className="pb-row total">
-                <span>Total</span>
-                <span>${Math.round(listing.price_per_night * 3 + listing.cleaning_fee + listing.price_per_night * 3 * serviceFeePct)}</span>
-              </div>
-            </div>
-
-            <button className="book-btn">Reserve now →</button>
-            <div className="book-note">You won't be charged yet</div>
-            {listing.is_instant_book && (
-              <div className="instant-note">⚡ Instant booking — no waiting for approval</div>
-            )}
-
-            <div className="fee-highlight">
-              <div className="fh-title">Industry-lowest 3.2% fee</div>
-              <div className="fh-sub">You save vs. other platforms every time</div>
-            </div>
-          </div>
+          <BookingSidebar listing={listing} />
         </div>
+      </div>
+
+      <div style={{ maxWidth:'1180px', margin:'0 auto', padding:'0 48px 32px', textAlign:'right' }}>
+        <ReportButton listingId={listing.id} />
       </div>
 
       <footer className="footer">

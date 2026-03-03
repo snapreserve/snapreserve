@@ -9,23 +9,52 @@ function supabase() {
   )
 }
 
+const STATUS_TABS = [
+  { key: 'pending',           label: 'Pending',          icon: '⏳' },
+  { key: 'changes_requested', label: 'Changes Requested', icon: '🔄' },
+  { key: 'approved',          label: 'Approved',          icon: '✅' },
+  { key: 'rejected',          label: 'Rejected',          icon: '❌' },
+]
+
 export default function ListingApprovalsPage() {
-  const [approvals, setApprovals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('pending')
-  const [selected, setSelected] = useState(null)
-  const [rejectionReason, setRejectionReason] = useState('')
-  const [acting, setActing] = useState(false)
-  const [toast, setToast] = useState(null)
+  const [approvals, setApprovals]               = useState([])
+  const [changeRequestsMap, setChangeRequestsMap] = useState({})
+  const [loading, setLoading]                   = useState(true)
+  const [activeTab, setActiveTab]               = useState('pending')
+  const [selected, setSelected]                 = useState(null)
+
+  // Rejection
+  const [rejectionReason, setRejectionReason]   = useState('')
+
+  // Request-changes inline form
+  const [requestTarget, setRequestTarget]       = useState(null) // listing_id
+  const [requestNotes, setRequestNotes]         = useState('')
+
+  const [acting, setActing]   = useState(false)
+  const [toast, setToast]     = useState(null)
+
+  // Image lightbox
+  const [lightbox, setLightbox] = useState(null) // image url
 
   const loadData = useCallback(async () => {
     setLoading(true)
     const sb = supabase()
-    const { data } = await sb
-      .from('listing_approvals')
-      .select('*, listings(*)')
-      .order('submitted_at', { ascending: false })
-    setApprovals(data || [])
+    const [{ data: apps }, { data: crs }] = await Promise.all([
+      sb.from('listing_approvals')
+        .select('*, listings(*)')
+        .order('submitted_at', { ascending: false }),
+      sb.from('listing_change_requests')
+        .select('listing_id, notes, admin_email, created_at, status')
+        .order('created_at', { ascending: false }),
+    ])
+    setApprovals(apps || [])
+
+    const crMap = {}
+    ;(crs || []).forEach(cr => {
+      if (!crMap[cr.listing_id]) crMap[cr.listing_id] = []
+      crMap[cr.listing_id].push(cr)
+    })
+    setChangeRequestsMap(crMap)
     setLoading(false)
   }, [])
 
@@ -33,22 +62,29 @@ export default function ListingApprovalsPage() {
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
+    setTimeout(() => setToast(null), 3500)
   }
 
-  async function doAction(listingId, action, reason) {
+  async function doAction(listingId, action, extra = {}) {
     setActing(true)
     try {
       const res = await fetch(`/api/admin/listings/${listingId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, rejection_reason: reason }),
+        body: JSON.stringify({ action, rejection_reason: extra.reason, notes: extra.notes }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Action failed')
-      showToast(action === 'approve' ? 'Listing approved and published!' : action === 'reject' ? 'Listing rejected.' : 'Changes requested.')
+      const messages = {
+        approve:          'Listing approved — host can now go live.',
+        reject:           'Listing rejected.',
+        request_changes:  'Changes requested. Host has been notified.',
+      }
+      showToast(messages[action] || 'Done.')
       setSelected(null)
       setRejectionReason('')
+      setRequestTarget(null)
+      setRequestNotes('')
       await loadData()
     } catch (err) {
       showToast(err.message, 'error')
@@ -58,15 +94,92 @@ export default function ListingApprovalsPage() {
   }
 
   function fmt(d) {
+    if (!d) return '—'
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
   const stats = {
-    pending: approvals.filter(a => a.status === 'pending').length,
-    approved: approvals.filter(a => a.status === 'approved').length,
-    rejected: approvals.filter(a => a.status === 'rejected').length,
+    pending:           approvals.filter(a => a.status === 'pending').length,
+    changes_requested: approvals.filter(a => a.status === 'changes_requested').length,
+    approved:          approvals.filter(a => a.status === 'approved').length,
+    rejected:          approvals.filter(a => a.status === 'rejected').length,
   }
   const filtered = approvals.filter(a => a.status === activeTab)
+
+  function ActionButtons({ a }) {
+    const isPending  = a.status === 'pending'
+    const isChanges  = a.status === 'changes_requested'
+    const showActions = isPending || isChanges
+    if (!showActions) return null
+
+    const showRequestForm = requestTarget === a.listing_id
+
+    return (
+      <div>
+        <div className="action-row">
+          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting}>
+            {acting ? 'Processing…' : '✅ Approve'}
+          </button>
+
+          <button
+            className="btn-changes"
+            onClick={() => {
+              if (showRequestForm) { setRequestTarget(null); setRequestNotes('') }
+              else { setRequestTarget(a.listing_id); setRequestNotes('') }
+            }}
+            disabled={acting}
+          >
+            🔄 {showRequestForm ? 'Cancel' : 'Request Changes'}
+          </button>
+
+          <div className="reject-wrap">
+            <input
+              className="reject-input"
+              placeholder="Rejection reason (required)…"
+              value={rejectionReason}
+              onChange={e => setRejectionReason(e.target.value)}
+            />
+            <button
+              className="btn-reject"
+              onClick={() => doAction(a.listing_id, 'reject', { reason: rejectionReason })}
+              disabled={acting || !rejectionReason.trim()}
+            >
+              ❌ Reject
+            </button>
+          </div>
+        </div>
+
+        {showRequestForm && (
+          <div className="request-form">
+            <div className="rf-label">Notes for host <span style={{color:'#F87171'}}>*</span></div>
+            <textarea
+              className="rf-textarea"
+              placeholder="Explain exactly what needs to be fixed — e.g. photos are too dark, description needs more detail, price seems incorrect…"
+              value={requestNotes}
+              onChange={e => setRequestNotes(e.target.value)}
+              rows={4}
+              autoFocus
+            />
+            <div style={{display:'flex',gap:'8px',marginTop:'10px'}}>
+              <button
+                className="btn-send-request"
+                onClick={() => doAction(a.listing_id, 'request_changes', { notes: requestNotes })}
+                disabled={acting || !requestNotes.trim()}
+              >
+                {acting ? 'Sending…' : '📤 Send request to host'}
+              </button>
+              <button
+                className="btn-cancel-request"
+                onClick={() => { setRequestTarget(null); setRequestNotes('') }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -100,6 +213,7 @@ export default function ListingApprovalsPage() {
         .pill.approved { background:rgba(74,222,128,0.1); color:#4ADE80; }
         .pill.rejected { background:rgba(248,113,113,0.1); color:#F87171; }
         .pill.changes_requested { background:rgba(96,165,250,0.1); color:#93C5FD; }
+        .pill.live { background:rgba(74,222,128,0.15); color:#4ADE80; }
         .chev { color:#6B5E52; font-size:0.8rem; margin-left:4px; }
         .detail { border-top:1px solid #2A2420; margin-top:16px; padding-top:18px; }
         .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
@@ -108,30 +222,75 @@ export default function ListingApprovalsPage() {
         .di-val { font-size:0.86rem; font-weight:600; color:#F5F0EB; }
         .desc-box { background:#0F0D0A; border-radius:8px; padding:12px; margin-bottom:16px; }
         .desc-box p { font-size:0.82rem; color:#A89880; line-height:1.7; }
-        .action-row { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; }
-        .btn-approve { background:#16A34A; color:white; border:none; border-radius:9px; padding:11px 22px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.15s; }
+
+        /* Images */
+        .images-section { margin-bottom:16px; }
+        .images-label { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B5E52; margin-bottom:8px; }
+        .images-row { display:flex; gap:8px; flex-wrap:wrap; }
+        .img-thumb { width:100px; height:72px; border-radius:8px; overflow:hidden; cursor:pointer; border:1px solid rgba(255,255,255,0.08); transition:all 0.15s; flex-shrink:0; }
+        .img-thumb:hover { border-color:#F4601A; transform:scale(1.03); }
+        .img-thumb img { width:100%; height:100%; object-fit:cover; }
+        .preview-link { display:inline-flex; align-items:center; gap:6px; background:rgba(244,96,26,0.08); border:1px solid rgba(244,96,26,0.2); color:#F4601A; padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; text-decoration:none; margin-bottom:16px; transition:background 0.15s; }
+        .preview-link:hover { background:rgba(244,96,26,0.15); }
+
+        /* Actions */
+        .action-row { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-bottom:0; }
+        .btn-approve { background:#16A34A; color:white; border:none; border-radius:9px; padding:11px 22px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.15s; white-space:nowrap; }
         .btn-approve:hover { background:#15803D; }
         .btn-approve:disabled { opacity:0.5; cursor:not-allowed; }
-        .btn-changes { background:rgba(96,165,250,0.1); border:1px solid rgba(96,165,250,0.2); color:#93C5FD; border-radius:9px; padding:11px 22px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        .btn-changes { background:rgba(96,165,250,0.1); border:1px solid rgba(96,165,250,0.2); color:#93C5FD; border-radius:9px; padding:11px 22px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
         .btn-changes:hover { background:rgba(96,165,250,0.2); }
+        .btn-changes:disabled { opacity:0.5; cursor:not-allowed; }
         .reject-wrap { flex:1; min-width:240px; display:flex; gap:8px; }
         .reject-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:9px; padding:10px 13px; font-size:0.83rem; font-family:inherit; color:#F5F0EB; outline:none; }
         .reject-input:focus { border-color:#F87171; }
         .btn-reject { background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.25); color:#F87171; border-radius:9px; padding:10px 18px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
         .btn-reject:hover { background:rgba(248,113,113,0.2); }
         .btn-reject:disabled { opacity:0.5; cursor:not-allowed; }
+
+        /* Request changes form */
+        .request-form { margin-top:14px; background:#0F0D0A; border:1px solid rgba(96,165,250,0.2); border-radius:10px; padding:16px; }
+        .rf-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#93C5FD; margin-bottom:8px; }
+        .rf-textarea { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:12px; font-size:0.84rem; font-family:inherit; color:#F5F0EB; outline:none; resize:vertical; min-height:90px; }
+        .rf-textarea:focus { border-color:#93C5FD; }
+        .btn-send-request { background:#93C5FD; color:#0F0D0A; border:none; border-radius:8px; padding:10px 20px; font-size:0.84rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        .btn-send-request:disabled { opacity:0.5; cursor:not-allowed; }
+        .btn-cancel-request { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#A89880; border-radius:8px; padding:10px 16px; font-size:0.84rem; font-weight:600; cursor:pointer; font-family:inherit; }
+
+        /* Change request history */
+        .cr-history { background:rgba(96,165,250,0.04); border:1px solid rgba(96,165,250,0.15); border-radius:10px; padding:14px; margin-bottom:16px; }
+        .cr-history-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#93C5FD; margin-bottom:10px; }
+        .cr-item { padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid rgba(96,165,250,0.1); }
+        .cr-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+        .cr-notes { font-size:0.84rem; color:#F5F0EB; line-height:1.65; margin-bottom:4px; }
+        .cr-meta { font-size:0.72rem; color:#6B5E52; }
+
+        /* Status panels */
         .info-approved { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.15); border-radius:10px; padding:14px; display:flex; align-items:center; gap:10px; }
         .info-rejected { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.15); border-radius:10px; padding:14px; }
         .empty { text-align:center; padding:56px; color:#6B5E52; }
         .empty-icon { font-size:2.2rem; margin-bottom:10px; }
-        .toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:12px; font-size:0.86rem; font-weight:600; z-index:9999; animation:fadeIn 0.2s; }
+        .toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:12px; font-size:0.86rem; font-weight:600; z-index:9999; animation:fadeIn 0.2s; max-width:360px; }
         .toast.success { background:#16A34A; color:white; }
         .toast.error { background:#DC2626; color:white; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @media(max-width:768px) { .content{padding:20px;} .stats-row{grid-template-columns:repeat(2,1fr);} .detail-grid{grid-template-columns:1fr;} .card-meta{display:none;} .topbar{padding:14px 20px;} }
+
+        /* Lightbox */
+        .lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center; cursor:zoom-out; }
+        .lightbox img { max-width:90vw; max-height:88vh; border-radius:10px; object-fit:contain; }
+        .lightbox-close { position:fixed; top:20px; right:24px; color:white; font-size:1.6rem; cursor:pointer; background:none; border:none; line-height:1; }
+
+        @media(max-width:768px) { .content{padding:20px;} .stats-row{grid-template-columns:repeat(2,1fr);} .detail-grid{grid-template-columns:1fr;} .card-meta{display:none;} .topbar{padding:14px 20px;} .action-row{flex-direction:column;} .reject-wrap{min-width:unset;} }
       `}</style>
 
       {toast && <div className={`toast ${toast.type}`}>{toast.msg}</div>}
+
+      {lightbox && (
+        <div className="lightbox" onClick={() => setLightbox(null)}>
+          <button className="lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+          <img src={lightbox} alt="Listing photo" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
 
       <div className="topbar">
         <h1>Listing Approvals</h1>
@@ -141,16 +300,22 @@ export default function ListingApprovalsPage() {
       <div className="content">
         <div className="stats-row">
           <div className="stat"><div className="stat-num" style={{color:'#FCD34D'}}>{stats.pending}</div><div className="stat-label">Pending</div></div>
+          <div className="stat"><div className="stat-num" style={{color:'#93C5FD'}}>{stats.changes_requested}</div><div className="stat-label">Changes Requested</div></div>
           <div className="stat"><div className="stat-num" style={{color:'#4ADE80'}}>{stats.approved}</div><div className="stat-label">Approved</div></div>
           <div className="stat"><div className="stat-num" style={{color:'#F87171'}}>{stats.rejected}</div><div className="stat-label">Rejected</div></div>
-          <div className="stat"><div className="stat-num" style={{color:'#F4601A'}}>{approvals.length}</div><div className="stat-label">Total</div></div>
         </div>
 
         <div className="tabs">
-          {[['pending','⏳'],['approved','✅'],['rejected','❌']].map(([tab, icon]) => (
-            <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`} onClick={() => { setActiveTab(tab); setSelected(null) }}>
-              {icon} {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {tab === 'pending' && stats.pending > 0 && <span className="tab-badge">{stats.pending}</span>}
+          {STATUS_TABS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              className={`tab ${activeTab === key ? 'active' : ''}`}
+              onClick={() => { setActiveTab(key); setSelected(null); setRequestTarget(null) }}
+            >
+              {icon} {label}
+              {(key === 'pending' || key === 'changes_requested') && stats[key] > 0 && (
+                <span className="tab-badge">{stats[key]}</span>
+              )}
             </button>
           ))}
         </div>
@@ -159,13 +324,16 @@ export default function ListingApprovalsPage() {
           <div className="empty"><div className="empty-icon">⏳</div><div>Loading...</div></div>
         ) : filtered.length === 0 ? (
           <div className="empty">
-            <div className="empty-icon">{activeTab === 'pending' ? '📭' : activeTab === 'approved' ? '✅' : '❌'}</div>
-            <div>No {activeTab} submissions</div>
+            <div className="empty-icon">{STATUS_TABS.find(t => t.key === activeTab)?.icon}</div>
+            <div>No {activeTab.replace('_', ' ')} submissions</div>
           </div>
         ) : (
           <div className="list">
             {filtered.map(a => {
               const isOpen = selected?.id === a.id
+              const images = Array.isArray(a.listings?.images) ? a.listings.images.filter(Boolean) : []
+              const crHistory = changeRequestsMap[a.listing_id] || []
+
               return (
                 <div key={a.id} className={`card ${isOpen ? 'open' : ''}`}>
                   <div className="card-top" onClick={() => setSelected(isOpen ? null : a)}>
@@ -180,23 +348,45 @@ export default function ListingApprovalsPage() {
                       </div>
                     </div>
                     <div className="card-right">
-                      <span className={`pill ${a.status}`}>{a.status.replace('_', ' ')}</span>
+                      <span className={`pill ${a.status}`}>{a.status.replace(/_/g, ' ')}</span>
                       <span className="chev">{isOpen ? '▲' : '▼'}</span>
                     </div>
                   </div>
 
                   {isOpen && (
                     <div className="detail">
+                      {/* Preview link */}
+                      <a
+                        href={`/listings/${a.listing_id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="preview-link"
+                      >
+                        👁 Preview as guest →
+                      </a>
+
+                      {/* Detail grid */}
                       <div className="detail-grid">
                         <div className="di"><div className="di-label">Title</div><div className="di-val">{a.listings?.title || a.listing_title || '—'}</div></div>
                         <div className="di"><div className="di-label">Type</div><div className="di-val">{a.listings?.type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
-                        <div className="di"><div className="di-label">Location</div><div className="di-val">{a.listings?.city || '—'}{a.listings?.state ? `, ${a.listings.state}` : ''}</div></div>
+                        <div className="di"><div className="di-label">Property type</div><div className="di-val">{a.listings?.property_type || '—'}</div></div>
+                        <div className="di"><div className="di-label">Location</div><div className="di-val">{a.listings?.city || '—'}{a.listings?.state ? `, ${a.listings.state}` : ''}{a.listings?.zip_code ? ` ${a.listings.zip_code}` : ''}</div></div>
                         <div className="di"><div className="di-label">Price / night</div><div className="di-val">{a.listings?.price_per_night ? `$${a.listings.price_per_night}` : '—'}</div></div>
-                        <div className="di"><div className="di-label">Host</div><div className="di-val">{a.host_name || '—'}</div></div>
-                        <div className="di"><div className="di-label">Host email</div><div className="di-val">{a.host_email}</div></div>
+                        <div className="di"><div className="di-label">Cleaning fee</div><div className="di-val">{a.listings?.cleaning_fee != null ? `$${a.listings.cleaning_fee}` : '—'}</div></div>
                         <div className="di"><div className="di-label">Max guests</div><div className="di-val">{a.listings?.max_guests ?? '—'}</div></div>
+                        <div className="di"><div className="di-label">Bedrooms / Baths</div><div className="di-val">{a.listings?.bedrooms ?? '—'} bd · {a.listings?.bathrooms ?? '—'} ba</div></div>
+                        <div className="di"><div className="di-label">Min nights</div><div className="di-val">{a.listings?.min_nights ?? '—'}</div></div>
+                        <div className="di"><div className="di-label">Instant book</div><div className="di-val">{a.listings?.is_instant_book ? '⚡ Yes' : 'No'}</div></div>
+                        <div className="di"><div className="di-label">Host</div><div className="di-val">{a.host_name || '—'}</div></div>
                         <div className="di"><div className="di-label">Submitted</div><div className="di-val">{fmt(a.submitted_at)}</div></div>
                       </div>
+
+                      {a.listings?.amenities && (
+                        <div className="desc-box">
+                          <div className="di-label" style={{marginBottom:'6px'}}>Amenities</div>
+                          <p>{a.listings.amenities}</p>
+                        </div>
+                      )}
 
                       {a.listings?.description && (
                         <div className="desc-box">
@@ -205,39 +395,59 @@ export default function ListingApprovalsPage() {
                         </div>
                       )}
 
-                      {a.status === 'pending' && (
-                        <div className="action-row">
-                          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting}>
-                            {acting ? 'Processing…' : '✅ Approve & publish'}
-                          </button>
-                          <button className="btn-changes" onClick={() => doAction(a.listing_id, 'request_changes')} disabled={acting}>
-                            🔄 Request changes
-                          </button>
-                          <div className="reject-wrap">
-                            <input
-                              className="reject-input"
-                              placeholder="Rejection reason (required)…"
-                              value={rejectionReason}
-                              onChange={e => setRejectionReason(e.target.value)}
-                            />
-                            <button className="btn-reject" onClick={() => doAction(a.listing_id, 'reject', rejectionReason)} disabled={acting || !rejectionReason.trim()}>
-                              ❌ Reject
-                            </button>
+                      {a.listings?.house_rules && (
+                        <div className="desc-box">
+                          <div className="di-label" style={{marginBottom:'6px'}}>House rules</div>
+                          <p>{a.listings.house_rules}</p>
+                        </div>
+                      )}
+
+                      {/* Images */}
+                      {images.length > 0 && (
+                        <div className="images-section">
+                          <div className="images-label">Photos ({images.length})</div>
+                          <div className="images-row">
+                            {images.map((url, i) => (
+                              <div key={i} className="img-thumb" onClick={e => { e.stopPropagation(); setLightbox(url) }}>
+                                <img src={url} alt={`Photo ${i + 1}`} />
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
 
+                      {/* Change request history */}
+                      {crHistory.length > 0 && (
+                        <div className="cr-history">
+                          <div className="cr-history-title">🔄 Change request history ({crHistory.length})</div>
+                          {crHistory.map((cr, i) => (
+                            <div key={i} className="cr-item">
+                              <div className="cr-notes">{cr.notes}</div>
+                              <div className="cr-meta">
+                                {fmt(cr.created_at)} · by {cr.admin_email}
+                                {cr.status === 'resolved' && <span style={{color:'#4ADE80',marginLeft:'8px'}}>✓ Resolved</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Action buttons for pending + changes_requested */}
+                      <ActionButtons a={a} />
+
+                      {/* Approved panel */}
                       {a.status === 'approved' && (
                         <div className="info-approved">
                           <div style={{fontSize:'1.2rem'}}>✅</div>
                           <div>
-                            <div style={{fontSize:'0.86rem',fontWeight:700,color:'#4ADE80'}}>Approved and live</div>
+                            <div style={{fontSize:'0.86rem',fontWeight:700,color:'#4ADE80'}}>Approved — waiting for host to go live</div>
                             {a.reviewed_at && <div style={{fontSize:'0.74rem',color:'#A89880'}}>Reviewed {fmt(a.reviewed_at)}</div>}
                           </div>
-                          <a href={`/listings/${a.listing_id}`} style={{marginLeft:'auto',background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.2)',color:'#4ADE80',padding:'6px 14px',borderRadius:'8px',fontSize:'0.76rem',fontWeight:700,textDecoration:'none'}}>View →</a>
+                          <a href={`/listings/${a.listing_id}`} target="_blank" rel="noreferrer" style={{marginLeft:'auto',background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.2)',color:'#4ADE80',padding:'6px 14px',borderRadius:'8px',fontSize:'0.76rem',fontWeight:700,textDecoration:'none'}}>Preview →</a>
                         </div>
                       )}
 
+                      {/* Rejected panel */}
                       {a.status === 'rejected' && (
                         <div className="info-rejected">
                           <div style={{fontSize:'0.72rem',fontWeight:700,color:'#F87171',textTransform:'uppercase',marginBottom:'4px'}}>Rejection reason</div>

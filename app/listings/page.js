@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 const cityImages = {
@@ -137,10 +137,10 @@ export default function ListingsPage() {
 
       {/* NAV */}
       <nav className="nav">
-        <a href="/" className="logo">Snap<span>Reserve</span></a>
+        <a href="/home" className="logo">Snap<span>Reserve</span></a>
         <div className="nav-links">
           <a href="/listings" className="nav-link">Stays</a>
-          <a href="/support" className="nav-link">Support</a>
+          <a href="/coming-soon?page=support" className="nav-link">Support</a>
         </div>
         <div style={{display:'flex',gap:'8px'}}>
           <a href="/login" className="nav-btn outline">Log in</a>

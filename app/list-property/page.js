@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 const STEPS = [
   { id: 1, label: 'Property type' },
@@ -58,6 +58,8 @@ export default function ListPropertyPage() {
   const [step, setStep] = useState(1)
   const [hostType, setHostType] = useState('private_stay') // 'private_stay' or 'hotel'
   const [saving, setSaving] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
+  const [draftId, setDraftId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const fileInputRef = useRef(null)
@@ -122,6 +124,57 @@ export default function ListPropertyPage() {
     update('photoUrls', form.photoUrls.filter((_, i) => i !== index))
   }
 
+  async function handleSaveDraft() {
+    setSaving(true)
+    setDraftSaved(false)
+    try {
+      const payload = {
+        host_id:         user.id,
+        status:          'draft',
+        type:            hostType,
+        property_type:   form.propertyType || null,
+        title:           form.title || null,
+        description:     form.description || null,
+        address:         form.address || null,
+        city:            form.city || null,
+        state:           form.state || null,
+        zip_code:        form.zip || null,
+        max_guests:      form.guests,
+        bedrooms:        form.bedrooms,
+        bathrooms:       form.bathrooms,
+        amenities:       form.amenities.length > 0 ? form.amenities.join(', ') : null,
+        house_rules:     form.rules || null,
+        price_per_night: form.pricePerNight ? parseFloat(form.pricePerNight) : null,
+        cleaning_fee:    form.cleaningFee ? parseFloat(form.cleaningFee) : 0,
+        min_nights:      form.minNights,
+        is_instant_book: form.instantBook,
+        is_active:       false,
+      }
+
+      let error
+      if (draftId) {
+        // Update existing draft
+        ;({ error } = await supabase.from('listings').update(payload).eq('id', draftId))
+      } else {
+        // Create new draft
+        const { data, error: insertError } = await supabase
+          .from('listings')
+          .insert({ ...payload, rating: 0, review_count: 0 })
+          .select('id')
+          .single()
+        error = insertError
+        if (data?.id) setDraftId(data.id)
+      }
+
+      if (error) throw error
+      setDraftSaved(true)
+      setTimeout(() => setDraftSaved(false), 3000)
+    } catch (err) {
+      alert(err?.message || 'Failed to save draft.')
+    }
+    setSaving(false)
+  }
+
   async function handleSubmit() {
     setSubmitting(true)
     try {
@@ -141,35 +194,46 @@ export default function ListPropertyPage() {
         }
       }
 
-      // Insert listing as pending
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .insert({
-          host_id: user.id,
-          title: form.title,
-          description: form.description,
-          type: hostType,
-          property_type: form.propertyType,
-          address: form.address,
-          city: form.city,
-          state: form.state,
-          zip_code: form.zip,
-          max_guests: form.guests,
-          bedrooms: form.bedrooms,
-          bathrooms: form.bathrooms,
-          amenities: form.amenities.join(', '),
-          house_rules: form.rules,
-          price_per_night: parseFloat(form.pricePerNight),
-          cleaning_fee: parseFloat(form.cleaningFee) || 0,
-          min_nights: form.minNights,
-          is_instant_book: form.instantBook,
-          is_active: false,
-          images: uploadedUrls,
-          rating: 0,
-          review_count: 0,
-        })
-        .select()
-        .single()
+      // Insert or update listing as pending_review
+      const listingPayload = {
+        host_id: user.id,
+        title: form.title,
+        description: form.description,
+        type: hostType,
+        property_type: form.propertyType,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        zip_code: form.zip,
+        max_guests: form.guests,
+        bedrooms: form.bedrooms,
+        bathrooms: form.bathrooms,
+        amenities: form.amenities.join(', '),
+        house_rules: form.rules,
+        price_per_night: parseFloat(form.pricePerNight),
+        cleaning_fee: parseFloat(form.cleaningFee) || 0,
+        min_nights: form.minNights,
+        is_instant_book: form.instantBook,
+        is_active: false,
+        images: uploadedUrls,
+        status: 'pending_review',
+      }
+
+      let listing, listingError
+      if (draftId) {
+        ;({ data: listing, error: listingError } = await supabase
+          .from('listings')
+          .update(listingPayload)
+          .eq('id', draftId)
+          .select()
+          .single())
+      } else {
+        ;({ data: listing, error: listingError } = await supabase
+          .from('listings')
+          .insert({ ...listingPayload, rating: 0, review_count: 0 })
+          .select()
+          .single())
+      }
 
       if (listingError) throw listingError
 
@@ -191,7 +255,7 @@ export default function ListPropertyPage() {
 
       setSubmitted(true)
     } catch (err) {
-      alert('Something went wrong. Please try again.')
+      alert(err?.message || 'Something went wrong. Please try again.')
       console.error(err)
     }
     setSubmitting(false)
@@ -226,8 +290,9 @@ export default function ListPropertyPage() {
         .logo { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; color:white; text-decoration:none; }
         .logo span { color:#F4601A; }
         .topbar-right { display:flex; align-items:center; gap:16px; }
-        .save-btn { background:none; border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.6); padding:8px 18px; border-radius:8px; font-size:0.82rem; cursor:pointer; font-family:inherit; }
-        .save-btn:hover { border-color:rgba(255,255,255,0.3); color:white; }
+        .save-btn { background:none; border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.6); padding:8px 18px; border-radius:8px; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+        .save-btn:hover:not(:disabled) { border-color:rgba(255,255,255,0.3); color:white; }
+        .save-btn:disabled { opacity:0.6; cursor:not-allowed; }
         .exit-btn { background:#F4601A; color:white; border:none; padding:8px 20px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; }
 
         /* LAYOUT */
@@ -363,7 +428,9 @@ export default function ListPropertyPage() {
       <div className="topbar">
         <a href="/" className="logo">Snap<span>Reserve™</span></a>
         <div className="topbar-right">
-          <button className="save-btn">Save draft</button>
+          <button className="save-btn" onClick={handleSaveDraft} disabled={saving}>
+            {draftSaved ? '✓ Saved' : saving ? 'Saving…' : 'Save draft'}
+          </button>
           <a href="/dashboard" className="exit-btn">Exit</a>
         </div>
       </div>

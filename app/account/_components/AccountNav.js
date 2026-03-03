@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 const NAV = [
   { href: '/account/profile',       icon: '👤', label: 'Profile' },
