@@ -113,24 +113,21 @@ export default function GuestDashboard() {
         {/* QUICK LINKS */}
         <div className="section-title">Your account</div>
         <div className="quick-grid">
-          <div className="quick-card">
+          <a href="/account/trips" className="quick-card">
             <div className="qc-icon">🧳</div>
             <div className="qc-title">My trips</div>
             <div className="qc-sub">View and manage your upcoming and past bookings</div>
-            <div className="qc-badge">Coming soon</div>
-          </div>
-          <div className="quick-card">
+          </a>
+          <a href="/account/saved" className="quick-card">
             <div className="qc-icon">❤️</div>
             <div className="qc-title">Saved places</div>
             <div className="qc-sub">Properties you've liked and want to revisit</div>
-            <div className="qc-badge">Coming soon</div>
-          </div>
-          <div className="quick-card">
+          </a>
+          <a href="/account/messages" className="quick-card">
             <div className="qc-icon">💬</div>
             <div className="qc-title">Messages</div>
             <div className="qc-sub">Chat with hosts about your stays</div>
-            <div className="qc-badge">Coming soon</div>
-          </div>
+          </a>
         </div>
 
         <div style={{textAlign:'center',paddingTop:'8px'}}>
