@@ -23,7 +23,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json().catch(() => ({}))
   const { action } = body
 
-  if (!['go_live', 'unpublish', 'resubmit'].includes(action)) {
+  if (!['go_live', 'unpublish', 'resubmit', 'submit_explanation'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
 
@@ -31,7 +31,7 @@ export async function PATCH(request, { params }) {
 
   const { data: listing } = await admin
     .from('listings')
-    .select('id, host_id, status, is_active')
+    .select('id, host_id, status, is_active, suspension_reason')
     .eq('id', id)
     .single()
 
@@ -50,6 +50,40 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: 'Only live listings can be unpublished' }, { status: 400 })
     }
     updatePayload = { status: 'approved', is_active: false }
+  } else if (action === 'submit_explanation') {
+    if (listing.status !== 'suspended') {
+      return NextResponse.json({ error: 'Only suspended listings can submit an explanation' }, { status: 400 })
+    }
+    const explanation = body.explanation?.trim()
+    if (!explanation) return NextResponse.json({ error: 'explanation is required' }, { status: 400 })
+
+    updatePayload = {
+      host_explanation:    explanation,
+      host_explanation_at: new Date().toISOString(),
+      status:              'pending_reapproval',
+    }
+
+    // Re-open any related reports so they resurface in the admin queue
+    const { data: relatedReports } = await admin
+      .from('reports')
+      .select('id')
+      .eq('target_id', id)
+      .eq('target_type', 'listing')
+      .in('status', ['under_review', 'escalated'])
+
+    if (relatedReports?.length) {
+      const now = new Date().toISOString()
+      for (const rep of relatedReports) {
+        await admin.from('reports').update({ status: 'open', updated_at: now }).eq('id', rep.id)
+        await admin.from('report_activity').insert({
+          report_id:   rep.id,
+          actor_id:    user.id,
+          actor_email: user.email,
+          action:      'host_submitted_explanation',
+          detail:      explanation.slice(0, 120),
+        }).catch(() => {})
+      }
+    }
   } else if (action === 'resubmit') {
     if (listing.status !== 'changes_requested') {
       return NextResponse.json({ error: 'Only listings with changes requested can be resubmitted' }, { status: 400 })

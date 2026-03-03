@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import ReportButton from './ReportButton'
 import BookingSidebar from './BookingSidebar'
+import MessageHostButton from './MessageHostButton'
 
 const cityImages = {
   'New York': 'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=1200&q=80',
@@ -205,6 +206,9 @@ export default async function PropertyPage({ params }) {
                 <div className="host-meta">Member since 2026</div>
                 {host?.is_verified && <div className="host-verified">✓ Verified host</div>}
               </div>
+            </div>
+            <div style={{ marginTop: '14px' }}>
+              <MessageHostButton listingId={listing.id} />
             </div>
           </div>
 

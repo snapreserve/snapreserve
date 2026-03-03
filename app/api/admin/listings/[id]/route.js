@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
 import { getAdminSession } from '@/lib/get-admin-session'
+import { notifyHost } from '@/lib/notify-host'
 
 export async function PATCH(request, { params }) {
   const { user, role, error } = await getAdminSession()
@@ -14,7 +15,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, rejection_reason, reason, notes } = body
 
-  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate']
+  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate', 'reject_permanently']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
@@ -68,11 +69,17 @@ export async function PATCH(request, { params }) {
     updatePayload.suspended_at = now
     updatePayload.suspension_reason = reason
     updatePayload.is_active = false
+    updatePayload.status = 'suspended'
   } else if (action === 'reactivate') {
     updatePayload.suspended_at = null
     updatePayload.suspension_reason = null
+    updatePayload.host_explanation = null
+    updatePayload.host_explanation_at = null
     updatePayload.is_active = true
     updatePayload.status = 'approved'
+  } else if (action === 'reject_permanently') {
+    updatePayload.is_active = false
+    updatePayload.status = 'rejected'
   }
 
   const { error: updateError } = await adminClient
@@ -102,6 +109,33 @@ export async function PATCH(request, { params }) {
       .update(approvalUpdate)
       .eq('listing_id', id)
       .eq('status', 'pending')
+  }
+
+  // Notify host for suspension / reactivation / permanent rejection
+  if (action === 'suspend') {
+    await notifyHost({
+      hostUserId: listing.host_id,
+      listingId:  id,
+      type:       'suspension',
+      subject:    `Your listing has been suspended`,
+      body:       `Your listing "${listing.title}" has been suspended.\n\nReason: ${reason}\n\nYou may submit an explanation from your host dashboard.`,
+    })
+  } else if (action === 'reactivate') {
+    await notifyHost({
+      hostUserId: listing.host_id,
+      listingId:  id,
+      type:       'reactivation',
+      subject:    `Your listing has been reactivated`,
+      body:       `Your listing "${listing.title}" has been reviewed and reactivated. You can go live again from your host dashboard.`,
+    })
+  } else if (action === 'reject_permanently') {
+    await notifyHost({
+      hostUserId: listing.host_id,
+      listingId:  id,
+      type:       'rejection',
+      subject:    `Your listing has been permanently removed`,
+      body:       `Your listing "${listing.title}" has been permanently removed from SnapReserve following a policy review.\n\nPlease contact support if you have questions.`,
+    })
   }
 
   // Update host's listing_status

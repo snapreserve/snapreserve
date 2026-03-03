@@ -1,9 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+import stripe from '@/lib/stripe'
 
 export async function POST(request) {
   try {
@@ -51,12 +49,13 @@ export async function POST(request) {
     // Fetch listing
     const { data: listing } = await admin
       .from('listings')
-      .select('id, title, city, state, host_id, price_per_night, cleaning_fee, max_guests, is_active, is_instant_book, cancellation_policy, rating, review_count')
+      .select('id, title, city, state, host_id, price_per_night, cleaning_fee, max_guests, is_active, status, is_instant_book, cancellation_policy, rating, review_count')
       .eq('id', listing_id)
       .single()
 
     if (!listing) return Response.json({ error: 'Listing not found.' }, { status: 404 })
     if (!listing.is_active) return Response.json({ error: 'This listing is no longer available.' }, { status: 400 })
+    if (listing.status === 'suspended') return Response.json({ error: 'This listing is temporarily unavailable.' }, { status: 400 })
 
     const guestsCount = Math.min(Number(guests) || 1, listing.max_guests)
 

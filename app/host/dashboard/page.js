@@ -1,7 +1,440 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+
+const MSG_TYPE_CFG = {
+  info:         { label: 'Message',      color: '#93C5FD', bg: 'rgba(96,165,250,0.1)'   },
+  warning:      { label: 'Warning',      color: '#FCD34D', bg: 'rgba(251,191,36,0.1)'   },
+  suspension:   { label: 'Suspension',   color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
+  reactivation: { label: 'Reactivated',  color: '#4ADE80', bg: 'rgba(74,222,128,0.1)'  },
+  rejection:    { label: 'Rejection',    color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
+}
+
+function fmtMsg(d) {
+  if (!d) return ''
+  const date = new Date(d), now = new Date(), diff = now - date
+  if (diff < 60000)    return 'just now'
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`
+  if (diff < 86400000) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function HostInbox({ userId, onAdminRead, unreadAdminCount = 0 }) {
+  const [tab,          setTab]          = useState('inbox')
+  const [convs,        setConvs]        = useState([])
+  const [convLoading,  setConvLoading]  = useState(true)
+  const [activeId,     setActiveId]     = useState(null)
+  const [thread,       setThread]       = useState(null)
+  const [threadLoading,setThreadLoading]= useState(false)
+  const [draft,        setDraft]        = useState('')
+  const [sending,      setSending]      = useState(false)
+  const [toast,        setToast]        = useState(null)
+  const bottomRef = useRef(null)
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  useEffect(() => {
+    if (!userId) return
+    fetch('/api/messages')
+      .then(r => r.json())
+      .then(data => {
+        setConvs(data.conversations || [])
+        setConvLoading(false)
+      })
+  }, [userId])
+
+  async function openThread(convId) {
+    setActiveId(convId)
+    setThreadLoading(true)
+    const res  = await fetch(`/api/messages/${convId}`)
+    const data = await res.json()
+    setThread(data)
+    setThreadLoading(false)
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+    setConvs(prev => prev.map(c =>
+      c.id === convId ? { ...c, host_unread_count: 0 } : c
+    ))
+  }
+
+  async function sendMsg(e) {
+    e?.preventDefault()
+    if (!draft.trim() || !activeId || sending) return
+    setSending(true)
+    const res = await fetch(`/api/messages/${activeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: draft.trim() }),
+    })
+    const msg = await res.json()
+    setSending(false)
+    if (res.ok) {
+      setThread(t => ({ ...t, messages: [...(t?.messages || []), msg] }))
+      setDraft('')
+      setConvs(prev => prev.map(c => c.id === activeId
+        ? { ...c, last_message_at: msg.created_at, last_message_preview: msg.body.slice(0, 80) }
+        : c
+      ))
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    } else {
+      showToast(msg.error || 'Failed to send.', 'error')
+    }
+  }
+
+  async function doBlock(conv) {
+    const action = conv.status === 'blocked' ? 'unblock' : 'block'
+    const res = await fetch(`/api/messages/${activeId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    if (res.ok) {
+      const newStatus = action === 'block' ? 'blocked' : 'active'
+      setThread(t => ({ ...t, conversation: { ...t.conversation, status: newStatus } }))
+      setConvs(prev => prev.map(c => c.id === activeId ? { ...c, status: newStatus } : c))
+      showToast(action === 'block' ? 'User blocked.' : 'User unblocked.')
+    }
+  }
+
+  const conv    = thread?.conversation
+  const blocked = conv?.status === 'blocked'
+  const totalConvUnread = convs.reduce((n, c) => n + (c.host_unread_count || 0), 0)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0', height: 'calc(100vh - 130px)' }}>
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 999, background: toast.type === 'error' ? '#DC2626' : '#16A34A', color: 'white', padding: '12px 20px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600 }}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
+        <button
+          onClick={() => setTab('inbox')}
+          style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', fontFamily: 'inherit', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', background: tab === 'inbox' ? '#F4601A' : 'rgba(255,255,255,0.06)', color: tab === 'inbox' ? 'white' : 'rgba(255,255,255,0.5)' }}
+        >
+          Guest Inbox {totalConvUnread > 0 && <span style={{ marginLeft: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '100px', padding: '1px 6px', fontSize: '0.68rem' }}>{totalConvUnread}</span>}
+        </button>
+        <button
+          onClick={() => setTab('notifications')}
+          style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', fontFamily: 'inherit', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', background: tab === 'notifications' ? '#F4601A' : 'rgba(255,255,255,0.06)', color: tab === 'notifications' ? 'white' : 'rgba(255,255,255,0.5)' }}
+        >
+          🛡️ SnapReserve Support {unreadAdminCount > 0 && <span style={{ marginLeft: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '100px', padding: '1px 6px', fontSize: '0.68rem' }}>{unreadAdminCount}</span>}
+        </button>
+      </div>
+
+      {tab === 'notifications' && (
+        <MessagesTab userId={userId} onRead={onAdminRead} />
+      )}
+
+      {tab === 'inbox' && (
+        <div style={{ display: 'flex', gap: '12px', flex: 1, minHeight: 0 }}>
+          {/* Conversation list */}
+          <div style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
+            {convLoading && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem' }}>Loading…</div>}
+            {!convLoading && convs.length === 0 && (
+              <div style={{ background: '#1A1712', border: '1px solid #2A2420', borderRadius: '12px', padding: '28px', textAlign: 'center', color: '#6B5E52', fontSize: '0.82rem' }}>
+                No guest messages yet.
+              </div>
+            )}
+            {convs.map(c => {
+              const unread   = c.host_unread_count || 0
+              const isActive = activeId === c.id
+              const img      = Array.isArray(c.listing?.images) ? c.listing.images[0] : null
+
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => openThread(c.id)}
+                  style={{ width: '100%', textAlign: 'left', background: isActive ? '#2A2420' : 'transparent', border: isActive ? '1px solid #F4601A' : '1px solid transparent', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: unread > 0 ? 700 : 600, color: '#F5F0EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      {c.listing?.title || 'Listing'}
+                    </div>
+                    <div style={{ fontSize: '0.62rem', color: '#6B5E52', flexShrink: 0 }}>{fmtMsg(c.last_message_at)}</div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#A89880' }}>
+                    {c.guest?.full_name || '—'}
+                    {c.is_booked_guest_chat && <span style={{ marginLeft: '4px', color: '#4ADE80', fontWeight: 700 }}>✓</span>}
+                    {c.status === 'blocked' && <span style={{ marginLeft: '4px', color: '#F87171' }}> · Blocked</span>}
+                  </div>
+                  <div style={{ fontSize: '0.71rem', color: '#6B5E52', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.last_message_preview || 'No messages yet'}
+                  </div>
+                  {unread > 0 && (
+                    <div style={{ marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F4601A' }} />
+                      <span style={{ fontSize: '0.62rem', color: '#F4601A', fontWeight: 700 }}>{unread} new</span>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Thread pane */}
+          <div style={{ flex: 1, background: '#1A1712', border: '1px solid #2A2420', borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+            {!activeId ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#6B5E52', gap: '8px' }}>
+                <div style={{ fontSize: '2rem' }}>💬</div>
+                <div style={{ fontSize: '0.84rem' }}>Select a conversation</div>
+              </div>
+            ) : threadLoading ? (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B5E52', fontSize: '0.84rem' }}>Loading…</div>
+            ) : (
+              <>
+                {/* Header */}
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #2A2420', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#F5F0EB' }}>
+                      {convs.find(c => c.id === activeId)?.listing?.title || 'Conversation'}
+                      {conv?.is_booked_guest_chat && <span style={{ marginLeft: '8px', fontSize: '0.62rem', fontWeight: 700, background: 'rgba(74,222,128,0.1)', color: '#4ADE80', padding: '2px 6px', borderRadius: '100px' }}>✓ Booked</span>}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '2px' }}>
+                      Guest: {convs.find(c => c.id === activeId)?.guest?.full_name || '—'}
+                      {blocked && <span style={{ marginLeft: '6px', color: '#F87171', fontWeight: 700 }}>· Blocked</span>}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => doBlock(conv)}
+                    style={{ fontSize: '0.72rem', fontWeight: 700, padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', border: '1px solid', borderColor: blocked ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)', background: blocked ? 'rgba(74,222,128,0.08)' : 'rgba(248,113,113,0.08)', color: blocked ? '#4ADE80' : '#F87171' }}
+                  >
+                    {blocked ? 'Unblock' : '🚫 Block'}
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(thread?.messages || []).length === 0 && (
+                    <div style={{ textAlign: 'center', color: '#6B5E52', fontSize: '0.82rem', marginTop: '32px' }}>No messages yet.</div>
+                  )}
+                  {(thread?.messages || []).map(m => {
+                    const mine = m.sender_id === userId
+                    return (
+                      <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                        <div style={{
+                          maxWidth: '72%', padding: '9px 13px', fontSize: '0.84rem', lineHeight: 1.6,
+                          borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                          background: mine ? '#F4601A' : '#2A2420',
+                          color: mine ? 'white' : '#F5F0EB',
+                        }}>
+                          {m.body}
+                          <div style={{ fontSize: '0.6rem', marginTop: '3px', opacity: 0.6, textAlign: 'right' }}>
+                            {fmtMsg(m.created_at)}
+                            {mine && <span style={{ marginLeft: '3px' }}>{m.is_read ? ' ✓✓' : ' ✓'}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div ref={bottomRef} />
+                </div>
+
+                {/* Compose */}
+                {blocked ? (
+                  <div style={{ padding: '12px 16px', borderTop: '1px solid #2A2420', textAlign: 'center', color: '#F87171', fontSize: '0.8rem', fontWeight: 600 }}>
+                    You have blocked this user.
+                  </div>
+                ) : (
+                  <form onSubmit={sendMsg} style={{ display: 'flex', gap: '8px', padding: '10px 14px', borderTop: '1px solid #2A2420' }}>
+                    <input
+                      value={draft}
+                      onChange={e => setDraft(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg() } }}
+                      placeholder="Type a message…"
+                      maxLength={2000}
+                      style={{ flex: 1, padding: '9px 13px', background: '#0F0D0A', border: '1px solid #2A2420', borderRadius: '9px', color: '#F5F0EB', fontSize: '0.84rem', fontFamily: 'inherit', outline: 'none' }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !draft.trim()}
+                      style={{ background: '#F4601A', color: 'white', border: 'none', borderRadius: '9px', padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (sending || !draft.trim()) ? 0.5 : 1 }}
+                    >
+                      {sending ? '…' : 'Send'}
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MessagesTab({ userId, onRead }) {
+  const [msgs, setMsgs]         = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [replies, setReplies]   = useState({})   // { [msgId]: draft text }
+  const [sending, setSending]   = useState(null) // msgId currently sending
+  const [toast, setToast]       = useState(null)
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  useEffect(() => {
+    if (!userId) return
+    async function load() {
+      const { data } = await supabase
+        .from('host_messages')
+        .select('id, listing_id, type, subject, body, is_read, created_at, reply_body, replied_at')
+        .eq('host_user_id', userId)
+        .order('created_at', { ascending: false })
+      setMsgs(data || [])
+      setLoading(false)
+
+      // Mark all unread as read
+      const unreadIds = (data || []).filter(m => !m.is_read).map(m => m.id)
+      if (unreadIds.length) {
+        await supabase.from('host_messages').update({ is_read: true }).in('id', unreadIds)
+        onRead?.()
+      }
+    }
+    load()
+  }, [userId])
+
+  async function submitReply(msgId) {
+    const reply = replies[msgId]?.trim()
+    if (!reply) return
+    setSending(msgId)
+    try {
+      const res = await fetch(`/api/host/messages/${msgId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reply }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send reply')
+      // Update local state
+      setMsgs(prev => prev.map(m =>
+        m.id === msgId ? { ...m, reply_body: reply, replied_at: new Date().toISOString() } : m
+      ))
+      setReplies(prev => ({ ...prev, [msgId]: '' }))
+      showToast('Reply sent.')
+    } catch (e) {
+      showToast(e.message, 'error')
+    } finally {
+      setSending(null)
+    }
+  }
+
+  function fmtDate(d) {
+    if (!d) return ''
+    return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+  }
+
+  if (loading) return <div style={{color:'rgba(255,255,255,0.3)',fontSize:'0.86rem'}}>Loading…</div>
+
+  return (
+    <>
+      {toast && (
+        <div style={{
+          position:'fixed', bottom:'24px', right:'24px', padding:'12px 20px',
+          borderRadius:'12px', fontSize:'0.85rem', fontWeight:600, zIndex:9999,
+          background: toast.type === 'error' ? '#DC2626' : '#16A34A', color:'white',
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
+      {!msgs.length ? (
+        <div className="inbox-empty">
+          <div style={{fontSize:'2rem',marginBottom:'12px'}}>🛡️</div>
+          <div style={{fontWeight:700,marginBottom:'6px'}}>No messages from SnapReserve yet.</div>
+          <div style={{fontSize:'0.78rem',color:'#6B5E52',maxWidth:'260px',margin:'0 auto',lineHeight:1.6}}>
+            If there's an issue with your listing or account, our support team will reach out here.
+          </div>
+        </div>
+      ) : (
+        <div className="inbox">
+          <div style={{ background: 'rgba(244,96,26,0.06)', border: '1px solid rgba(244,96,26,0.18)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.1rem' }}>🛡️</span>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#F5F0EB' }}>SnapReserve Support</div>
+              <div style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '1px' }}>Official messages from the SnapReserve team about your listings and account. You can reply directly here.</div>
+            </div>
+          </div>
+          {msgs.map(m => {
+            const cfg = MSG_TYPE_CFG[m.type] || MSG_TYPE_CFG.info
+            const hasReplied = !!m.reply_body
+            const draft = replies[m.id] || ''
+
+            return (
+              <div key={m.id} className={`inbox-msg ${!m.is_read ? 'unread' : ''}`}>
+                <div style={{display:'inline-flex',alignItems:'center',padding:'2px 8px',borderRadius:'100px',fontSize:'0.62rem',fontWeight:700,background:cfg.bg,color:cfg.color,marginBottom:'8px'}}>
+                  {cfg.label}
+                </div>
+                <div className="inbox-msg-header">
+                  <div className={`inbox-msg-subject ${!m.is_read ? 'unread' : ''}`}>
+                    {m.subject || '(no subject)'}
+                  </div>
+                  <div className="inbox-msg-date">{fmtDate(m.created_at)}</div>
+                </div>
+                <div className="inbox-msg-body">{m.body}</div>
+
+                {/* Previous reply */}
+                {hasReplied && (
+                  <div style={{
+                    marginTop:'12px', background:'rgba(255,255,255,0.04)',
+                    border:'1px solid rgba(255,255,255,0.08)', borderRadius:'10px',
+                    padding:'10px 14px',
+                  }}>
+                    <div style={{fontSize:'0.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'rgba(255,255,255,0.3)',marginBottom:'4px'}}>
+                      Your reply · {fmtDate(m.replied_at)}
+                    </div>
+                    <div style={{fontSize:'0.82rem',color:'#D0C8BE',lineHeight:1.6,whiteSpace:'pre-wrap'}}>
+                      {m.reply_body}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reply box — always available so host can send follow-ups */}
+                <div style={{marginTop:'12px'}}>
+                  <textarea
+                    style={{
+                      width:'100%', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)',
+                      borderRadius:'10px', padding:'10px 14px', color:'#F5F0EB', fontSize:'0.82rem',
+                      resize:'vertical', minHeight:'64px', outline:'none', fontFamily:'inherit',
+                      boxSizing:'border-box',
+                    }}
+                    placeholder={hasReplied ? 'Send a follow-up…' : 'Write a reply…'}
+                    value={draft}
+                    onChange={e => setReplies(prev => ({ ...prev, [m.id]: e.target.value }))}
+                    onFocus={e => { e.target.style.borderColor = '#F4601A' }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)' }}
+                  />
+                  <div style={{display:'flex',justifyContent:'flex-end',marginTop:'6px'}}>
+                    <button
+                      onClick={() => submitReply(m.id)}
+                      disabled={!draft || sending === m.id}
+                      style={{
+                        background: draft ? '#F4601A' : 'rgba(255,255,255,0.08)',
+                        color: draft ? 'white' : 'rgba(255,255,255,0.3)',
+                        border:'none', borderRadius:'8px', padding:'8px 18px',
+                        fontSize:'0.8rem', fontWeight:700, cursor: draft ? 'pointer' : 'not-allowed',
+                        fontFamily:'inherit', transition:'all 0.15s',
+                      }}
+                    >
+                      {sending === m.id ? 'Sending…' : hasReplied ? 'Send follow-up' : 'Reply'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
+  )
+}
 
 const NAV = [
   { id: 'properties', label: 'My Properties', icon: '🏠' },
@@ -21,6 +454,8 @@ const STATUS_CONFIG = {
   changes_requested:  { label: '🔄 Changes Needed',   color: '#93C5FD', bg: '#2563EB' },
   rejected:           { label: '❌ Rejected',          color: '#F87171', bg: '#DC2626' },
   draft:              { label: '○ Draft',             color: 'rgba(255,255,255,0.4)', bg: '#374151' },
+  suspended:          { label: '🚫 Suspended',         color: '#DC2626', bg: '#DC2626' },
+  pending_reapproval: { label: '⏳ Under Review',      color: '#D97706', bg: '#D97706' },
 }
 
 function statusCfg(s) {
@@ -39,6 +474,9 @@ export default function HostDashboard() {
   const [expandedCR, setExpandedCR]     = useState(null) // listing_id with expanded change notes
   const [switchModal, setSwitchModal]   = useState(false)
   const [switching, setSwitching]       = useState(false)
+  const [explanations, setExplanations] = useState({}) // { [listing_id]: string }
+  const [unreadMsgCount,  setUnreadMsgCount]  = useState(0)
+  const [convUnreadCount, setConvUnreadCount] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -53,6 +491,23 @@ export default function HostDashboard() {
       setProfile(prof)
       const listArr = lists || []
       setListings(listArr)
+
+      // Fetch unread host messages count
+      const { count: msgCount } = await supabase
+        .from('host_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('host_user_id', user.id)
+        .eq('is_read', false)
+      setUnreadMsgCount(msgCount || 0)
+
+      // Fetch conversation unread count (host_unread_count sum)
+      const { data: convData } = await supabase
+        .from('conversations')
+        .select('host_unread_count')
+        .eq('host_user_id', user.id)
+        .eq('status', 'active')
+      const totalConvUnread = (convData || []).reduce((n, c) => n + (c.host_unread_count || 0), 0)
+      setConvUnreadCount(totalConvUnread)
 
       // Fetch change requests for all listings
       const ids = listArr.map(l => l.id)
@@ -107,6 +562,30 @@ export default function HostDashboard() {
         resubmit:  '📤 Resubmitted for review.',
       }
       showToast(messages[action] || 'Done.')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function submitExplanation(listingId) {
+    const explanation = explanations[listingId]?.trim()
+    if (!explanation) return showToast('Please enter an explanation.', 'error')
+    setActionLoading(listingId)
+    try {
+      const res = await fetch(`/api/host/listings/${listingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'submit_explanation', explanation }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Failed to submit')
+      setListings(prev => prev.map(l =>
+        l.id === listingId ? { ...l, status: 'pending_reapproval' } : l
+      ))
+      setExplanations(prev => ({ ...prev, [listingId]: '' }))
+      showToast('Explanation submitted. We\'ll review it shortly.')
     } catch (err) {
       showToast(err.message, 'error')
     } finally {
@@ -205,6 +684,25 @@ export default function HostDashboard() {
         .status-banner.changes { background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.2); color:#93C5FD; }
         .status-banner.approved { background:rgba(244,96,26,0.06); border:1px solid rgba(244,96,26,0.2); color:#F4601A; }
         .status-banner.rejected { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.15); color:#F87171; }
+        .status-banner.suspended { background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.2); color:#F87171; }
+        .status-banner.reapproval { background:rgba(217,119,6,0.06); border:1px solid rgba(217,119,6,0.2); color:#FCD34D; }
+        .explanation-area { margin-top:10px; }
+        .explanation-input { width:100%; background:#0F0D0A; border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:8px 12px; color:#F5F0EB; font-size:0.8rem; resize:vertical; min-height:64px; outline:none; font-family:inherit; box-sizing:border-box; }
+        .explanation-input:focus { border-color:#F87171; }
+        .explanation-submit { margin-top:8px; background:rgba(248,113,113,0.12); color:#F87171; border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:7px 14px; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        .explanation-submit:disabled { opacity:0.4; cursor:not-allowed; }
+        .msg-badge { display:inline-flex; align-items:center; justify-content:center; background:#DC2626; color:white; border-radius:100px; font-size:0.62rem; font-weight:800; min-width:16px; height:16px; padding:0 4px; margin-left:4px; }
+        /* Messages tab */
+        .inbox { display:flex; flex-direction:column; gap:10px; max-width:720px; }
+        .inbox-msg { background:#1A1712; border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px 20px; transition:border-color 0.15s; }
+        .inbox-msg.unread { border-color:rgba(244,96,26,0.35); }
+        .inbox-msg-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
+        .inbox-msg-subject { font-size:0.92rem; font-weight:700; color:#F5F0EB; }
+        .inbox-msg-subject.unread { color:#F4601A; }
+        .inbox-msg-date { font-size:0.7rem; color:#6B5E52; flex-shrink:0; }
+        .inbox-msg-body { font-size:0.84rem; color:#D0C8BE; line-height:1.7; white-space:pre-wrap; }
+        .inbox-msg-type { display:inline-flex; align-items:center; padding:2px 8px; border-radius:100px; font-size:0.62rem; font-weight:700; margin-bottom:8px; }
+        .inbox-empty { text-align:center; padding:60px 20px; color:#6B5E52; font-size:0.86rem; }
 
         /* Change notes */
         .cr-box { background:#0F0D0A; border:1px solid rgba(96,165,250,0.2); border-radius:10px; padding:14px; margin-bottom:12px; }
@@ -252,6 +750,9 @@ export default function HostDashboard() {
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
+                {item.id === 'messages' && (unreadMsgCount + convUnreadCount) > 0 && (
+                  <span className="msg-badge">{unreadMsgCount + convUnreadCount}</span>
+                )}
               </div>
             ))}
           </nav>
@@ -328,6 +829,34 @@ export default function HostDashboard() {
                         {l.status === 'rejected' && (
                           <div className="status-banner rejected">
                             ❌ Your listing was rejected. Contact support for details.
+                          </div>
+                        )}
+                        {l.status === 'suspended' && (
+                          <div className="status-banner suspended">
+                            🚫 <strong>Listing suspended.</strong>
+                            {l.suspension_reason && (
+                              <div style={{marginTop:'4px',opacity:0.85}}>{l.suspension_reason}</div>
+                            )}
+                            <div className="explanation-area">
+                              <textarea
+                                className="explanation-input"
+                                placeholder="Explain why this suspension should be lifted…"
+                                value={explanations[l.id] || ''}
+                                onChange={e => setExplanations(prev => ({ ...prev, [l.id]: e.target.value }))}
+                              />
+                              <button
+                                className="explanation-submit"
+                                onClick={() => submitExplanation(l.id)}
+                                disabled={actionLoading === l.id}
+                              >
+                                {actionLoading === l.id ? 'Submitting…' : 'Submit explanation'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {l.status === 'pending_reapproval' && (
+                          <div className="status-banner reapproval">
+                            ⏳ Your explanation is under review. We'll get back to you shortly.
                           </div>
                         )}
 
@@ -429,6 +958,20 @@ export default function HostDashboard() {
                             </>
                           )}
 
+                          {l.status === 'suspended' && (
+                            <>
+                              <button className="prop-btn danger" disabled>🚫 Suspended</button>
+                              <a href="mailto:support@snapreserve.app" className="prop-btn secondary">Contact support</a>
+                            </>
+                          )}
+
+                          {l.status === 'pending_reapproval' && (
+                            <>
+                              <button className="prop-btn secondary" disabled>⏳ Under Review</button>
+                              <a href={`/listings/${l.id}`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
+                            </>
+                          )}
+
                           {(!l.status || l.status === 'draft') && (
                             <>
                               <a href="/list-property" className="prop-btn orange">Edit draft</a>
@@ -491,7 +1034,11 @@ export default function HostDashboard() {
               </div>
             )}
 
-            {activeNav !== 'properties' && activeNav !== 'settings' && (
+            {activeNav === 'messages' && (
+              <HostInbox userId={profile?.id} onAdminRead={() => setUnreadMsgCount(0)} unreadAdminCount={unreadMsgCount} />
+            )}
+
+            {activeNav !== 'properties' && activeNav !== 'settings' && activeNav !== 'messages' && (
               <div className="empty">
                 <div className="empty-icon">{NAV.find(n => n.id === activeNav)?.icon}</div>
                 <div className="empty-title">{NAV.find(n => n.id === activeNav)?.label}</div>
