@@ -12,7 +12,7 @@ const NAV = [
   { href: '/account/security',      icon: '🔒', label: 'Security' },
 ]
 
-export default function AccountNav({ profile }) {
+export default function AccountNav({ profile, isHost }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -82,6 +82,21 @@ export default function AccountNav({ profile }) {
 
       {/* Footer */}
       <div style={{ padding: '16px 24px', borderTop: '1px solid #E8E2D9', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {!isHost && (
+          <a href="/become-a-host" style={{
+            fontSize: '0.78rem', fontWeight: 700, color: '#F4601A',
+            textDecoration: 'none', padding: '8px 14px',
+            background: 'rgba(244,96,26,0.06)', borderRadius: '8px',
+            border: '1px solid rgba(244,96,26,0.15)',
+          }}>
+            List your property →
+          </a>
+        )}
+        {isHost && (
+          <a href="/host/dashboard" style={{ fontSize: '0.78rem', color: '#A89880', textDecoration: 'none' }}>
+            Host dashboard →
+          </a>
+        )}
         <a href="/" style={{ fontSize: '0.78rem', color: '#A89880', textDecoration: 'none' }}>
           ← Browse properties
         </a>

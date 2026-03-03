@@ -1,131 +1,322 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
+const HOST_TYPES = [
+  {
+    id: 'hotel',
+    icon: '🏨',
+    label: 'Hotel or Resort',
+    desc: 'You manage a hotel, boutique inn, bed & breakfast, or resort.',
+  },
+  {
+    id: 'property_manager',
+    icon: '🏢',
+    label: 'Property Manager',
+    desc: 'You manage multiple rental properties on behalf of owners.',
+  },
+  {
+    id: 'individual',
+    icon: '🏠',
+    label: 'Individual Host',
+    desc: 'You\'re renting your own home, apartment, villa, or spare room.',
+  },
+]
+
+const TYPE_LABEL = { hotel: 'Hotel or Resort', property_manager: 'Property Manager', individual: 'Individual Host' }
+
 export default function BecomeAHostPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState(1)
+  const [checking, setChecking] = useState(true)
+
+  // Form state
+  const [hostType, setHostType] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [agreed, setAgreed] = useState(false)
+
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleStart() {
-    setLoading(true)
+  // Step 1 validation errors
+  const [fieldErrors, setFieldErrors] = useState({})
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.replace('/login?next=/become-a-host')
+        return
+      }
+      supabase.from('users').select('is_host').eq('id', user.id).maybeSingle().then(({ data }) => {
+        if (data?.is_host) {
+          router.replace('/host/dashboard')
+        } else {
+          setChecking(false)
+        }
+      })
+    })
+  }, [])
+
+  function validateStep1() {
+    const errs = {}
+    if (!hostType) errs.hostType = 'Please select a host type.'
+    if (!displayName.trim() || displayName.trim().length < 2) errs.displayName = 'Enter at least 2 characters.'
+    if (displayName.trim().length > 100) errs.displayName = 'Max 100 characters.'
+    if (!phone.trim() || !/^\+?[\d\s\-().]{7,20}$/.test(phone.trim())) errs.phone = 'Enter a valid phone number.'
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  function handleContinue() {
+    if (validateStep1()) setStep(2)
+  }
+
+  async function handleSubmit() {
+    if (!agreed) { setError('You must agree to the Host Terms to continue.'); return }
+    setSubmitting(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login?next=/become-a-host'); return }
-
-    const res = await fetch('/api/become-host', { method: 'POST' })
+    const res = await fetch('/api/become-host', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host_type: hostType, display_name: displayName.trim(), phone: phone.trim() }),
+    })
     const json = await res.json()
 
     if (!res.ok) {
-      setError(json.error || 'Something went wrong')
-      setLoading(false)
+      setError(json.error || 'Something went wrong. Please try again.')
+      setSubmitting(false)
       return
     }
 
     router.push('/host/dashboard')
   }
 
-  const perks = [
-    { icon: '💰', title: 'Earn extra income', body: 'Set your own price and earn on your schedule. Hosts on SnapReserve earn an average of $1,200/month.' },
-    { icon: '🛡️', title: 'You\'re protected', body: 'Every booking comes with SnapGuarantee — damage protection and secure payments handled for you.' },
-    { icon: '⚡', title: 'Industry-lowest fees', body: 'We charge just 3.2% — far less than any competitor — so you keep more of what you earn.' },
-    { icon: '🗓️', title: 'Full control', body: 'You decide when you\'re available, who can book, and what the rules are. Cancel any time.' },
-  ]
+  const inp = {
+    width: '100%', padding: '12px 14px', border: '1px solid #E8E2D9',
+    borderRadius: '10px', fontSize: '0.92rem', fontFamily: 'inherit',
+    background: 'white', outline: 'none', color: '#1A1410',
+  }
+  const label = {
+    display: 'block', fontSize: '0.76rem', fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '0.08em',
+    color: '#6B5F54', marginBottom: '7px',
+  }
+  const errTxt = { fontSize: '0.75rem', color: '#DC2626', marginTop: '5px' }
+
+  if (checking) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAF8F5' }}>
+      <div style={{ color: '#A89880', fontSize: '0.9rem', fontFamily: 'sans-serif' }}>Loading…</div>
+    </div>
+  )
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;600;700&display=swap');
-        * { margin:0; padding:0; box-sizing:border-box; }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; background:#FAF8F5; color:#1A1410; }
-
         .topbar { background:white; border-bottom:1px solid #E8E2D9; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; }
         .logo { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:900; text-decoration:none; color:#1A1410; }
         .logo span { color:#F4601A; }
         .back-link { font-size:0.84rem; color:#6B5F54; text-decoration:none; }
         .back-link:hover { color:#1A1410; }
-
-        .hero { text-align:center; padding:72px 24px 56px; max-width:700px; margin:0 auto; }
-        .eyebrow { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.14em; color:#F4601A; margin-bottom:20px; }
-        .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2.4rem,5vw,3.6rem); font-weight:900; line-height:1.1; letter-spacing:-1.5px; margin-bottom:20px; }
-        .hero h1 em { font-style:italic; color:#F4601A; }
-        .hero p { font-size:1rem; color:#6B5F54; line-height:1.8; margin-bottom:36px; max-width:480px; margin-left:auto; margin-right:auto; }
-
-        .start-btn { background:linear-gradient(135deg,#F4601A,#FF7A35); color:white; border:none; border-radius:14px; padding:17px 44px; font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; display:inline-flex; align-items:center; gap:10px; }
-        .start-btn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(244,96,26,0.35); }
-        .start-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-        .no-commitment { font-size:0.76rem; color:#A89880; margin-top:14px; }
-
-        .error-box { background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.15); border-radius:10px; padding:10px 16px; font-size:0.82rem; color:#DC2626; margin-top:16px; display:inline-block; }
-
-        .perks { max-width:900px; margin:0 auto; padding:0 24px 80px; display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-        .perk { background:white; border:1px solid #E8E2D9; border-radius:18px; padding:28px; }
-        .perk-icon { font-size:1.8rem; margin-bottom:14px; }
-        .perk-title { font-size:1rem; font-weight:700; margin-bottom:8px; }
-        .perk-body { font-size:0.84rem; color:#6B5F54; line-height:1.7; }
-
-        .steps { background:white; border-top:1px solid #E8E2D9; border-bottom:1px solid #E8E2D9; padding:48px 24px; margin-bottom:48px; }
-        .steps-inner { max-width:700px; margin:0 auto; }
-        .steps-title { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; text-align:center; margin-bottom:32px; }
-        .steps-list { display:flex; gap:0; }
-        .step { flex:1; text-align:center; position:relative; }
-        .step:not(:last-child)::after { content:''; position:absolute; top:20px; left:50%; width:100%; height:2px; background:#E8E2D9; z-index:0; }
-        .step-num { width:40px; height:40px; border-radius:50%; background:#F4601A; color:white; font-weight:800; font-size:0.9rem; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; position:relative; z-index:1; }
-        .step-label { font-size:0.82rem; font-weight:600; color:#1A1410; }
-        .step-sub { font-size:0.72rem; color:#A89880; margin-top:3px; }
-
-        @media(max-width:640px) { .perks{grid-template-columns:1fr;} .steps-list{flex-direction:column;gap:24px;} .step::after{display:none;} }
+        .type-card { background:white; border:2px solid #E8E2D9; border-radius:14px; padding:20px; cursor:pointer; transition:all 0.15s; text-align:left; font-family:inherit; width:100%; }
+        .type-card:hover { border-color:#F4601A; background:#FFFAF8; }
+        .type-card.selected { border-color:#F4601A; background:#FFF5F0; }
+        .type-icon { font-size:1.6rem; margin-bottom:10px; }
+        .type-label { font-size:0.92rem; font-weight:700; color:#1A1410; margin-bottom:4px; }
+        .type-desc { font-size:0.78rem; color:#6B5F54; line-height:1.5; }
+        @media(max-width:640px) { .topbar{padding:0 20px;} .type-grid{grid-template-columns:1fr !important;} }
       `}</style>
 
+      {/* Top bar */}
       <div className="topbar">
-        <a href="/" className="logo">Snap<span>Reserve</span></a>
-        <a href="/dashboard" className="back-link">← Back to dashboard</a>
+        <a href="/home" className="logo">Snap<span>Reserve</span></a>
+        {step === 2
+          ? <button onClick={() => setStep(1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>← Back</button>
+          : <a href="/dashboard" className="back-link">← Back to dashboard</a>
+        }
       </div>
 
-      <div className="hero">
-        <div className="eyebrow">Become a Host</div>
-        <h1>Earn money sharing your<br/><em>space</em> with the world.</h1>
-        <p>Join thousands of hosts on SnapReserve. List in minutes, get bookings fast, and keep 96.8% of everything you earn.</p>
-        <button className="start-btn" onClick={handleStart} disabled={loading}>
-          {loading ? 'Setting up your account…' : 'Get started for free →'}
-        </button>
-        <div className="no-commitment">No commitment. You can stop hosting any time.</div>
-        {error && <div className="error-box">⚠️ {error}</div>}
-      </div>
-
-      <div className="steps">
-        <div className="steps-inner">
-          <div className="steps-title">It takes about 10 minutes</div>
-          <div className="steps-list">
-            <div className="step">
-              <div className="step-num">1</div>
-              <div className="step-label">Tell us about your place</div>
-              <div className="step-sub">Type, location, basics</div>
-            </div>
-            <div className="step">
-              <div className="step-num">2</div>
-              <div className="step-label">Add photos & details</div>
-              <div className="step-sub">Amenities, rules, pricing</div>
-            </div>
-            <div className="step">
-              <div className="step-num">3</div>
-              <div className="step-label">Publish & get booked</div>
-              <div className="step-sub">Review takes ~24 hours</div>
-            </div>
-          </div>
+      {/* Progress */}
+      <div style={{ background: 'white', borderBottom: '1px solid #E8E2D9', padding: '0 40px' }}>
+        <div style={{ maxWidth: '560px', margin: '0 auto', display: 'flex', gap: '0', height: '4px' }}>
+          <div style={{ flex: 1, background: '#F4601A', borderRadius: '0 0 0 4px' }} />
+          <div style={{ flex: 1, background: step === 2 ? '#F4601A' : '#E8E2D9', borderRadius: '0 0 4px 0' }} />
         </div>
       </div>
 
-      <div className="perks">
-        {perks.map(p => (
-          <div key={p.title} className="perk">
-            <div className="perk-icon">{p.icon}</div>
-            <div className="perk-title">{p.title}</div>
-            <div className="perk-body">{p.body}</div>
-          </div>
-        ))}
+      {/* Form area */}
+      <div style={{ maxWidth: '560px', margin: '0 auto', padding: '48px 24px 80px' }}>
+
+        {/* ─── STEP 1 ─── */}
+        {step === 1 && (
+          <>
+            <div style={{ marginBottom: '36px' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#F4601A', marginBottom: '10px' }}>
+                Step 1 of 2
+              </div>
+              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '2rem', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '10px' }}>
+                Tell us about your hosting
+              </h1>
+              <p style={{ fontSize: '0.9rem', color: '#6B5F54', lineHeight: 1.7 }}>
+                This takes about 2 minutes. You can update these details any time from your host profile.
+              </p>
+            </div>
+
+            {/* Host type */}
+            <div style={{ marginBottom: '28px' }}>
+              <div style={label}>What type of host are you?</div>
+              <div className="type-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                {HOST_TYPES.map(t => (
+                  <button
+                    key={t.id}
+                    className={`type-card${hostType === t.id ? ' selected' : ''}`}
+                    onClick={() => { setHostType(t.id); setFieldErrors(e => ({ ...e, hostType: '' })) }}
+                    type="button"
+                  >
+                    <div className="type-icon">{t.icon}</div>
+                    <div className="type-label">{t.label}</div>
+                    <div className="type-desc">{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+              {fieldErrors.hostType && <p style={errTxt}>{fieldErrors.hostType}</p>}
+            </div>
+
+            {/* Display name */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={label}>
+                {hostType === 'individual' ? 'Your hosting name' : 'Business or property name'}
+              </label>
+              <input
+                style={{ ...inp, borderColor: fieldErrors.displayName ? '#DC2626' : '#E8E2D9' }}
+                value={displayName}
+                onChange={e => { setDisplayName(e.target.value); setFieldErrors(e2 => ({ ...e2, displayName: '' })) }}
+                placeholder={
+                  hostType === 'hotel' ? 'e.g. Grand Palace Hotel'
+                  : hostType === 'property_manager' ? 'e.g. Lakeside Properties LLC'
+                  : 'e.g. Alex\'s Beachside Retreat'
+                }
+                maxLength={100}
+              />
+              <p style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '5px' }}>
+                This is how you'll appear to guests on your listings.
+              </p>
+              {fieldErrors.displayName && <p style={errTxt}>{fieldErrors.displayName}</p>}
+            </div>
+
+            {/* Phone */}
+            <div style={{ marginBottom: '36px' }}>
+              <label style={label}>Phone number</label>
+              <input
+                style={{ ...inp, borderColor: fieldErrors.phone ? '#DC2626' : '#E8E2D9' }}
+                value={phone}
+                onChange={e => { setPhone(e.target.value); setFieldErrors(e2 => ({ ...e2, phone: '' })) }}
+                placeholder="+1 (555) 000-0000"
+                type="tel"
+              />
+              <p style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '5px' }}>
+                For booking notifications only — never shown to guests.
+              </p>
+              {fieldErrors.phone && <p style={errTxt}>{fieldErrors.phone}</p>}
+            </div>
+
+            <button
+              onClick={handleContinue}
+              style={{
+                width: '100%', background: 'linear-gradient(135deg,#F4601A,#FF7A35)',
+                color: 'white', border: 'none', borderRadius: '12px',
+                padding: '15px', fontSize: '1rem', fontWeight: 700,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Continue →
+            </button>
+          </>
+        )}
+
+        {/* ─── STEP 2 ─── */}
+        {step === 2 && (
+          <>
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#F4601A', marginBottom: '10px' }}>
+                Step 2 of 2
+              </div>
+              <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '2rem', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '10px' }}>
+                Review your profile
+              </h1>
+              <p style={{ fontSize: '0.9rem', color: '#6B5F54', lineHeight: 1.7 }}>
+                Confirm your details before we create your host account.
+              </p>
+            </div>
+
+            {/* Summary card */}
+            <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', padding: '24px', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  { label: 'Host type',     value: `${HOST_TYPES.find(t => t.id === hostType)?.icon}  ${TYPE_LABEL[hostType]}` },
+                  { label: 'Display name',  value: displayName.trim() },
+                  { label: 'Phone',         value: phone.trim() },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid #F3F0EB' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#A89880' }}>{row.label}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1A1410' }}>{row.value}</span>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setStep(1)}
+                  style={{ background: 'none', border: 'none', fontSize: '0.78rem', color: '#F4601A', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0, textAlign: 'left' }}
+                >
+                  Edit details
+                </button>
+              </div>
+            </div>
+
+            {/* Terms */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', marginBottom: '28px' }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => { setAgreed(e.target.checked); setError('') }}
+                style={{ marginTop: '3px', width: '16px', height: '16px', accentColor: '#F4601A', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '0.84rem', color: '#6B5F54', lineHeight: 1.6 }}>
+                I have read and agree to SnapReserve's{' '}
+                <a href="/coming-soon?page=host-terms" style={{ color: '#F4601A', fontWeight: 600 }}>Host Terms & Conditions</a>,
+                including the host service fee of 3.2% and the cancellation policy framework.
+                I confirm that I have the right to list any properties on this platform.
+              </span>
+            </label>
+
+            {error && (
+              <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: '10px', padding: '12px 16px', fontSize: '0.84rem', color: '#DC2626', marginBottom: '20px' }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              style={{
+                width: '100%', background: submitting ? '#D4CEC5' : 'linear-gradient(135deg,#F4601A,#FF7A35)',
+                color: 'white', border: 'none', borderRadius: '12px',
+                padding: '15px', fontSize: '1rem', fontWeight: 700,
+                cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                transition: 'background 0.2s',
+              }}
+            >
+              {submitting ? 'Creating your host profile…' : 'Create Host Profile'}
+            </button>
+
+            <p style={{ fontSize: '0.76rem', color: '#A89880', textAlign: 'center', marginTop: '14px', lineHeight: 1.6 }}>
+              No commitment. You can stop hosting at any time from your account settings.
+            </p>
+          </>
+        )}
       </div>
     </>
   )

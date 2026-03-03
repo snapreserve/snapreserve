@@ -61,11 +61,29 @@ export default function HomePage() {
   const autocompleteService = useRef(null)
   const debounceRef = useRef(null)
 
+  // Auth state for nav
+  const [authUser, setAuthUser] = useState(null)
+  const [isHost, setIsHost] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
   useEffect(() => {
     fetchData()
   }, [])
 
   useEffect(() => { setActiveChip(null) }, [mode])
+
+  // Load logged-in user once
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      setAuthUser(user)
+      supabase.from('users').select('is_host, full_name').eq('id', user.id).maybeSingle()
+        .then(({ data }) => {
+          setIsHost(!!data?.is_host)
+          if (data?.full_name) setAuthUser(u => ({ ...u, full_name: data.full_name }))
+        })
+    })
+  }, [])
 
   async function fetchData() {
     const { data } = await supabase.from('listings').select('*').eq('is_active', true).order('rating', { ascending: false })
@@ -221,6 +239,14 @@ export default function HomePage() {
         .nav-right { display:flex; gap:8px; align-items:center; }
         .nav-outline { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #D4CEC5; color:#1A1410; text-decoration:none; }
         .nav-solid { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; }
+        .nav-host-link { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #F4601A; color:#F4601A; text-decoration:none; transition:background 0.15s; }
+        .nav-host-link:hover { background:rgba(244,96,26,0.06); }
+        .nav-avatar { width:34px; height:34px; border-radius:50%; background:#F4601A; color:white; font-weight:700; font-size:0.78rem; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative; }
+        .user-menu { position:absolute; top:calc(100% + 10px); right:0; background:white; border:1px solid #E8E2D9; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:200px; padding:6px; z-index:200; }
+        .user-menu a, .user-menu button { display:block; width:100%; padding:9px 14px; font-size:0.84rem; font-weight:600; color:#1A1410; text-decoration:none; border:none; background:none; cursor:pointer; font-family:inherit; text-align:left; border-radius:8px; }
+        .user-menu a:hover, .user-menu button:hover { background:#F3F0EB; }
+        .user-menu .menu-sep { height:1px; background:#E8E2D9; margin:4px 0; }
+        .user-menu .menu-danger { color:#DC2626; }
 
         /* ═══ HERO ═══ */
         .hero { padding:52px 40px 56px; text-align:center; transition:background 0.4s; }
@@ -349,9 +375,48 @@ export default function HomePage() {
             <a href="/listings?type=private_stay" className="nav-link">Private Stays</a>
           </div>
           <div className="nav-right">
-            <a href="/dashboard" className="nav-link">Dashboard</a>
-            <a href="/login" className="nav-outline">Log in</a>
-            <a href="/signup" className="nav-solid">Sign up</a>
+            {authUser ? (
+              <>
+                {!isHost && (
+                  <a href="/become-a-host" className="nav-host-link">List your property</a>
+                )}
+                {isHost && (
+                  <a href="/host/dashboard" className="nav-link">Host Dashboard</a>
+                )}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    className="nav-avatar"
+                    onClick={() => setShowUserMenu(v => !v)}
+                    onBlur={() => setTimeout(() => setShowUserMenu(false), 150)}
+                  >
+                    {authUser.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+                  </button>
+                  {showUserMenu && (
+                    <div className="user-menu">
+                      <a href="/account/profile">Profile</a>
+                      <a href="/account/trips">My trips</a>
+                      <a href="/account/saved">Saved places</a>
+                      <a href="/account/messages">Messages</a>
+                      {!isHost && <a href="/become-a-host">List your property</a>}
+                      {isHost && <a href="/host/dashboard">Host dashboard</a>}
+                      <div className="menu-sep" />
+                      <button
+                        className="menu-danger"
+                        onClick={async () => { await supabase.auth.signOut(); window.location.reload() }}
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <a href="/become-a-host" className="nav-host-link">List your property</a>
+                <a href="/login" className="nav-outline">Log in</a>
+                <a href="/signup" className="nav-solid">Sign up</a>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -688,7 +753,7 @@ export default function HomePage() {
               </div>
             </div>
             <div style={{display:'flex', gap:'12px', position:'relative', flexWrap:'wrap'}}>
-              <a href="/list-property" style={{background:'#2B6FEA', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none'}}>Partner with Us</a>
+              <a href="/become-a-host" style={{background:'#2B6FEA', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none'}}>List your property</a>
               <a href="/coming-soon?page=support" style={{background:'rgba(255,255,255,0.1)', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none', border:'1px solid rgba(255,255,255,0.18)'}}>Learn More</a>
             </div>
           </div>
@@ -706,7 +771,7 @@ export default function HomePage() {
               </div>
             </div>
             <div style={{display:'flex', gap:'12px', position:'relative', flexWrap:'wrap'}}>
-              <a href="/list-property" style={{background:'#F4601A', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none'}}>Start Hosting</a>
+              <a href="/become-a-host" style={{background:'#F4601A', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none'}}>Start Hosting</a>
               <a href="/coming-soon?page=support" style={{background:'rgba(255,255,255,0.08)', color:'white', padding:'12px 26px', borderRadius:'100px', fontWeight:700, fontSize:'0.88rem', textDecoration:'none', border:'1px solid rgba(255,255,255,0.15)'}}>Learn More</a>
             </div>
           </div>

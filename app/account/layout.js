@@ -21,7 +21,7 @@ export default async function AccountLayout({ children }) {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name, email, avatar_url, is_active')
+    .select('full_name, email, avatar_url, is_active, is_host')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -41,7 +41,7 @@ export default async function AccountLayout({ children }) {
       `}</style>
       <div className="account-shell" style={{ display: 'flex', minHeight: '100vh' }}>
         <div className="account-sidebar">
-          <AccountNav profile={profile} />
+          <AccountNav profile={profile} isHost={!!profile?.is_host} />
         </div>
         <main style={{ flex: 1, minWidth: 0, padding: '40px 32px', maxWidth: '780px' }}>
           {children}
