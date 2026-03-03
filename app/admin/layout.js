@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import Link from 'next/link'
 import SignOutButton from './_components/SignOutButton'
 
+export const dynamic = 'force-dynamic'
+
 async function getCurrentRole() {
   try {
     const cookieStore = await cookies()

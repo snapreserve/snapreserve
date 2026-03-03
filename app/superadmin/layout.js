@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import SignOutButton from '../admin/_components/SignOutButton'
 
+export const dynamic = 'force-dynamic'
+
 export default function SuperAdminLayout({ children }) {
   return (
     <>
