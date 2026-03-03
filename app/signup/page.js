@@ -8,7 +8,6 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isHost, setIsHost] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -18,9 +17,7 @@ export default function SignupPage() {
     setGoogleLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
@@ -29,16 +26,10 @@ export default function SignupPage() {
     setLoading(true)
     setError('')
 
-    // Create auth user
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-          is_host: isHost,
-        }
-      }
+      options: { data: { full_name: fullName } },
     })
 
     if (authError) {
@@ -47,13 +38,13 @@ export default function SignupPage() {
       return
     }
 
-    // Save to users table
+    // Create profile row — guest by default (is_host = false)
     if (data.user) {
       await supabase.from('users').insert({
         id: data.user.id,
         email,
         full_name: fullName,
-        is_host: isHost,
+        is_host: false,
         is_verified: false,
       })
     }
@@ -79,7 +70,7 @@ export default function SignupPage() {
           <div className="card">
             <div className="success-icon">✅</div>
             <div className="title">Check your email!</div>
-            <div className="sub">We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account and start using SnapReserve.</div>
+            <div className="sub">We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</div>
             <a href="/login" className="btn">Go to login →</a>
           </div>
         </div>
@@ -90,6 +81,7 @@ export default function SignupPage() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; }
 
@@ -103,29 +95,26 @@ export default function SignupPage() {
         .tagline { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 32px; }
 
         .title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
-        .subtitle { font-size: 0.84rem; color: #6B5F54; margin-bottom: 28px; }
+        .subtitle { font-size: 0.84rem; color: #6B5F54; margin-bottom: 24px; }
+
+        .google-btn { width: 100%; background: white; border: 1.5px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-weight: 600; color: #1A1410; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.18s; margin-bottom: 16px; }
+        .google-btn:hover { border-color: #D4CEC5; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .divider { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 20px; position: relative; }
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #E8E2D9; }
+        .divider span { background: white; padding: 0 12px; position: relative; }
 
         .form-group { margin-bottom: 16px; }
         .label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6B5F54; margin-bottom: 6px; display: block; }
         .input { width: 100%; background: #FAF8F5; border: 1px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-family: inherit; outline: none; color: #1A1410; transition: all 0.18s; }
         .input:focus { border-color: #F4601A; background: white; box-shadow: 0 0 0 3px rgba(244,96,26,0.08); }
 
-        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .role-card { border: 2px solid #E8E2D9; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; transition: all 0.18s; }
-        .role-card.selected { border-color: #F4601A; background: #FFF9F6; }
-        .role-icon { font-size: 1.4rem; margin-bottom: 4px; }
-        .role-label { font-size: 0.8rem; font-weight: 700; }
-        .role-sub { font-size: 0.7rem; color: #A89880; }
-
         .error { background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.15); border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; color: #DC2626; margin-bottom: 16px; }
 
         .submit-btn { width: 100%; background: linear-gradient(135deg, #F4601A, #FF7A35); border: none; border-radius: 12px; padding: 14px; font-size: 0.94rem; font-weight: 700; color: white; cursor: pointer; font-family: inherit; transition: all 0.2s; margin-bottom: 16px; }
         .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(244,96,26,0.3); }
         .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .divider { text-align: center; font-size: 0.78rem; color: #A89880; margin-bottom: 16px; position: relative; }
-        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #E8E2D9; }
-        .divider span { background: white; padding: 0 12px; position: relative; }
 
         .terms { font-size: 0.72rem; color: #A89880; text-align: center; margin-bottom: 16px; line-height: 1.6; }
         .terms a { color: #F4601A; text-decoration: none; }
@@ -134,11 +123,6 @@ export default function SignupPage() {
         .login-link a { color: #F4601A; font-weight: 700; text-decoration: none; }
 
         .back-link { display: block; text-align: center; font-size: 0.8rem; color: #A89880; text-decoration: none; margin-top: 20px; }
-
-        .google-btn { width: 100%; background: white; border: 1.5px solid #E8E2D9; border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; font-weight: 600; color: #1A1410; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.18s; margin-bottom: 16px; }
-        .google-btn:hover { border-color: #D4CEC5; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .google-note { font-size: 0.72rem; color: #A89880; text-align: center; margin-top: -8px; margin-bottom: 16px; }
       `}</style>
 
       <div className="page">
@@ -147,7 +131,7 @@ export default function SignupPage() {
           <div className="tagline">Book in a snap. Stay anywhere.</div>
 
           <div className="title">Create your account</div>
-          <div className="subtitle">Join thousands of guests and hosts on SnapReserve</div>
+          <div className="subtitle">Join SnapReserve — it's free</div>
 
           <button className="google-btn" onClick={handleGoogleSignUp} disabled={googleLoading} type="button">
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -158,71 +142,25 @@ export default function SignupPage() {
             </svg>
             {googleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
-          <p className="google-note">No password needed — we'll use your Google account</p>
 
           <div className="divider"><span>or sign up with email</span></div>
 
           <form onSubmit={handleSignup}>
             {error && <div className="error">⚠️ {error}</div>}
 
-            {/* ROLE SELECTION */}
-            <div className="form-group">
-              <label className="label">I want to</label>
-              <div className="role-grid">
-                <div
-                  className={`role-card ${!isHost ? 'selected' : ''}`}
-                  onClick={() => setIsHost(false)}
-                >
-                  <div className="role-icon">🏨</div>
-                  <div className="role-label">Book stays</div>
-                  <div className="role-sub">I'm a guest</div>
-                </div>
-                <div
-                  className={`role-card ${isHost ? 'selected' : ''}`}
-                  onClick={() => setIsHost(true)}
-                >
-                  <div className="role-icon">🏠</div>
-                  <div className="role-label">List my property</div>
-                  <div className="role-sub">I'm a host</div>
-                </div>
-              </div>
-            </div>
-
             <div className="form-group">
               <label className="label">Full name</label>
-              <input
-                className="input"
-                type="text"
-                placeholder="Your full name"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                required
-              />
+              <input className="input" type="text" placeholder="Your full name" value={fullName} onChange={e => setFullName(e.target.value)} required />
             </div>
 
             <div className="form-group">
               <label className="label">Email address</label>
-              <input
-                className="input"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+              <input className="input" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
 
             <div className="form-group">
               <label className="label">Password</label>
-              <input
-                className="input"
-                type="password"
-                placeholder="Minimum 6 characters"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+              <input className="input" type="password" placeholder="Minimum 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
             </div>
 
             <div className="terms">
@@ -230,7 +168,7 @@ export default function SignupPage() {
             </div>
 
             <button className="submit-btn" type="submit" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account →'}
+              {loading ? 'Creating account…' : 'Create account →'}
             </button>
           </form>
 

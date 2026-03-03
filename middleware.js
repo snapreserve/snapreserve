@@ -183,7 +183,7 @@ export async function middleware(request) {
   // ----------------------------------------------------------------
   // Existing protected routes (user-facing)
   // ----------------------------------------------------------------
-  const protectedRoutes = ['/dashboard', '/booking', '/trips', '/account']
+  const protectedRoutes = ['/dashboard', '/host', '/booking', '/trips', '/account']
   const isProtected = protectedRoutes.some(r => path.startsWith(r))
 
   if (isProtected && !user) {
