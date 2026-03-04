@@ -67,7 +67,10 @@ export default function ListPropertyPage() {
   const [initialStatus, setInitialStatus] = useState(null)
   const [changeNotes, setChangeNotes] = useState([])
   const [previewing, setPreviewing] = useState(false)
+  const [betaAcknowledged, setBetaAcknowledged] = useState(false)
   const fileInputRef = useRef(null)
+
+  const BETA_TERMS_VERSION = '1.0'
 
   // Form data
   const [form, setForm] = useState({
@@ -349,6 +352,13 @@ export default function ListPropertyPage() {
         // Step 5: Update user listing_status
         await supabase.from('users').update({ listing_status: 'pending' }).eq('id', user.id)
       }
+
+      // Save beta acknowledgment
+      await supabase.from('beta_acknowledgments').insert({
+        user_id:            user.id,
+        listing_id:         listingId,
+        beta_terms_version: BETA_TERMS_VERSION,
+      })
 
       setSubmitted(true)
     } catch (err) {
@@ -886,6 +896,56 @@ export default function ListPropertyPage() {
                     After you submit, our team will review your listing within <strong style={{color:'white'}}>24 hours</strong>. We verify the details, check your photos, and make sure everything meets our quality standards. You'll get an email when you're approved and your listing goes live.
                   </div>
                 </div>
+
+                {/* Beta Notice */}
+                <div style={{marginTop:'20px',background:'rgba(251,191,36,0.06)',border:'1px solid rgba(251,191,36,0.2)',borderRadius:'14px',padding:'22px 24px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'14px'}}>
+                    <span style={{fontSize:'1.1rem'}}>⚡</span>
+                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:'1rem',fontWeight:700,color:'#FCD34D'}}>
+                      SnapReserve™ Beta Notice
+                    </div>
+                  </div>
+                  <p style={{fontSize:'0.84rem',color:'rgba(255,255,255,0.6)',lineHeight:1.75,marginBottom:'14px'}}>
+                    SnapReserve is currently in beta testing. During this early access phase, some features may change as we continue improving the platform.
+                  </p>
+                  <p style={{fontSize:'0.84rem',fontWeight:700,color:'rgba(255,255,255,0.75)',marginBottom:'10px'}}>
+                    By publishing your listing on SnapReserve, you acknowledge that:
+                  </p>
+                  <ul style={{paddingLeft:'4px',listStyle:'none',display:'flex',flexDirection:'column',gap:'8px',marginBottom:'0'}}>
+                    {[
+                      'The platform is still under development and may experience occasional bugs or changes.',
+                      'Booking, pricing, and availability tools may be updated during the beta period.',
+                      'Hosts are responsible for ensuring their property complies with local laws, taxes, and licensing requirements.',
+                      'SnapReserve is currently operating as a limited beta release while the platform is being refined.',
+                    ].map((item, i) => (
+                      <li key={i} style={{display:'flex',gap:'10px',fontSize:'0.82rem',color:'rgba(255,255,255,0.55)',lineHeight:1.65}}>
+                        <span style={{color:'#FCD34D',flexShrink:0,marginTop:'1px'}}>•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Acknowledgment checkbox */}
+                <label
+                  style={{display:'flex',alignItems:'flex-start',gap:'12px',marginTop:'16px',cursor:'pointer',padding:'16px 18px',background: betaAcknowledged ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',border:`1px solid ${betaAcknowledged ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.1)'}`,borderRadius:'12px',transition:'all 0.2s'}}
+                >
+                  <div style={{position:'relative',flexShrink:0,marginTop:'1px'}}>
+                    <input
+                      type="checkbox"
+                      checked={betaAcknowledged}
+                      onChange={e => setBetaAcknowledged(e.target.checked)}
+                      style={{position:'absolute',opacity:0,width:'20px',height:'20px',cursor:'pointer',margin:0}}
+                    />
+                    <div style={{width:'20px',height:'20px',border:`2px solid ${betaAcknowledged ? '#4ADE80' : 'rgba(255,255,255,0.25)'}`,borderRadius:'5px',background: betaAcknowledged ? '#4ADE80' : 'transparent',display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.18s',pointerEvents:'none'}}>
+                      {betaAcknowledged && <span style={{color:'#0F0D0A',fontSize:'0.78rem',fontWeight:900,lineHeight:1}}>✓</span>}
+                    </div>
+                  </div>
+                  <span style={{fontSize:'0.84rem',color: betaAcknowledged ? '#F5F0EB' : 'rgba(255,255,255,0.55)',lineHeight:1.6,fontWeight: betaAcknowledged ? 600 : 400}}>
+                    I acknowledge that SnapReserve is currently in beta and agree to the terms above.
+                  </span>
+                </label>
+
               </div>
             )}
           </div>
@@ -900,7 +960,9 @@ export default function ListPropertyPage() {
               ? <button className="next-btn" onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.propertyType}>
                   Choose & continue →
                 </button>
-              : <button className="next-btn" onClick={handleSubmit} disabled={submitting || !form.title || !form.pricePerNight}>
+              : <button className="next-btn" onClick={handleSubmit} disabled={submitting || !form.title || !form.pricePerNight || !betaAcknowledged}
+                  title={!betaAcknowledged ? 'Please acknowledge the Beta Notice above before submitting' : ''}
+                >
                   {submitting ? 'Submitting...' : editMode ? '📤 Submit changes →' : '🚀 Submit for review →'}
                 </button>
             }
