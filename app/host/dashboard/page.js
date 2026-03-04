@@ -483,9 +483,15 @@ export default function HostDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      // listings.host_id → hosts.id (not users.id), so look up hosts row first
+      const { data: hostRow } = await supabase
+        .from('hosts').select('id').eq('user_id', user.id).maybeSingle()
+
       const [{ data: prof }, { data: lists }] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
-        supabase.from('listings').select('*').eq('host_id', user.id).order('created_at', { ascending: false }),
+        hostRow
+          ? supabase.from('listings').select('*').eq('host_id', hostRow.id).order('created_at', { ascending: false })
+          : Promise.resolve({ data: [] }),
       ])
 
       setProfile(prof)
