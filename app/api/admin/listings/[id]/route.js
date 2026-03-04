@@ -45,6 +45,14 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
   }
 
+  // Resolve host's user_id from hosts.id (listings.host_id → hosts.id, not users.id)
+  let hostUserId = null
+  if (listing.host_id) {
+    const { data: hostRow } = await adminClient
+      .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
+    hostUserId = hostRow?.user_id ?? null
+  }
+
   const now = new Date().toISOString()
   let updatePayload = { reviewed_by: user.id, reviewed_at: now }
   let approvalUpdate = {}
@@ -114,7 +122,7 @@ export async function PATCH(request, { params }) {
   // Notify host for suspension / reactivation / permanent rejection
   if (action === 'suspend') {
     await notifyHost({
-      hostUserId: listing.host_id,
+      hostUserId,
       listingId:  id,
       type:       'suspension',
       subject:    `Your listing has been suspended`,
@@ -122,7 +130,7 @@ export async function PATCH(request, { params }) {
     })
   } else if (action === 'reactivate') {
     await notifyHost({
-      hostUserId: listing.host_id,
+      hostUserId,
       listingId:  id,
       type:       'reactivation',
       subject:    `Your listing has been reactivated`,
@@ -130,7 +138,7 @@ export async function PATCH(request, { params }) {
     })
   } else if (action === 'reject_permanently') {
     await notifyHost({
-      hostUserId: listing.host_id,
+      hostUserId,
       listingId:  id,
       type:       'rejection',
       subject:    `Your listing has been permanently removed`,
@@ -138,17 +146,19 @@ export async function PATCH(request, { params }) {
     })
   }
 
-  // Update host's listing_status
-  if (action === 'approve') {
-    await adminClient
-      .from('users')
-      .update({ listing_status: 'approved', is_verified: true })
-      .eq('id', listing.host_id)
-  } else if (action === 'reject') {
-    await adminClient
-      .from('users')
-      .update({ listing_status: 'rejected' })
-      .eq('id', listing.host_id)
+  // Update host's listing_status (use hostUserId — listings.host_id is hosts.id, not users.id)
+  if (hostUserId) {
+    if (action === 'approve') {
+      await adminClient
+        .from('users')
+        .update({ listing_status: 'approved', is_verified: true })
+        .eq('id', hostUserId)
+    } else if (action === 'reject') {
+      await adminClient
+        .from('users')
+        .update({ listing_status: 'rejected' })
+        .eq('id', hostUserId)
+    }
   }
 
   await logAction({

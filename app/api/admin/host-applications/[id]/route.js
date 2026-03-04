@@ -50,6 +50,20 @@ export async function PATCH(request, { params }) {
       .eq('id', app.user_id)
     if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 })
 
+    // Create hosts row (idempotent — upsert on user_id)
+    await admin
+      .from('hosts')
+      .upsert(
+        {
+          user_id: app.user_id,
+          host_status: 'active',
+          host_type: app.host_type || null,
+          display_name: app.display_name || null,
+          verification_status: 'unverified',
+        },
+        { onConflict: 'user_id', ignoreDuplicates: true }
+      )
+
     await logAction({
       actorId: user.id,
       actorEmail: user.email,

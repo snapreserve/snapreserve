@@ -128,8 +128,13 @@ export default function ListPropertyPage() {
     setSaving(true)
     setDraftSaved(false)
     try {
+      // listings.host_id references hosts.id (not users.id)
+      const { data: hostRow, error: hostErr } = await supabase
+        .from('hosts').select('id').eq('user_id', user.id).maybeSingle()
+      if (hostErr || !hostRow) throw new Error('Host profile not found. Please contact support.')
+
       const payload = {
-        host_id:         user.id,
+        host_id:         hostRow.id,
         status:          'draft',
         type:            hostType,
         property_type:   form.propertyType || null,
@@ -178,6 +183,11 @@ export default function ListPropertyPage() {
   async function handleSubmit() {
     setSubmitting(true)
     try {
+      // listings.host_id references hosts.id (not users.id)
+      const { data: hostRow, error: hostErr } = await supabase
+        .from('hosts').select('id').eq('user_id', user.id).maybeSingle()
+      if (hostErr || !hostRow) throw new Error('Host profile not found. Please contact support.')
+
       // Upload photos to Supabase Storage
       let uploadedUrls = []
       for (const file of form.photos) {
@@ -196,7 +206,7 @@ export default function ListPropertyPage() {
 
       // Insert or update listing as pending_review
       const listingPayload = {
-        host_id: user.id,
+        host_id: hostRow.id,
         title: form.title,
         description: form.description,
         type: hostType,
