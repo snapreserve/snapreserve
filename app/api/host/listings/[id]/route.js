@@ -36,7 +36,13 @@ export async function PATCH(request, { params }) {
     .single()
 
   if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-  if (listing.host_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // listings.host_id → hosts.id (not users.id) — verify ownership via hosts table
+  const { data: hostRow } = await admin
+    .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
+  if (!hostRow || hostRow.user_id !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   let updatePayload = {}
 
