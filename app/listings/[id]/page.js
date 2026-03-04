@@ -34,11 +34,11 @@ export default async function PropertyPage({ params, searchParams }) {
     .eq('is_available', true)
     .order('price_per_night', { ascending: true })
 
-  const { data: host } = listing?.host_id ? await supabase
-    .from('users')
-    .select('*')
-    .eq('id', listing.host_id)
-    .single() : { data: null }
+  // listings.host_id → hosts.id → hosts.user_id → public.users
+  const { data: hostRow } = listing?.host_id ? await supabase
+    .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle() : { data: null }
+  const { data: host } = hostRow?.user_id ? await supabase
+    .from('users').select('*').eq('id', hostRow.user_id).single() : { data: null }
 
   if (!listing) {
     return (
@@ -50,7 +50,9 @@ export default async function PropertyPage({ params, searchParams }) {
   }
 
   const amenities = listing.amenities ? listing.amenities.split(',') : []
-  const heroImg = cityImages[listing.city] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80'
+  const uploadedImages = Array.isArray(listing.images) ? listing.images.filter(Boolean) : []
+  const heroImg = uploadedImages[0] || cityImages[listing.city] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80'
+  const galleryImages = uploadedImages.slice(1, 5)
   const serviceFeePct = 0.032
 
   return (
@@ -171,6 +173,18 @@ export default async function PropertyPage({ params, searchParams }) {
 
         .divider { border: none; border-top: 1px solid #E8E2D9; margin: 24px 0; }
 
+        .photo-gallery { max-width: 1200px; margin: 0 auto; padding: 10px 48px 0; display: grid; gap: 8px; }
+        .photo-gallery.cols-1 { grid-template-columns: 1fr; }
+        .photo-gallery.cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .photo-gallery.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .photo-gallery.cols-4 { grid-template-columns: repeat(4, 1fr); }
+        .gallery-thumb { height: 130px; border-radius: 10px; overflow: hidden; position: relative; }
+        .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .gallery-thumb:hover img { transform: scale(1.04); }
+        .gallery-more { position: absolute; inset: 0; background: rgba(0,0,0,0.52); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.94rem; }
+
+        @media (max-width: 600px) { .photo-gallery { padding: 8px 20px 0; } .gallery-thumb { height: 90px; } }
+
         .footer { background: #1A1410; color: #A89880; padding: 32px 48px; display: flex; align-items: center; justify-content: space-between; }
         .footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: #F5EFE8; }
         .footer-logo span { color: #F4601A; }
@@ -207,6 +221,20 @@ export default async function PropertyPage({ params, searchParams }) {
           <div className="hr-count">{listing.review_count} reviews</div>
         </div>
       </div>
+
+      {/* PHOTO GALLERY STRIP — uploaded images beyond the hero */}
+      {galleryImages.length > 0 && (
+        <div className={`photo-gallery cols-${galleryImages.length}`}>
+          {galleryImages.map((url, i) => (
+            <div key={i} className="gallery-thumb">
+              <img src={url} alt={`${listing.title} photo ${i + 2}`} />
+              {i === 3 && uploadedImages.length > 5 && (
+                <div className="gallery-more">+{uploadedImages.length - 5} more</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="main">
         {/* LEFT COLUMN */}

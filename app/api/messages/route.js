@@ -70,7 +70,14 @@ export async function POST(request) {
   if (!listing.is_active || listing.status === 'suspended') {
     return NextResponse.json({ error: 'This listing is not currently available.' }, { status: 400 })
   }
-  if (listing.host_id === user.id) {
+
+  // listings.host_id → hosts.id (not users.id) — resolve the actual host user_id
+  const { data: hostRow } = await admin
+    .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
+  const hostUserId = hostRow?.user_id
+  if (!hostUserId) return NextResponse.json({ error: 'Host not found.' }, { status: 404 })
+
+  if (hostUserId === user.id) {
     return NextResponse.json({ error: 'You cannot message your own listing.' }, { status: 400 })
   }
 
@@ -99,10 +106,10 @@ export async function POST(request) {
     )
   }
 
-  // Create conversation
+  // Create conversation — host_user_id must be users.id (not hosts.id)
   const { data: conv, error } = await admin
     .from('conversations')
-    .insert({ listing_id, guest_user_id: user.id, host_user_id: listing.host_id })
+    .insert({ listing_id, guest_user_id: user.id, host_user_id: hostUserId })
     .select('id')
     .single()
 
