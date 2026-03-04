@@ -188,23 +188,7 @@ export default function ListPropertyPage() {
         .from('hosts').select('id').eq('user_id', user.id).maybeSingle()
       if (hostErr || !hostRow) throw new Error('Host profile not found. Please contact support.')
 
-      // Upload photos to Supabase Storage
-      let uploadedUrls = []
-      for (const file of form.photos) {
-        const ext = file.name.split('.').pop()
-        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { data, error } = await supabase.storage
-          .from('property-images')
-          .upload(path, file)
-        if (!error) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('property-images')
-            .getPublicUrl(path)
-          uploadedUrls.push(publicUrl)
-        }
-      }
-
-      // Insert or update listing as pending_review
+      // Step 1: Create/update listing first to get its ID
       const listingPayload = {
         host_id: hostRow.id,
         title: form.title,
@@ -225,7 +209,6 @@ export default function ListPropertyPage() {
         min_nights: form.minNights,
         is_instant_book: form.instantBook,
         is_active: false,
-        images: uploadedUrls,
         status: 'pending_review',
       }
 
@@ -240,19 +223,53 @@ export default function ListPropertyPage() {
       } else {
         ;({ data: listing, error: listingError } = await supabase
           .from('listings')
-          .insert({ ...listingPayload, rating: 0, review_count: 0 })
+          .insert({ ...listingPayload, rating: 0, review_count: 0, images: [] })
           .select()
           .single())
       }
 
       if (listingError) throw listingError
 
-      // Get host info for approval record
-      const { data: profile } = await supabase.from('users').select('full_name, email').eq('id', user.id).single()
+      // Step 2: Upload photos to listings/{listingId}/{filename}
+      const listingId = listing.id
+      const uploadedImages = []
+      for (const file of form.photos) {
+        const ext = file.name.split('.').pop()
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const path = `listings/${listingId}/${filename}`
+        const { error: uploadErr } = await supabase.storage
+          .from('property-images')
+          .upload(path, file)
+        if (!uploadErr) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('property-images')
+            .getPublicUrl(path)
+          uploadedImages.push({ path, url: publicUrl })
+        }
+      }
 
-      // Create approval request
+      // Step 3: Insert listing_images rows + update listing.images array
+      if (uploadedImages.length > 0) {
+        await supabase.from('listing_images').insert(
+          uploadedImages.map((img, i) => ({
+            listing_id: listingId,
+            path: img.path,
+            is_cover: i === 0,
+            sort_order: i,
+          }))
+        )
+        await supabase
+          .from('listings')
+          .update({ images: uploadedImages.map(i => i.url) })
+          .eq('id', listingId)
+      }
+
+      // Step 4: Create approval request
+      const { data: profile } = await supabase
+        .from('users').select('full_name, email').eq('id', user.id).single()
+
       await supabase.from('listing_approvals').insert({
-        listing_id: listing.id,
+        listing_id: listingId,
         host_id: user.id,
         host_name: profile?.full_name || '',
         host_email: profile?.email || user.email,
@@ -260,7 +277,7 @@ export default function ListPropertyPage() {
         status: 'pending',
       })
 
-      // Update user listing_status
+      // Step 5: Update user listing_status
       await supabase.from('users').update({ listing_status: 'pending' }).eq('id', user.id)
 
       setSubmitted(true)

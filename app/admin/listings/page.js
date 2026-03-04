@@ -33,6 +33,9 @@ export default function ListingApprovalsPage() {
   const [acting, setActing]   = useState(false)
   const [toast, setToast]     = useState(null)
 
+  // Images: { [listingId]: { loading: bool, items: [] } }
+  const [imagesMap, setImagesMap] = useState({})
+
   // Image lightbox
   const [lightbox, setLightbox] = useState(null) // image url
 
@@ -63,6 +66,18 @@ export default function ListingApprovalsPage() {
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3500)
+  }
+
+  async function fetchImages(listingId) {
+    if (imagesMap[listingId]) return // already loaded
+    setImagesMap(prev => ({ ...prev, [listingId]: { loading: true, items: [] } }))
+    try {
+      const res = await fetch(`/api/admin/listings/${listingId}/images`)
+      const json = await res.json()
+      setImagesMap(prev => ({ ...prev, [listingId]: { loading: false, items: json.images || [] } }))
+    } catch {
+      setImagesMap(prev => ({ ...prev, [listingId]: { loading: false, items: [] } }))
+    }
   }
 
   async function doAction(listingId, action, extra = {}) {
@@ -112,12 +127,22 @@ export default function ListingApprovalsPage() {
     const showActions = isPending || isChanges
     if (!showActions) return null
 
+    const imgState   = imagesMap[a.listing_id]
+    const imgCount   = imgState?.items?.length ?? 0
+    const imgLoading = imgState?.loading ?? true
+    const tooFewPhotos = !imgLoading && imgCount < 5
+
     const showRequestForm = requestTarget === a.listing_id
 
     return (
       <div>
+        {tooFewPhotos && (
+          <div style={{background:'rgba(251,191,36,0.08)',border:'1px solid rgba(251,191,36,0.25)',borderRadius:'10px',padding:'10px 14px',marginBottom:'12px',fontSize:'0.82rem',color:'#FCD34D',display:'flex',alignItems:'center',gap:'8px'}}>
+            <span>⚠️</span> Host must upload at least 5 photos before approval. ({imgCount} uploaded)
+          </div>
+        )}
         <div className="action-row">
-          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting}>
+          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting || tooFewPhotos}>
             {acting ? 'Processing…' : '✅ Approve'}
           </button>
 
@@ -336,7 +361,7 @@ export default function ListingApprovalsPage() {
 
               return (
                 <div key={a.id} className={`card ${isOpen ? 'open' : ''}`}>
-                  <div className="card-top" onClick={() => setSelected(isOpen ? null : a)}>
+                  <div className="card-top" onClick={() => { const opening = !isOpen; setSelected(opening ? a : null); if (opening) fetchImages(a.listing_id) }}>
                     <div className="card-icon">{a.listings?.type === 'hotel' ? '🏨' : '🏠'}</div>
                     <div className="card-info">
                       <div className="card-title">{a.listing_title || 'Untitled'}</div>
@@ -403,18 +428,42 @@ export default function ListingApprovalsPage() {
                       )}
 
                       {/* Images */}
-                      {images.length > 0 && (
-                        <div className="images-section">
-                          <div className="images-label">Photos ({images.length})</div>
-                          <div className="images-row">
-                            {images.map((url, i) => (
-                              <div key={i} className="img-thumb" onClick={e => { e.stopPropagation(); setLightbox(url) }}>
-                                <img src={url} alt={`Photo ${i + 1}`} />
+                      {(() => {
+                        const imgState = imagesMap[a.listing_id]
+                        const imgs = imgState?.items ?? []
+                        const cover = imgs.find(i => i.is_cover) ?? imgs[0]
+                        const rest  = imgs.filter(i => i !== cover)
+                        return (
+                          <div className="images-section">
+                            <div className="images-label">
+                              Photos {imgState?.loading ? '(loading…)' : `(${imgs.length})`}
+                            </div>
+                            {imgState?.loading && (
+                              <div style={{color:'#6B5E52',fontSize:'0.8rem',padding:'12px 0'}}>Loading images…</div>
+                            )}
+                            {!imgState?.loading && imgs.length === 0 && (
+                              <div style={{color:'#F87171',fontSize:'0.8rem',padding:'12px 0'}}>No photos uploaded yet.</div>
+                            )}
+                            {cover && (
+                              <div
+                                style={{width:'100%',height:'260px',borderRadius:'10px',overflow:'hidden',marginBottom:'8px',cursor:'zoom-in',border:'1px solid rgba(255,255,255,0.08)'}}
+                                onClick={e => { e.stopPropagation(); setLightbox(cover.url) }}
+                              >
+                                <img src={cover.url} alt="Cover" style={{width:'100%',height:'100%',objectFit:'cover'}} />
                               </div>
-                            ))}
+                            )}
+                            {rest.length > 0 && (
+                              <div className="images-row">
+                                {rest.map((img, i) => (
+                                  <div key={img.id} className="img-thumb" onClick={e => { e.stopPropagation(); setLightbox(img.url) }}>
+                                    <img src={img.url} alt={`Photo ${i + 2}`} />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        )
+                      })()}
 
                       {/* Change request history */}
                       {crHistory.length > 0 && (
