@@ -17,8 +17,9 @@ const tierColors = {
   Premium: { bg: '#FFF3ED', text: '#F4601A', border: '#FECBAF' },
 }
 
-export default async function PropertyPage({ params }) {
+export default async function PropertyPage({ params, searchParams }) {
   const { id } = await params
+  const { preview } = await searchParams
 
   const { data: listing } = await supabase
     .from('listings')
@@ -54,6 +55,29 @@ export default async function PropertyPage({ params }) {
 
   return (
     <>
+      {preview === '1' && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: '#1A1712', borderBottom: '2px solid #F4601A',
+          padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontFamily: "'DM Sans',-apple-system,sans-serif",
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1rem' }}>👁️</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#F5F0EB' }}>Preview mode — not yet live</div>
+              <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.45)', marginTop: '1px' }}>This is how your listing will appear to guests once approved and published.</div>
+            </div>
+          </div>
+          <a
+            href="/host/dashboard"
+            style={{ background: '#F4601A', border: 'none', color: 'white', borderRadius: '8px', padding: '8px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-block' }}
+          >
+            ← Back to dashboard
+          </a>
+        </div>
+      )}
+      <div style={preview === '1' ? { marginTop: '64px' } : {}}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; color: #1A1410; }
@@ -297,6 +321,7 @@ export default async function PropertyPage({ params }) {
         <div className="footer-logo">Snap<span>Reserve</span></div>
         <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve · snapreserve.app</div>
       </footer>
+      </div>
     </>
   )
 }

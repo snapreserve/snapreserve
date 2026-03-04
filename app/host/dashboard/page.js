@@ -940,20 +940,14 @@ export default function HostDashboard() {
                           {l.status === 'pending_review' && (
                             <>
                               <button className="prop-btn secondary" disabled>⏳ In Review</button>
-                              <a href={`/listings/${l.id}`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
+                              <a href={`/listings/${l.id}?preview=1`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
                             </>
                           )}
 
                           {l.status === 'changes_requested' && (
                             <>
-                              <button
-                                className="prop-btn orange"
-                                onClick={() => callListingAction(l.id, 'resubmit')}
-                                disabled={isActing}
-                              >
-                                {isActing ? 'Submitting…' : '📤 Resubmit'}
-                              </button>
-                              <a href={`/listings/${l.id}`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
+                              <a href={`/list-property?edit=${l.id}`} className="prop-btn orange">✏️ Edit listing</a>
+                              <a href={`/listings/${l.id}?preview=1`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
                             </>
                           )}
 
@@ -980,8 +974,8 @@ export default function HostDashboard() {
 
                           {(!l.status || l.status === 'draft') && (
                             <>
-                              <a href="/list-property" className="prop-btn orange">Edit draft</a>
-                              <button className="prop-btn secondary" disabled>Submit</button>
+                              <a href={`/list-property?edit=${l.id}`} className="prop-btn orange">✏️ Edit draft</a>
+                              <a href={`/listings/${l.id}?preview=1`} className="prop-btn secondary" target="_blank" rel="noreferrer">Preview</a>
                             </>
                           )}
                         </div>

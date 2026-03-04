@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const STEPS = [
@@ -54,6 +54,7 @@ const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','
 
 export default function ListPropertyPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [user, setUser] = useState(null)
   const [step, setStep] = useState(1)
   const [hostType, setHostType] = useState('private_stay') // 'private_stay' or 'hotel'
@@ -62,6 +63,10 @@ export default function ListPropertyPage() {
   const [draftId, setDraftId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [initialStatus, setInitialStatus] = useState(null)
+  const [changeNotes, setChangeNotes] = useState([])
+  const [previewing, setPreviewing] = useState(false)
   const fileInputRef = useRef(null)
 
   // Form data
@@ -92,9 +97,49 @@ export default function ListPropertyPage() {
   })
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
       setUser(user)
+      const editId = searchParams.get('edit')
+      if (editId) {
+        setDraftId(editId)
+        setEditMode(true)
+        const { data: listing } = await supabase
+          .from('listings').select('*').eq('id', editId).single()
+        if (!listing) return
+        setInitialStatus(listing.status)
+        setHostType(listing.type || 'private_stay')
+        setForm(prev => ({
+          ...prev,
+          propertyType: listing.property_type || '',
+          title:        listing.title || '',
+          description:  listing.description || '',
+          address:      listing.address || '',
+          city:         listing.city || '',
+          state:        listing.state || '',
+          zip:          listing.zip_code || '',
+          guests:       listing.max_guests || 2,
+          bedrooms:     listing.bedrooms || 1,
+          bathrooms:    listing.bathrooms || 1,
+          beds:         listing.beds || 1,
+          amenities:    listing.amenities ? listing.amenities.split(',').map(a => a.trim()).filter(Boolean) : [],
+          rules:        listing.house_rules || '',
+          pricePerNight: listing.price_per_night?.toString() || '',
+          cleaningFee:  listing.cleaning_fee?.toString() || '',
+          minNights:    listing.min_nights || 1,
+          instantBook:  listing.is_instant_book || false,
+          photoUrls:    Array.isArray(listing.images) ? listing.images : [],
+          photos:       [],
+        }))
+        if (listing.status === 'changes_requested') {
+          const { data: crs } = await supabase
+            .from('listing_change_requests')
+            .select('notes, admin_email, created_at')
+            .eq('listing_id', editId).eq('status', 'open')
+            .order('created_at', { ascending: false })
+          setChangeNotes(crs || [])
+        }
+      }
     })
   }, [])
 
@@ -120,13 +165,18 @@ export default function ListPropertyPage() {
   }
 
   function removePhoto(index) {
-    update('photos', form.photos.filter((_, i) => i !== index))
+    const urlToRemove = form.photoUrls[index]
+    // If it's a blob URL, it's a new file — remove from photos array too
+    if (urlToRemove?.startsWith('blob:')) {
+      const blobIndex = form.photoUrls.slice(0, index).filter(u => u.startsWith('blob:')).length
+      update('photos', form.photos.filter((_, i) => i !== blobIndex))
+    }
     update('photoUrls', form.photoUrls.filter((_, i) => i !== index))
   }
 
-  async function handleSaveDraft() {
-    setSaving(true)
-    setDraftSaved(false)
+  async function handleSaveDraft(silent = false) {
+    if (!silent) { setSaving(true); setDraftSaved(false) }
+    let savedId = draftId
     try {
       // listings.host_id references hosts.id (not users.id)
       const { data: hostRow, error: hostErr } = await supabase
@@ -135,7 +185,7 @@ export default function ListPropertyPage() {
 
       const payload = {
         host_id:         hostRow.id,
-        status:          'draft',
+        status:          editMode ? (initialStatus || 'draft') : 'draft',
         type:            hostType,
         property_type:   form.propertyType || null,
         title:           form.title || null,
@@ -157,27 +207,35 @@ export default function ListPropertyPage() {
       }
 
       let error
-      if (draftId) {
-        // Update existing draft
-        ;({ error } = await supabase.from('listings').update(payload).eq('id', draftId))
+      if (savedId) {
+        ;({ error } = await supabase.from('listings').update(payload).eq('id', savedId))
       } else {
-        // Create new draft
         const { data, error: insertError } = await supabase
           .from('listings')
           .insert({ ...payload, rating: 0, review_count: 0 })
           .select('id')
           .single()
         error = insertError
-        if (data?.id) setDraftId(data.id)
+        if (data?.id) { savedId = data.id; setDraftId(data.id) }
       }
 
       if (error) throw error
-      setDraftSaved(true)
-      setTimeout(() => setDraftSaved(false), 3000)
+      if (!silent) { setDraftSaved(true); setTimeout(() => setDraftSaved(false), 3000) }
     } catch (err) {
-      alert(err?.message || 'Failed to save draft.')
+      if (!silent) alert(err?.message || 'Failed to save draft.')
     }
-    setSaving(false)
+    if (!silent) setSaving(false)
+    return savedId
+  }
+
+  async function handlePreview() {
+    setPreviewing(true)
+    try {
+      const id = await handleSaveDraft(true)
+      if (id) window.open(`/listings/${id}?preview=1`, '_blank')
+    } finally {
+      setPreviewing(false)
+    }
   }
 
   async function handleSubmit() {
@@ -230,7 +288,7 @@ export default function ListPropertyPage() {
 
       if (listingError) throw listingError
 
-      // Step 2: Upload photos to listings/{listingId}/{filename}
+      // Step 2: Upload only NEW photos (form.photos = File objects for newly added images)
       const listingId = listing.id
       const uploadedImages = []
       for (const file of form.photos) {
@@ -248,37 +306,49 @@ export default function ListPropertyPage() {
         }
       }
 
-      // Step 3: Insert listing_images rows + update listing.images array
+      // Step 3: Merge existing (non-blob) URLs + new uploads → update listing.images
+      const existingUrls = form.photoUrls.filter(u => !u.startsWith('blob:'))
+      const allImageUrls = [...existingUrls, ...uploadedImages.map(i => i.url)]
+      if (allImageUrls.length > 0 || editMode) {
+        await supabase.from('listings').update({ images: allImageUrls }).eq('id', listingId)
+      }
       if (uploadedImages.length > 0) {
         await supabase.from('listing_images').insert(
           uploadedImages.map((img, i) => ({
             listing_id: listingId,
             path: img.path,
-            is_cover: i === 0,
-            sort_order: i,
+            is_cover: existingUrls.length === 0 && i === 0,
+            sort_order: existingUrls.length + i,
           }))
         )
-        await supabase
-          .from('listings')
-          .update({ images: uploadedImages.map(i => i.url) })
-          .eq('id', listingId)
       }
 
-      // Step 4: Create approval request
-      const { data: profile } = await supabase
-        .from('users').select('full_name, email').eq('id', user.id).single()
+      if (editMode) {
+        // For edits: call resubmit if was in changes_requested state
+        if (initialStatus === 'changes_requested') {
+          await fetch(`/api/host/listings/${listingId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'resubmit' }),
+          })
+        }
+      } else {
+        // Step 4: Create approval request (new submissions only)
+        const { data: profile } = await supabase
+          .from('users').select('full_name, email').eq('id', user.id).single()
 
-      await supabase.from('listing_approvals').insert({
-        listing_id: listingId,
-        host_id: user.id,
-        host_name: profile?.full_name || '',
-        host_email: profile?.email || user.email,
-        listing_title: form.title,
-        status: 'pending',
-      })
+        await supabase.from('listing_approvals').insert({
+          listing_id: listingId,
+          host_id: user.id,
+          host_name: profile?.full_name || '',
+          host_email: profile?.email || user.email,
+          listing_title: form.title,
+          status: 'pending',
+        })
 
-      // Step 5: Update user listing_status
-      await supabase.from('users').update({ listing_status: 'pending' }).eq('id', user.id)
+        // Step 5: Update user listing_status
+        await supabase.from('users').update({ listing_status: 'pending' }).eq('id', user.id)
+      }
 
       setSubmitted(true)
     } catch (err) {
@@ -295,12 +365,17 @@ export default function ListPropertyPage() {
     <>
       <style>{`* { margin:0;padding:0;box-sizing:border-box; } body { font-family:'DM Sans',-apple-system,sans-serif; background:#0F0D0A; color:white; min-height:100vh; display:flex; align-items:center; justify-content:center; }`}</style>
       <div style={{textAlign:'center',padding:'40px 20px',maxWidth:'480px',margin:'0 auto'}}>
-        <div style={{fontSize:'4rem',marginBottom:'20px'}}>🎉</div>
-        <div style={{fontFamily:'Playfair Display,serif',fontSize:'2rem',fontWeight:700,marginBottom:'12px'}}>Submitted for review!</div>
-        <div style={{fontSize:'0.92rem',color:'rgba(255,255,255,0.5)',lineHeight:1.8,marginBottom:'32px'}}>
-          Your listing <strong style={{color:'white'}}>"{form.title}"</strong> has been submitted. We'll review it within 24 hours and notify you by email once it's approved and live on SnapReserve™.
+        <div style={{fontSize:'4rem',marginBottom:'20px'}}>{editMode ? '✅' : '🎉'}</div>
+        <div style={{fontFamily:'Playfair Display,serif',fontSize:'2rem',fontWeight:700,marginBottom:'12px'}}>
+          {editMode ? 'Changes submitted!' : 'Submitted for review!'}
         </div>
-        <a href="/dashboard" style={{background:'#F4601A',color:'white',padding:'14px 32px',borderRadius:'100px',fontWeight:700,fontSize:'0.94rem',textDecoration:'none',display:'inline-block'}}>Back to dashboard →</a>
+        <div style={{fontSize:'0.92rem',color:'rgba(255,255,255,0.5)',lineHeight:1.8,marginBottom:'32px'}}>
+          {editMode
+            ? <>Your changes to <strong style={{color:'white'}}>"{form.title}"</strong> have been submitted. Our team will review them shortly.</>
+            : <>Your listing <strong style={{color:'white'}}>"{form.title}"</strong> has been submitted. We'll review it within 24 hours and notify you once it's approved.</>
+          }
+        </div>
+        <a href="/host/dashboard" style={{background:'#F4601A',color:'white',padding:'14px 32px',borderRadius:'100px',fontWeight:700,fontSize:'0.94rem',textDecoration:'none',display:'inline-block'}}>Back to dashboard →</a>
       </div>
     </>
   )
@@ -458,7 +533,10 @@ export default function ListPropertyPage() {
           <button className="save-btn" onClick={handleSaveDraft} disabled={saving}>
             {draftSaved ? '✓ Saved' : saving ? 'Saving…' : 'Save draft'}
           </button>
-          <a href="/dashboard" className="exit-btn">Exit</a>
+          <button className="save-btn" onClick={handlePreview} disabled={previewing} style={{borderColor:'rgba(244,96,26,0.4)',color:'#F4601A'}}>
+            {previewing ? 'Opening…' : '👁️ Preview'}
+          </button>
+          <a href="/host/dashboard" className="exit-btn">Exit</a>
         </div>
       </div>
 
@@ -493,8 +571,26 @@ export default function ListPropertyPage() {
             <div className="step-badge">
               {hostType === 'private_stay' ? '🏠 Private Stay Host' : '🏨 Hotel Host'}
             </div>
-            <h1>List your space on SnapReserve™</h1>
-            <p className="subtitle">Earn money from your home, apartment, villa, or unique space. Takes about 10 minutes to go live.</p>
+            <h1>{editMode ? 'Edit your listing' : 'List your space on SnapReserve™'}</h1>
+            <p className="subtitle">{editMode ? 'Update your listing details, then submit your changes for review.' : 'Earn money from your home, apartment, villa, or unique space. Takes about 10 minutes to go live.'}</p>
+
+            {/* Edit mode: change request notes */}
+            {editMode && changeNotes.length > 0 && (
+              <div style={{background:'rgba(96,165,250,0.06)',border:'1px solid rgba(96,165,250,0.25)',borderRadius:'12px',padding:'16px 18px',marginTop:'4px',marginBottom:'8px'}}>
+                <div style={{fontWeight:700,color:'#93C5FD',fontSize:'0.84rem',marginBottom:'10px',display:'flex',alignItems:'center',gap:'6px'}}>
+                  🔄 Admin requested the following changes
+                </div>
+                {changeNotes.map((cr, i) => (
+                  <div key={i} style={{fontSize:'0.84rem',color:'#F5F0EB',lineHeight:1.65,paddingTop: i > 0 ? '8px' : 0, borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none', marginTop: i > 0 ? '8px' : 0}}>
+                    {cr.notes}
+                    <div style={{fontSize:'0.68rem',color:'rgba(255,255,255,0.3)',marginTop:'2px'}}>
+                      {new Date(cr.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="divider" />
 
             {/* STEP 1 — Property Type */}
@@ -805,7 +901,7 @@ export default function ListPropertyPage() {
                   Choose & continue →
                 </button>
               : <button className="next-btn" onClick={handleSubmit} disabled={submitting || !form.title || !form.pricePerNight}>
-                  {submitting ? 'Submitting...' : '🚀 Submit for review →'}
+                  {submitting ? 'Submitting...' : editMode ? '📤 Submit changes →' : '🚀 Submit for review →'}
                 </button>
             }
           </div>
