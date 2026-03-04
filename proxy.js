@@ -15,7 +15,7 @@ function decodeJwtPayload(token) {
   }
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
