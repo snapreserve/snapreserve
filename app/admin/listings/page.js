@@ -482,7 +482,7 @@ export default function ListingApprovalsPage() {
                       )}
 
                       {/* Action buttons for pending + changes_requested */}
-                      <ActionButtons a={a} />
+                      {ActionButtons({ a })}
 
                       {/* Approved panel */}
                       {a.status === 'approved' && (
