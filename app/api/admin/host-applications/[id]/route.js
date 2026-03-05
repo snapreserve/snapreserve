@@ -14,11 +14,18 @@ export async function PATCH(request, { params }) {
   const body = await request.json().catch(() => ({}))
   const { action, rejection_reason } = body
 
-  if (!['approve', 'reject'].includes(action)) {
-    return NextResponse.json({ error: 'Invalid action. Use approve or reject.' }, { status: 400 })
+  if (!['approve', 'reject', 'save_notes'].includes(action)) {
+    return NextResponse.json({ error: 'Invalid action.' }, { status: 400 })
   }
   if (action === 'reject' && !rejection_reason?.trim()) {
     return NextResponse.json({ error: 'Rejection reason is required.' }, { status: 400 })
+  }
+
+  // Save admin notes — no role restriction beyond admin+
+  if (action === 'save_notes') {
+    const { notes } = body
+    await admin.from('host_applications').update({ id_admin_notes: notes ?? null }).eq('id', id)
+    return NextResponse.json({ success: true })
   }
 
   const admin = createAdminClient()

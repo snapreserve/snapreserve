@@ -4,13 +4,39 @@ import { getAdminSession } from '@/lib/get-admin-session'
 import { redirect } from 'next/navigation'
 import HostApplicationsClient from './HostApplicationsClient'
 
+async function signedUrl(admin, path) {
+  if (!path) return null
+  const { data } = await admin.storage.from('host-id-documents').createSignedUrl(path, 3600)
+  return data?.signedUrl ?? null
+}
+
 async function getData() {
-  const supabase = createAdminClient()
-  const { data } = await supabase
+  const admin = createAdminClient()
+  const { data } = await admin
     .from('host_applications')
-    .select('id, status, host_type, display_name, phone, created_at, reviewed_at, rejection_reason, user_id, users(email, full_name, avatar_url)')
+    .select(`
+      id, status, host_type, display_name, phone, created_at,
+      reviewed_at, rejection_reason, user_id, id_admin_notes,
+      id_type, id_front_url, id_back_url, id_passport_url, id_selfie_url, id_submitted_at,
+      users(email, full_name, avatar_url)
+    `)
     .order('created_at', { ascending: false })
-  return data ?? []
+
+  const apps = data ?? []
+
+  // Generate signed URLs for pending applications (admins need to view docs)
+  const withUrls = await Promise.all(apps.map(async app => {
+    if (app.status !== 'pending' && app.status !== 'rejected') return app
+    const [front, back, passport, selfie] = await Promise.all([
+      signedUrl(admin, app.id_front_url),
+      signedUrl(admin, app.id_back_url),
+      signedUrl(admin, app.id_passport_url),
+      signedUrl(admin, app.id_selfie_url),
+    ])
+    return { ...app, id_front_signed: front, id_back_signed: back, id_passport_signed: passport, id_selfie_signed: selfie }
+  }))
+
+  return withUrls
 }
 
 export default async function HostApplicationsPage() {
@@ -21,23 +47,5 @@ export default async function HostApplicationsPage() {
 
   const applications = await getData()
 
-  return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        .topbar { background:var(--sr-surface); border-bottom:1px solid var(--sr-border-solid); padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
-        .topbar h1 { font-size:1.05rem; font-weight:700; color:var(--sr-text); }
-        .content { padding:32px; }
-      `}</style>
-      <div className="topbar">
-        <h1>Host Applications</h1>
-        <div style={{ fontSize: '0.8rem', color: 'var(--sr-muted)' }}>
-          {applications.filter(a => a.status === 'pending').length} pending
-        </div>
-      </div>
-      <div className="content">
-        <HostApplicationsClient applications={applications} />
-      </div>
-    </>
-  )
+  return <HostApplicationsClient applications={applications} role={role} />
 }

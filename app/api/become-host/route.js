@@ -22,7 +22,7 @@ export async function POST(request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json().catch(() => ({}))
-  const { host_type, display_name, phone } = body
+  const { host_type, display_name, phone, id_type, id_front_url, id_back_url, id_passport_url, id_selfie_url } = body
 
   if (!VALID_TYPES.includes(host_type)) {
     return NextResponse.json({ error: 'Invalid host_type' }, { status: 400 })
@@ -78,7 +78,15 @@ export async function POST(request) {
   const { error: appErr } = await admin
     .from('host_applications')
     .upsert(
-      { user_id: user.id, status: 'pending', host_type, display_name: name, phone: ph },
+      {
+        user_id: user.id, status: 'pending', host_type, display_name: name, phone: ph,
+        id_type: id_type ?? null,
+        id_front_url: id_front_url ?? null,
+        id_back_url: id_back_url ?? null,
+        id_passport_url: id_passport_url ?? null,
+        id_selfie_url: id_selfie_url ?? null,
+        id_submitted_at: (id_type && id_selfie_url) ? new Date().toISOString() : null,
+      },
       { onConflict: 'user_id' }
     )
 

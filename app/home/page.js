@@ -421,7 +421,6 @@ export default function HomePage() {
                 <div className="stats-row">
                   <div><div className="sv">🇺🇸</div><div className="sl">US launch</div></div>
                   <div><div className="sv">{stats.cities}+</div><div className="sl">Cities</div></div>
-                  <div><div className="sv">4.8★</div><div className="sl">Avg. rating</div></div>
                 </div>
                 <div className="browse-btn" style={{ background:'#1A6EF4' }}>Browse Hotels →</div>
               </div>
@@ -437,7 +436,6 @@ export default function HomePage() {
                 <div className="stats-row">
                   <div><div className="sv">{stats.hosts}+</div><div className="sl">Private hosts</div></div>
                   <div><div className="sv">{stats.cities}+</div><div className="sl">Cities</div></div>
-                  <div><div className="sv">4.9★</div><div className="sl">Avg. rating</div></div>
                 </div>
                 <div className="browse-btn" style={{ background:'#F4601A' }}>Browse Stays →</div>
               </div>
