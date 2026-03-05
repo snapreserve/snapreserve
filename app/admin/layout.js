@@ -6,7 +6,7 @@ import AdminNav from './_components/AdminNav'
 
 export const dynamic = 'force-dynamic'
 
-async function getCurrentRole() {
+async function getAdminInfo() {
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -20,21 +20,26 @@ async function getCurrentRole() {
       }
     )
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+    if (!user) return { role: null, email: null, name: null }
     const { data } = await supabase
       .from('admin_roles')
       .select('role')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle()
-    return data?.role ?? null
+    const { data: profile } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+    return { role: data?.role ?? null, email: user.email, name: profile?.full_name ?? null }
   } catch {
-    return null
+    return { role: null, email: null, name: null }
   }
 }
 
 export default async function AdminLayout({ children }) {
-  const role = await getCurrentRole()
+  const { role, email, name } = await getAdminInfo()
   const isSuperAdmin = role === 'super_admin'
 
   return (
@@ -69,7 +74,13 @@ export default async function AdminLayout({ children }) {
           </div>
           <AdminNav isSuperAdmin={isSuperAdmin} />
           <div className="sidebar-footer">
-            <small style={{display:'block', marginBottom:'10px'}}>Role: {role ?? 'unknown'}</small>
+            <div style={{marginBottom:'12px'}}>
+              <div style={{fontSize:'0.78rem', fontWeight:700, color:'var(--sr-text)', marginBottom:'2px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                {name ?? email ?? 'Admin'}
+              </div>
+              {name && <div style={{fontSize:'0.68rem', color:'var(--sr-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:'6px'}}>{email}</div>}
+              {role && <span className={`role-badge role-${role}`}>{role.replace('_', ' ')}</span>}
+            </div>
             <ThemeToggle style={{width:'100%',marginBottom:'8px',justifyContent:'center'}} />
             <SignOutButton />
           </div>
