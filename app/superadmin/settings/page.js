@@ -39,6 +39,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState(null)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
+  const [waitlistV2Enabled, setWaitlistV2Enabled] = useState(false)
   const [supportEmail, setSupportEmail] = useState('')
   const [saving, setSaving] = useState({})
   const [toast, setToast] = useState(null)
@@ -53,6 +54,7 @@ export default function SettingsPage() {
         setSettings(s)
         setMaintenanceMode(s.maintenance_mode?.value ?? false)
         setWaitlistEnabled(s.waitlist_enabled?.value ?? true)
+        setWaitlistV2Enabled(s.waitlist_v2_enabled?.value ?? false)
         setSupportEmail(s.support_email?.value ?? '')
       })
       .catch(() => router.push('/admin'))
@@ -93,6 +95,11 @@ export default function SettingsPage() {
   async function toggleWaitlist(val) {
     setWaitlistEnabled(val)
     await saveSetting('waitlist_enabled', val)
+  }
+
+  async function toggleWaitlistV2(val) {
+    setWaitlistV2Enabled(val)
+    await saveSetting('waitlist_v2_enabled', val)
   }
 
   async function saveEmail() {
@@ -165,6 +172,31 @@ export default function SettingsPage() {
               <span className="toggle-slider" />
             </label>
             <span className="toggle-label">{waitlistEnabled ? 'Enabled — accepting sign-ups' : 'Disabled — form is closed'}</span>
+          </div>
+        </div>
+
+        {/* Waitlist v2 */}
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <div className="section-title">Waitlist v2 — Site Lock</div>
+              <div className="section-desc">Redirects all public routes to /waitlist. Admins are unaffected.</div>
+              {settings.waitlist_v2_enabled?.updated_at && (
+                <div className="updated-text">Last updated: {fmt(settings.waitlist_v2_enabled.updated_at)}</div>
+              )}
+            </div>
+          </div>
+          <div className="toggle-wrap">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={waitlistV2Enabled}
+                onChange={e => toggleWaitlistV2(e.target.checked)}
+                disabled={saving.waitlist_v2_enabled}
+              />
+              <span className="toggle-slider" />
+            </label>
+            <span className="toggle-label">{waitlistV2Enabled ? 'Enabled — site locked to /waitlist' : 'Disabled — site is open'}</span>
           </div>
         </div>
 
