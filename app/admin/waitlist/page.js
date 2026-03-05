@@ -7,8 +7,8 @@ import WaitlistClient from './_components/WaitlistClient'
 async function getWaitlist() {
   const supabase = createAdminClient()
   const { data, count } = await supabase
-    .from('waitlist')
-    .select('id, email, first_name, last_name, user_type, message, region, created_at', { count: 'exact' })
+    .from('waitlist_v2_signups')
+    .select('id, email, first_name, last_name, city, role, interest, referral_code, referred_by, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
   return { entries: data ?? [], total: count ?? 0 }
 }
