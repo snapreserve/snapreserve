@@ -229,7 +229,6 @@ function ListingsInner() {
           <div className="nav-links">
             <a href="/home"          className="nav-link">Home</a>
             <a href="/about"         className="nav-link">About</a>
-            <a href="/become-a-host" className="nav-link">For Hosts</a>
             <a href="/listings"      className="nav-link active">Explore</a>
             <a href="/contact"       className="nav-link">Contact</a>
           </div>
@@ -364,7 +363,6 @@ function ListingsInner() {
         <span className="footer-logo">Snap<span>Reserve</span>™</span>
         <div className="footer-links">
           <a href="/about">About</a>
-          <a href="/become-a-host">For Hosts</a>
           <a href="/listings">Explore</a>
           <a href="/contact">Contact</a>
           <a href="/privacy">Privacy</a>
