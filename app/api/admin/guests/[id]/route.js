@@ -109,6 +109,11 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
+  // Block protected owner account
+  if (guest.is_owner && action !== 'reactivate') {
+    return NextResponse.json({ error: 'This account is protected and cannot be modified.' }, { status: 403 })
+  }
+
   const now = new Date().toISOString()
   let updatePayload = {}
 

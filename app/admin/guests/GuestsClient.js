@@ -450,7 +450,13 @@ export default function GuestsClient({ initialGuests, role }) {
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 5 }} onClick={e => e.stopPropagation()}>
                       {canManage && !g.suspended_at && g.is_active && (
-                        <button className="gs-btn gs-btn-susp" onClick={() => openModal('suspend', g)}>Suspend</button>
+                        <button
+                          className="gs-btn gs-btn-susp"
+                          onClick={() => !g.is_owner && openModal('suspend', g)}
+                          disabled={g.is_owner}
+                          title={g.is_owner ? 'This account is protected and cannot be modified.' : undefined}
+                          style={g.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                        >Suspend</button>
                       )}
                       {canReinstate && (!g.is_active || g.suspended_at) && (
                         <button className="gs-btn gs-btn-react" onClick={() => openModal('reactivate', g)}>Reinstate</button>
@@ -508,6 +514,7 @@ export default function GuestsClient({ initialGuests, role }) {
                       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                         {(() => { const b = guestStatus(sel); return <span className="gs-badge" style={{ background: b.bg, color: b.color }}>{b.label}</span> })()}
                         {sel.is_host && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.1)', color: 'var(--sr-orange)' }}>Host</span>}
+                        {sel.is_owner && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.2)', color: 'var(--sr-orange)', border: '1px solid var(--sr-orange)' }}>Protected Owner</span>}
                       </div>
 
                       {/* 4-stat grid */}
@@ -545,8 +552,20 @@ export default function GuestsClient({ initialGuests, role }) {
                           <div className="gs-sec-title">Actions</div>
                           <div className="gs-actions">
                             {canManage && !sel.suspended_at && sel.is_active && <>
-                              <button className="gs-btn gs-btn-susp" onClick={() => openModal('suspend', sel)}>Suspend</button>
-                              <button className="gs-btn gs-btn-deact" onClick={() => openModal('deactivate', sel)}>Deactivate</button>
+                              <button
+                                className="gs-btn gs-btn-susp"
+                                onClick={() => !sel.is_owner && openModal('suspend', sel)}
+                                disabled={sel.is_owner}
+                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
+                                style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                              >Suspend</button>
+                              <button
+                                className="gs-btn gs-btn-deact"
+                                onClick={() => !sel.is_owner && openModal('deactivate', sel)}
+                                disabled={sel.is_owner}
+                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
+                                style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                              >Deactivate</button>
                             </>}
                             {canReinstate && (!sel.is_active || sel.suspended_at) && (
                               <button className="gs-btn gs-btn-react" onClick={() => openModal('reactivate', sel)}>Reinstate</button>
@@ -735,8 +754,20 @@ export default function GuestsClient({ initialGuests, role }) {
                         {canManage || canReinstate ? (
                           <div className="gs-actions">
                             {canManage && !sel.suspended_at && sel.is_active && <>
-                              <button className="gs-btn gs-btn-susp" onClick={() => openModal('suspend', sel)}>Suspend Account</button>
-                              <button className="gs-btn gs-btn-deact" onClick={() => openModal('deactivate', sel)}>Deactivate Account</button>
+                              <button
+                                className="gs-btn gs-btn-susp"
+                                onClick={() => !sel.is_owner && openModal('suspend', sel)}
+                                disabled={sel.is_owner}
+                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
+                                style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                              >Suspend Account</button>
+                              <button
+                                className="gs-btn gs-btn-deact"
+                                onClick={() => !sel.is_owner && openModal('deactivate', sel)}
+                                disabled={sel.is_owner}
+                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
+                                style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                              >Deactivate Account</button>
                             </>}
                             {canReinstate && (!sel.is_active || sel.suspended_at) && (
                               <button className="gs-btn gs-btn-react" onClick={() => openModal('reactivate', sel)}>Reinstate Account</button>

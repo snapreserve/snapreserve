@@ -125,6 +125,15 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Host not found' }, { status: 404 })
   }
 
+  // Block protected owner account (suspend/reactivate affect the user row)
+  if (action === 'suspend') {
+    const { data: hostUser } = await adminClient
+      .from('users').select('is_owner').eq('id', host.user_id).maybeSingle()
+    if (hostUser?.is_owner) {
+      return NextResponse.json({ error: 'This account is protected and cannot be modified.' }, { status: 403 })
+    }
+  }
+
   // Handle message action
   if (action === 'message') {
     await notifyHost({

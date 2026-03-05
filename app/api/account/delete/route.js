@@ -18,6 +18,12 @@ export async function POST(request) {
   const admin = createAdminClient()
   const today = new Date().toISOString().split('T')[0]
 
+  // ── Block owner account self-deletion ─────────────────────────────────────
+  const { data: selfUser } = await admin.from('users').select('is_owner').eq('id', user.id).maybeSingle()
+  if (selfUser?.is_owner) {
+    return NextResponse.json({ error: 'This account is protected and cannot be modified.' }, { status: 403 })
+  }
+
   // ── Block if upcoming bookings exist ───────────────────────────────────────
   const { data: upcoming } = await admin
     .from('bookings')

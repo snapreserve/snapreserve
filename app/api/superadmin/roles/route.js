@@ -50,12 +50,17 @@ export async function POST(request) {
   // Verify the target user actually exists before granting any role
   const { data: targetUser } = await adminClient
     .from('users')
-    .select('id')
+    .select('id, is_owner')
     .eq('id', target_user_id)
     .maybeSingle()
 
   if (!targetUser) {
     return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
+  }
+
+  // Owner account roles cannot be modified
+  if (targetUser.is_owner) {
+    return NextResponse.json({ error: 'This account is protected and cannot be modified.' }, { status: 403 })
   }
 
   const { error: upsertError } = await adminClient
@@ -101,6 +106,13 @@ export async function DELETE(request) {
   const h = await headers()
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const ua = h.get('user-agent') ?? 'unknown'
+
+  const adminClientDel = createAdminClient()
+  const { data: targetUserDel } = await adminClientDel
+    .from('users').select('is_owner').eq('id', target_user_id).maybeSingle()
+  if (targetUserDel?.is_owner) {
+    return NextResponse.json({ error: 'This account is protected and cannot be modified.' }, { status: 403 })
+  }
 
   // ── Block revocation of super_admin role ─────────────────────────────────
   if (revokeRole === 'super_admin') {
