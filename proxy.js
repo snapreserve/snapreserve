@@ -120,16 +120,8 @@ export async function proxy(request) {
       path === '/pending-approval'
 
     if (!isOwner && !isBypassPath) {
-      // Waitlist lock — blocks everyone (logged-in or not)
-      const locked = await isWaitlistV2Enabled(supabase)
-      if (locked) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/waitlist'
-        url.search   = ''
-        return NextResponse.redirect(url)
-      }
-
-      // Approval gate — only for authenticated users
+      // Approval gate — checked FIRST for authenticated users so non-approved
+      // users always land on /pending-approval, not /waitlist
       if (user) {
         const approvalStatus = await getApprovalStatus(supabase, user.id)
         if (approvalStatus !== 'approved') {
@@ -138,6 +130,15 @@ export async function proxy(request) {
           url.search   = ''
           return NextResponse.redirect(url)
         }
+      }
+
+      // Waitlist lock — blocks everyone (logged-in or not)
+      const locked = await isWaitlistV2Enabled(supabase)
+      if (locked) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/waitlist'
+        url.search   = ''
+        return NextResponse.redirect(url)
       }
     }
   }
