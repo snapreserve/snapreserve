@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-// Routes that bypass the waitlist lock
+// Routes that always bypass the site lock
 const ALLOWED_PREFIXES = [
   '/waitlist',
   '/admin',
@@ -9,12 +9,14 @@ const ALLOWED_PREFIXES = [
   '/auth',
   '/_next',
   '/favicon',
+  '/login',
+  '/signup',
 ]
 
-// Simple in-process cache (per edge worker instance)
+// Simple in-process cache (per worker instance, ~30 s TTL)
 let cachedEnabled = null
 let cacheExpiry   = 0
-const CACHE_TTL   = 30_000 // 30 seconds
+const CACHE_TTL   = 30_000
 
 async function isWaitlistV2Enabled() {
   const now = Date.now()
@@ -27,10 +29,7 @@ async function isWaitlistV2Enabled() {
         apikey:        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
       },
-      // Edge-friendly cache hint
-      next: { revalidate: 30 },
     })
-
     if (!res.ok) return false
     const rows = await res.json()
     const enabled = rows?.[0]?.value === true
@@ -42,19 +41,35 @@ async function isWaitlistV2Enabled() {
   }
 }
 
+/**
+ * Returns true if the request has a Supabase auth session cookie.
+ * Authenticated users (admins, hosts, guests) always bypass the waitlist lock —
+ * only unauthenticated visitors get sent to /waitlist.
+ */
+function hasAuthSession(request) {
+  return request.cookies.getAll().some(
+    c => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+  )
+}
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // Check if this path is always allowed
-  const isAllowed = ALLOWED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/') || pathname.startsWith(prefix + '?'))
+  // 1. Always-allowed paths (admin portal, API, auth callbacks, etc.)
+  const isAllowed = ALLOWED_PREFIXES.some(
+    p => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?')
+  )
   if (isAllowed) return NextResponse.next()
 
-  // Check waitlist v2 lock
+  // 2. Authenticated users (admins, existing members) are never locked out
+  if (hasAuthSession(request)) return NextResponse.next()
+
+  // 3. Check waitlist v2 lock — only affects unauthenticated visitors
   const locked = await isWaitlistV2Enabled()
   if (locked) {
     const url = request.nextUrl.clone()
     url.pathname = '/waitlist'
-    url.search = ''
+    url.search   = ''
     return NextResponse.redirect(url)
   }
 
@@ -63,10 +78,6 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except static files, images, and fonts.
-     * We still run the middleware on all app routes.
-     */
     '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|otf|eot)).*)',
   ],
 }
