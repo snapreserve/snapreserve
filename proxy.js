@@ -121,12 +121,12 @@ export async function proxy(request) {
 
     if (!isOwner && !isBypassPath) {
       // Approval gate — checked FIRST for authenticated users so non-approved
-      // users always land on /pending-approval, not /waitlist
+      // users always land on /waitlist until an admin approves them
       if (user) {
         const approvalStatus = await getApprovalStatus(supabase, user.id)
         if (approvalStatus !== 'approved') {
           const url = request.nextUrl.clone()
-          url.pathname = '/pending-approval'
+          url.pathname = '/waitlist'
           url.search   = ''
           return NextResponse.redirect(url)
         }
