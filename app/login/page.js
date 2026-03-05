@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -12,6 +13,12 @@ export default function LoginPage() {
   const [resetMode, setResetMode] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('error') === 'account_suspended') {
+      setError('Your account has been suspended. Contact support@snapreserve.app to appeal.')
+    }
+  }, [searchParams])
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
@@ -37,9 +44,27 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false); return }
-    router.push('/dashboard')
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) { setError(authError.message); setLoading(false); return }
+
+    // Check if account is suspended
+    if (data?.user) {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('suspended_at, is_active')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (userRow?.suspended_at || userRow?.is_active === false) {
+        await supabase.auth.signOut()
+        setError('Your account has been suspended. Please check your email or contact support@snapreserve.app to appeal.')
+        setLoading(false)
+        return
+      }
+    }
+
+    const next = searchParams.get('next') || '/dashboard'
+    router.push(next)
     router.refresh()
   }
 
@@ -76,7 +101,7 @@ export default function LoginPage() {
               The future of<br />travel booking<br />is <em style={{ color:'#F4601A' }}>here.</em>
             </div>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.42)', lineHeight:1.8, marginBottom:36, maxWidth:320 }}>
-              Hotels, private stays, and experiences — all in one place with industry-lowest fees at just 3.2%.
+              Hotels, private stays, and experiences — all in one place with transparent, low platform fees.
             </div>
             <div style={{ display:'flex', gap:32 }}>
               {[['180K+','Hosts worldwide'],['90+','Cities'],['4.9★','Avg. rating']].map(([val, label]) => (
@@ -110,7 +135,7 @@ export default function LoginPage() {
             {/* Login / Sign up toggle */}
             <div style={{ display:'flex', background:'#EDEBE7', borderRadius:100, padding:4, marginBottom:30 }}>
               <div style={{ flex:1, padding:'10px', borderRadius:100, background:'white', textAlign:'center', fontWeight:700, fontSize:13, boxShadow:'0 2px 10px rgba(0,0,0,0.08)', color:'#1A1410' }}>Log in</div>
-              <a href="/signup" style={{ flex:1, padding:'10px', borderRadius:100, textAlign:'center', fontWeight:700, fontSize:13, color:'#6B5F54', textDecoration:'none' }}>Sign up</a>
+              <a href={searchParams.get('next') ? `/signup?next=${encodeURIComponent(searchParams.get('next'))}` : '/signup'} style={{ flex:1, padding:'10px', borderRadius:100, textAlign:'center', fontWeight:700, fontSize:13, color:'#6B5F54', textDecoration:'none' }}>Sign up</a>
             </div>
 
             {!resetMode ? (
@@ -157,7 +182,7 @@ export default function LoginPage() {
                 </form>
 
                 <div style={{ textAlign:'center', fontSize:13, color:'#6B5F54' }}>
-                  Don't have an account? <a href="/signup" style={{ color:'#F4601A', fontWeight:700, textDecoration:'none' }}>Sign up free →</a>
+                  Don't have an account? <a href={searchParams.get('next') ? `/signup?next=${encodeURIComponent(searchParams.get('next'))}` : '/signup'} style={{ color:'#F4601A', fontWeight:700, textDecoration:'none' }}>Sign up free →</a>
                 </div>
               </>
             ) : (

@@ -54,12 +54,13 @@ export default function TermsPage() {
         <p>You must be at least 18 years old to use SnapReserve™. By using our platform, you represent and warrant that you meet this age requirement and have the legal capacity to enter into a binding agreement.</p>
 
         <h2>🏠 Platform Role</h2>
-        <p>SnapReserve™ is a marketplace that connects guests with hosts. We are not a party to any rental agreement between guests and hosts. We do not own, manage, or control any listed properties.</p>
+        <p>SnapReserve™ is a marketplace that connects hosts and guests. SnapReserve™ does not own, operate, manage, or control any properties listed on the platform. We are not a party to any rental agreement between guests and hosts, and we make no representations about the quality, safety, or legality of any listed property.</p>
         <div className="highlight">
           <ul>
             <li>Hosts are solely responsible for the accuracy of their listings and the condition of their properties</li>
             <li>Guests are responsible for reviewing listing details, house rules, and cancellation policies before booking</li>
             <li>SnapReserve™ facilitates the transaction but does not guarantee the quality or safety of any property</li>
+            <li>Hosts are responsible for maintaining appropriate insurance coverage for their property and complying with all applicable local laws and regulations</li>
           </ul>
         </div>
 

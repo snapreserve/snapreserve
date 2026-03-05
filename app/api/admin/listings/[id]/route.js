@@ -116,7 +116,6 @@ export async function PATCH(request, { params }) {
       .from('listing_approvals')
       .update(approvalUpdate)
       .eq('listing_id', id)
-      .eq('status', 'pending')
   }
 
   // Notify host for suspension / reactivation / permanent rejection

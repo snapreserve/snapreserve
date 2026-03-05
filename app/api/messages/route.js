@@ -2,28 +2,61 @@ import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/get-user-session'
 import { createAdminClient } from '@/lib/supabase-admin'
 
-// GET — list all conversations for the current user (guest or host)
+const CONV_SELECT = `
+  id, status, last_message_at, last_message_preview,
+  guest_unread_count, host_unread_count,
+  is_booked_guest_chat, blocked_by,
+  guest_user_id, host_user_id,
+  listing:listings(id, title, city, state, images)
+`
+
+// GET — list all conversations for the current user (guest, host, or team member)
 export async function GET(request) {
   const { user } = await getUserSession()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
 
-  // Fetch conversations without user FK joins (those FKs reference auth.users
-  // which PostgREST can't expose — we fetch user names separately from public.users)
-  const { data: conversations, error } = await admin
+  // Fetch conversations where user is guest or primary host
+  const { data: directConvs, error } = await admin
     .from('conversations')
-    .select(`
-      id, status, last_message_at, last_message_preview,
-      guest_unread_count, host_unread_count,
-      is_booked_guest_chat, blocked_by,
-      guest_user_id, host_user_id,
-      listing:listings(id, title, city, state, images)
-    `)
+    .select(CONV_SELECT)
     .or(`guest_user_id.eq.${user.id},host_user_id.eq.${user.id}`)
     .order('last_message_at', { ascending: false, nullsFirst: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  let conversations = directConvs || []
+
+  // Also fetch org conversations for team members (not Finance)
+  const { data: membership } = await admin
+    .from('host_team_members')
+    .select('host_id, role')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (membership && membership.role !== 'finance') {
+    const { data: hostRow } = await admin
+      .from('hosts').select('user_id').eq('id', membership.host_id).maybeSingle()
+
+    if (hostRow?.user_id) {
+      const { data: orgConvs } = await admin
+        .from('conversations')
+        .select(CONV_SELECT)
+        .eq('host_user_id', hostRow.user_id)
+        .order('last_message_at', { ascending: false, nullsFirst: false })
+
+      const existingIds = new Set(conversations.map(c => c.id))
+      for (const c of orgConvs || []) {
+        if (!existingIds.has(c.id)) conversations.push(c)
+      }
+      // Sort merged list by last_message_at
+      conversations.sort((a, b) =>
+        new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0)
+      )
+    }
+  }
 
   // Batch-fetch user names from public.users
   const userIds = [...new Set(

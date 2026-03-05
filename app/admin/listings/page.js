@@ -36,19 +36,25 @@ export default function ListingApprovalsPage() {
   // Images: { [listingId]: { loading: bool, items: [] } }
   const [imagesMap, setImagesMap] = useState({})
 
+  // Follow-ups: { [listingId]: { loading: bool, items: [], unread: number } }
+  const [followupsMap, setFollowupsMap] = useState({})
+  // Unread counts fetched on load: { [listingId]: number }
+  const [unreadCounts, setUnreadCounts] = useState({})
+
   // Image lightbox
   const [lightbox, setLightbox] = useState(null) // image url
 
   const loadData = useCallback(async () => {
     setLoading(true)
     const sb = supabase()
-    const [{ data: apps }, { data: crs }] = await Promise.all([
+    const [{ data: apps }, { data: crs }, { data: fus }] = await Promise.all([
       sb.from('listing_approvals')
         .select('*, listings(*)')
         .order('submitted_at', { ascending: false }),
       sb.from('listing_change_requests')
         .select('listing_id, notes, admin_email, created_at, status')
         .order('created_at', { ascending: false }),
+      fetch('/api/admin/listings/followup-counts').then(r => r.ok ? r.json() : { counts: [] }).then(j => ({ data: j.counts || [] })),
     ])
     setApprovals(apps || [])
 
@@ -58,6 +64,11 @@ export default function ListingApprovalsPage() {
       crMap[cr.listing_id].push(cr)
     })
     setChangeRequestsMap(crMap)
+
+    const ucMap = {}
+    ;(fus || []).forEach(({ listing_id, unread }) => { ucMap[listing_id] = unread })
+    setUnreadCounts(ucMap)
+
     setLoading(false)
   }, [])
 
@@ -77,6 +88,19 @@ export default function ListingApprovalsPage() {
       setImagesMap(prev => ({ ...prev, [listingId]: { loading: false, items: json.images || [] } }))
     } catch {
       setImagesMap(prev => ({ ...prev, [listingId]: { loading: false, items: [] } }))
+    }
+  }
+
+  async function fetchFollowups(listingId) {
+    setFollowupsMap(prev => ({ ...prev, [listingId]: { loading: true, items: [] } }))
+    try {
+      const res  = await fetch(`/api/admin/listings/${listingId}/followups`)
+      const json = await res.json()
+      setFollowupsMap(prev => ({ ...prev, [listingId]: { loading: false, items: json.followups || [] } }))
+      // Clear unread badge now that we've read them
+      setUnreadCounts(prev => ({ ...prev, [listingId]: 0 }))
+    } catch {
+      setFollowupsMap(prev => ({ ...prev, [listingId]: { loading: false, items: [] } }))
     }
   }
 
@@ -124,7 +148,8 @@ export default function ListingApprovalsPage() {
   function ActionButtons({ a }) {
     const isPending  = a.status === 'pending'
     const isChanges  = a.status === 'changes_requested'
-    const showActions = isPending || isChanges
+    const isRejected = a.status === 'rejected'
+    const showActions = isPending || isChanges || isRejected
     if (!showActions) return null
 
     const imgState   = imagesMap[a.listing_id]
@@ -136,42 +161,46 @@ export default function ListingApprovalsPage() {
 
     return (
       <div>
-        {tooFewPhotos && (
+        {tooFewPhotos && !isRejected && (
           <div style={{background:'rgba(251,191,36,0.08)',border:'1px solid rgba(251,191,36,0.25)',borderRadius:'10px',padding:'10px 14px',marginBottom:'12px',fontSize:'0.82rem',color:'#FCD34D',display:'flex',alignItems:'center',gap:'8px'}}>
             <span>⚠️</span> Host must upload at least 5 photos before approval. ({imgCount} uploaded)
           </div>
         )}
         <div className="action-row">
-          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting || tooFewPhotos}>
-            {acting ? 'Processing…' : '✅ Approve'}
+          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting || (!isRejected && tooFewPhotos)}>
+            {acting ? 'Processing…' : isRejected ? '✅ Re-approve' : '✅ Approve'}
           </button>
 
-          <button
-            className="btn-changes"
-            onClick={() => {
-              if (showRequestForm) { setRequestTarget(null); setRequestNotes('') }
-              else { setRequestTarget(a.listing_id); setRequestNotes('') }
-            }}
-            disabled={acting}
-          >
-            🔄 {showRequestForm ? 'Cancel' : 'Request Changes'}
-          </button>
-
-          <div className="reject-wrap">
-            <input
-              className="reject-input"
-              placeholder="Rejection reason (required)…"
-              value={rejectionReason}
-              onChange={e => setRejectionReason(e.target.value)}
-            />
+          {!isRejected && (
             <button
-              className="btn-reject"
-              onClick={() => doAction(a.listing_id, 'reject', { reason: rejectionReason })}
-              disabled={acting || !rejectionReason.trim()}
+              className="btn-changes"
+              onClick={() => {
+                if (showRequestForm) { setRequestTarget(null); setRequestNotes('') }
+                else { setRequestTarget(a.listing_id); setRequestNotes('') }
+              }}
+              disabled={acting}
             >
-              ❌ Reject
+              🔄 {showRequestForm ? 'Cancel' : 'Request Changes'}
             </button>
-          </div>
+          )}
+
+          {!isRejected && (
+            <div className="reject-wrap">
+              <input
+                className="reject-input"
+                placeholder="Rejection reason (optional)…"
+                value={rejectionReason}
+                onChange={e => setRejectionReason(e.target.value)}
+              />
+              <button
+                className="btn-reject"
+                onClick={() => doAction(a.listing_id, 'reject', { reason: rejectionReason })}
+                disabled={acting}
+              >
+                ❌ Reject
+              </button>
+            </div>
+          )}
         </div>
 
         {showRequestForm && (
@@ -210,28 +239,28 @@ export default function ListingApprovalsPage() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        .topbar { background:#1A1712; border-bottom:1px solid #2A2420; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
-        .topbar h1 { font-size:1.05rem; font-weight:700; color:#F5F0EB; }
-        .refresh-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#A89880; padding:7px 16px; border-radius:8px; font-size:0.8rem; cursor:pointer; font-family:inherit; }
-        .refresh-btn:hover { color:#F5F0EB; }
+        .topbar { background:var(--sr-surface); border-bottom:1px solid var(--sr-border-solid); padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
+        .topbar h1 { font-size:1.05rem; font-weight:700; color:var(--sr-text); }
+        .refresh-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:var(--sr-muted); padding:7px 16px; border-radius:8px; font-size:0.8rem; cursor:pointer; font-family:inherit; }
+        .refresh-btn:hover { color:var(--sr-text); }
         .content { padding:28px 32px; }
         .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
-        .stat { background:#1A1712; border:1px solid #2A2420; border-radius:12px; padding:18px 20px; }
+        .stat { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; padding:18px 20px; }
         .stat-num { font-size:1.7rem; font-weight:800; line-height:1; margin-bottom:4px; }
-        .stat-label { font-size:0.72rem; color:#A89880; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+        .stat-label { font-size:0.72rem; color:var(--sr-muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
         .tabs { display:flex; gap:4px; background:rgba(255,255,255,0.05); border-radius:10px; padding:4px; margin-bottom:20px; width:fit-content; }
-        .tab { padding:8px 20px; border-radius:7px; font-size:0.84rem; font-weight:600; border:none; cursor:pointer; font-family:inherit; color:#A89880; background:transparent; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
-        .tab.active { background:#F4601A; color:white; }
+        .tab { padding:8px 20px; border-radius:7px; font-size:0.84rem; font-weight:600; border:none; cursor:pointer; font-family:inherit; color:var(--sr-muted); background:transparent; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
+        .tab.active { background:var(--sr-orange); color:white; }
         .tab-badge { background:rgba(255,255,255,0.2); font-size:0.65rem; font-weight:800; padding:1px 7px; border-radius:100px; }
         .list { display:flex; flex-direction:column; gap:10px; }
-        .card { background:#1A1712; border:1px solid #2A2420; border-radius:12px; padding:18px 22px; cursor:pointer; transition:all 0.15s; }
+        .card { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; padding:18px 22px; cursor:pointer; transition:all 0.15s; }
         .card:hover { border-color:#3A3430; }
-        .card.open { border-color:#F4601A; background:rgba(244,96,26,0.04); }
+        .card.open { border-color:var(--sr-orange); background:rgba(244,96,26,0.04); }
         .card-top { display:flex; align-items:center; gap:14px; }
-        .card-icon { width:44px; height:44px; border-radius:10px; background:#2A2420; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+        .card-icon { width:44px; height:44px; border-radius:10px; background:var(--sr-border-solid); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
         .card-info { flex:1; min-width:0; }
-        .card-title { font-weight:700; font-size:0.92rem; color:#F5F0EB; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .card-meta { font-size:0.74rem; color:#A89880; display:flex; gap:12px; flex-wrap:wrap; }
+        .card-title { font-weight:700; font-size:0.92rem; color:var(--sr-text); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .card-meta { font-size:0.74rem; color:var(--sr-muted); display:flex; gap:12px; flex-wrap:wrap; }
         .card-right { display:flex; align-items:center; gap:8px; }
         .pill { padding:3px 12px; border-radius:100px; font-size:0.68rem; font-weight:700; text-transform:uppercase; }
         .pill.pending { background:rgba(251,191,36,0.1); color:#FCD34D; }
@@ -239,23 +268,23 @@ export default function ListingApprovalsPage() {
         .pill.rejected { background:rgba(248,113,113,0.1); color:#F87171; }
         .pill.changes_requested { background:rgba(96,165,250,0.1); color:#93C5FD; }
         .pill.live { background:rgba(74,222,128,0.15); color:#4ADE80; }
-        .chev { color:#6B5E52; font-size:0.8rem; margin-left:4px; }
-        .detail { border-top:1px solid #2A2420; margin-top:16px; padding-top:18px; }
+        .chev { color:var(--sr-sub); font-size:0.8rem; margin-left:4px; }
+        .detail { border-top:1px solid var(--sr-border-solid); margin-top:16px; padding-top:18px; }
         .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-        .di { background:#0F0D0A; border-radius:8px; padding:12px; }
-        .di-label { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B5E52; margin-bottom:4px; }
-        .di-val { font-size:0.86rem; font-weight:600; color:#F5F0EB; }
-        .desc-box { background:#0F0D0A; border-radius:8px; padding:12px; margin-bottom:16px; }
-        .desc-box p { font-size:0.82rem; color:#A89880; line-height:1.7; }
+        .di { background:var(--sr-bg); border-radius:8px; padding:12px; }
+        .di-label { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); margin-bottom:4px; }
+        .di-val { font-size:0.86rem; font-weight:600; color:var(--sr-text); }
+        .desc-box { background:var(--sr-bg); border-radius:8px; padding:12px; margin-bottom:16px; }
+        .desc-box p { font-size:0.82rem; color:var(--sr-muted); line-height:1.7; }
 
         /* Images */
         .images-section { margin-bottom:16px; }
-        .images-label { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B5E52; margin-bottom:8px; }
+        .images-label { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); margin-bottom:8px; }
         .images-row { display:flex; gap:8px; flex-wrap:wrap; }
         .img-thumb { width:100px; height:72px; border-radius:8px; overflow:hidden; cursor:pointer; border:1px solid rgba(255,255,255,0.08); transition:all 0.15s; flex-shrink:0; }
-        .img-thumb:hover { border-color:#F4601A; transform:scale(1.03); }
+        .img-thumb:hover { border-color:var(--sr-orange); transform:scale(1.03); }
         .img-thumb img { width:100%; height:100%; object-fit:cover; }
-        .preview-link { display:inline-flex; align-items:center; gap:6px; background:rgba(244,96,26,0.08); border:1px solid rgba(244,96,26,0.2); color:#F4601A; padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; text-decoration:none; margin-bottom:16px; transition:background 0.15s; }
+        .preview-link { display:inline-flex; align-items:center; gap:6px; background:rgba(244,96,26,0.08); border:1px solid rgba(244,96,26,0.2); color:var(--sr-orange); padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; text-decoration:none; margin-bottom:16px; transition:background 0.15s; }
         .preview-link:hover { background:rgba(244,96,26,0.15); }
 
         /* Actions */
@@ -267,33 +296,33 @@ export default function ListingApprovalsPage() {
         .btn-changes:hover { background:rgba(96,165,250,0.2); }
         .btn-changes:disabled { opacity:0.5; cursor:not-allowed; }
         .reject-wrap { flex:1; min-width:240px; display:flex; gap:8px; }
-        .reject-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:9px; padding:10px 13px; font-size:0.83rem; font-family:inherit; color:#F5F0EB; outline:none; }
+        .reject-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:9px; padding:10px 13px; font-size:0.83rem; font-family:inherit; color:var(--sr-text); outline:none; }
         .reject-input:focus { border-color:#F87171; }
         .btn-reject { background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.25); color:#F87171; border-radius:9px; padding:10px 18px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
         .btn-reject:hover { background:rgba(248,113,113,0.2); }
         .btn-reject:disabled { opacity:0.5; cursor:not-allowed; }
 
         /* Request changes form */
-        .request-form { margin-top:14px; background:#0F0D0A; border:1px solid rgba(96,165,250,0.2); border-radius:10px; padding:16px; }
+        .request-form { margin-top:14px; background:var(--sr-bg); border:1px solid rgba(96,165,250,0.2); border-radius:10px; padding:16px; }
         .rf-label { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#93C5FD; margin-bottom:8px; }
-        .rf-textarea { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:12px; font-size:0.84rem; font-family:inherit; color:#F5F0EB; outline:none; resize:vertical; min-height:90px; }
+        .rf-textarea { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(96,165,250,0.2); border-radius:8px; padding:12px; font-size:0.84rem; font-family:inherit; color:var(--sr-text); outline:none; resize:vertical; min-height:90px; }
         .rf-textarea:focus { border-color:#93C5FD; }
-        .btn-send-request { background:#93C5FD; color:#0F0D0A; border:none; border-radius:8px; padding:10px 20px; font-size:0.84rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        .btn-send-request { background:#93C5FD; color:var(--sr-bg); border:none; border-radius:8px; padding:10px 20px; font-size:0.84rem; font-weight:700; cursor:pointer; font-family:inherit; }
         .btn-send-request:disabled { opacity:0.5; cursor:not-allowed; }
-        .btn-cancel-request { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#A89880; border-radius:8px; padding:10px 16px; font-size:0.84rem; font-weight:600; cursor:pointer; font-family:inherit; }
+        .btn-cancel-request { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--sr-muted); border-radius:8px; padding:10px 16px; font-size:0.84rem; font-weight:600; cursor:pointer; font-family:inherit; }
 
         /* Change request history */
         .cr-history { background:rgba(96,165,250,0.04); border:1px solid rgba(96,165,250,0.15); border-radius:10px; padding:14px; margin-bottom:16px; }
         .cr-history-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#93C5FD; margin-bottom:10px; }
         .cr-item { padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid rgba(96,165,250,0.1); }
         .cr-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
-        .cr-notes { font-size:0.84rem; color:#F5F0EB; line-height:1.65; margin-bottom:4px; }
-        .cr-meta { font-size:0.72rem; color:#6B5E52; }
+        .cr-notes { font-size:0.84rem; color:var(--sr-text); line-height:1.65; margin-bottom:4px; }
+        .cr-meta { font-size:0.72rem; color:var(--sr-sub); }
 
         /* Status panels */
         .info-approved { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.15); border-radius:10px; padding:14px; display:flex; align-items:center; gap:10px; }
         .info-rejected { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.15); border-radius:10px; padding:14px; }
-        .empty { text-align:center; padding:56px; color:#6B5E52; }
+        .empty { text-align:center; padding:56px; color:var(--sr-sub); }
         .empty-icon { font-size:2.2rem; margin-bottom:10px; }
         .toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:12px; font-size:0.86rem; font-weight:600; z-index:9999; animation:fadeIn 0.2s; max-width:360px; }
         .toast.success { background:#16A34A; color:white; }
@@ -359,9 +388,11 @@ export default function ListingApprovalsPage() {
               const images = Array.isArray(a.listings?.images) ? a.listings.images.filter(Boolean) : []
               const crHistory = changeRequestsMap[a.listing_id] || []
 
+              const fuUnread = unreadCounts[a.listing_id] || 0
+
               return (
                 <div key={a.id} className={`card ${isOpen ? 'open' : ''}`}>
-                  <div className="card-top" onClick={() => { const opening = !isOpen; setSelected(opening ? a : null); if (opening) fetchImages(a.listing_id) }}>
+                  <div className="card-top" onClick={() => { const opening = !isOpen; setSelected(opening ? a : null); if (opening) { fetchImages(a.listing_id); fetchFollowups(a.listing_id) } }}>
                     <div className="card-icon">{a.listings?.type === 'hotel' ? '🏨' : '🏠'}</div>
                     <div className="card-info">
                       <div className="card-title">{a.listing_title || 'Untitled'}</div>
@@ -373,6 +404,11 @@ export default function ListingApprovalsPage() {
                       </div>
                     </div>
                     <div className="card-right">
+                      {fuUnread > 0 && (
+                        <span style={{background:'var(--sr-orange)',color:'white',borderRadius:'100px',fontSize:'0.65rem',fontWeight:800,padding:'2px 8px',lineHeight:'1.4'}}>
+                          💬 {fuUnread} new
+                        </span>
+                      )}
                       <span className={`pill ${a.status}`}>{a.status.replace(/_/g, ' ')}</span>
                       <span className="chev">{isOpen ? '▲' : '▼'}</span>
                     </div>
@@ -439,7 +475,7 @@ export default function ListingApprovalsPage() {
                               Photos {imgState?.loading ? '(loading…)' : `(${imgs.length})`}
                             </div>
                             {imgState?.loading && (
-                              <div style={{color:'#6B5E52',fontSize:'0.8rem',padding:'12px 0'}}>Loading images…</div>
+                              <div style={{color:'var(--sr-sub)',fontSize:'0.8rem',padding:'12px 0'}}>Loading images…</div>
                             )}
                             {!imgState?.loading && imgs.length === 0 && (
                               <div style={{color:'#F87171',fontSize:'0.8rem',padding:'12px 0'}}>No photos uploaded yet.</div>
@@ -481,6 +517,32 @@ export default function ListingApprovalsPage() {
                         </div>
                       )}
 
+                      {/* Host follow-up messages */}
+                      {(() => {
+                        const fuState = followupsMap[a.listing_id]
+                        const fus = fuState?.items || []
+                        if (fuState?.loading) return (
+                          <div style={{fontSize:'0.8rem',color:'var(--sr-sub)',padding:'10px 0'}}>Loading messages…</div>
+                        )
+                        if (!fus.length) return null
+                        return (
+                          <div style={{background:'rgba(244,96,26,0.05)',border:'1px solid rgba(244,96,26,0.2)',borderRadius:'10px',padding:'14px',marginBottom:'16px'}}>
+                            <div style={{fontSize:'0.72rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',color:'var(--sr-orange)',marginBottom:'10px'}}>
+                              💬 Host messages ({fus.length})
+                            </div>
+                            {fus.map((fu, i) => (
+                              <div key={fu.id} style={{borderBottom: i < fus.length - 1 ? '1px solid rgba(244,96,26,0.12)' : 'none', paddingBottom: i < fus.length - 1 ? '10px' : 0, marginBottom: i < fus.length - 1 ? '10px' : 0}}>
+                                <div style={{fontSize:'0.84rem',color:'var(--sr-text)',lineHeight:'1.65'}}>{fu.message}</div>
+                                <div style={{fontSize:'0.72rem',color:'var(--sr-sub)',marginTop:'4px',display:'flex',alignItems:'center',gap:'8px'}}>
+                                  {fmt(fu.created_at)}
+                                  {fu.read_by_admin && <span style={{color:'#4ADE80'}}>✓ Read</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
+
                       {/* Action buttons for pending + changes_requested */}
                       {ActionButtons({ a })}
 
@@ -490,7 +552,7 @@ export default function ListingApprovalsPage() {
                           <div style={{fontSize:'1.2rem'}}>✅</div>
                           <div>
                             <div style={{fontSize:'0.86rem',fontWeight:700,color:'#4ADE80'}}>Approved — waiting for host to go live</div>
-                            {a.reviewed_at && <div style={{fontSize:'0.74rem',color:'#A89880'}}>Reviewed {fmt(a.reviewed_at)}</div>}
+                            {a.reviewed_at && <div style={{fontSize:'0.74rem',color:'var(--sr-muted)'}}>Reviewed {fmt(a.reviewed_at)}</div>}
                           </div>
                           <a href={`/listings/${a.listing_id}`} target="_blank" rel="noreferrer" style={{marginLeft:'auto',background:'rgba(74,222,128,0.1)',border:'1px solid rgba(74,222,128,0.2)',color:'#4ADE80',padding:'6px 14px',borderRadius:'8px',fontSize:'0.76rem',fontWeight:700,textDecoration:'none'}}>Preview →</a>
                         </div>
@@ -500,8 +562,8 @@ export default function ListingApprovalsPage() {
                       {a.status === 'rejected' && (
                         <div className="info-rejected">
                           <div style={{fontSize:'0.72rem',fontWeight:700,color:'#F87171',textTransform:'uppercase',marginBottom:'4px'}}>Rejection reason</div>
-                          <div style={{fontSize:'0.84rem',color:'#A89880'}}>{a.rejection_reason || '—'}</div>
-                          {a.reviewed_at && <div style={{fontSize:'0.73rem',color:'#6B5E52',marginTop:'6px'}}>Reviewed {fmt(a.reviewed_at)}</div>}
+                          <div style={{fontSize:'0.84rem',color:'var(--sr-muted)'}}>{a.rejection_reason || '—'}</div>
+                          {a.reviewed_at && <div style={{fontSize:'0.73rem',color:'var(--sr-sub)',marginTop:'6px'}}>Reviewed {fmt(a.reviewed_at)}</div>}
                         </div>
                       )}
                     </div>

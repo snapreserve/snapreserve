@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Footer from '@/app/components/Footer'
+import { useTheme } from '@/app/components/ThemeProvider'
 
 const cityImages = {
   'New York': 'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=800&q=80',
@@ -63,6 +65,8 @@ export default function HomePage() {
   const [userProfile, setUserProfile] = useState(null) // { full_name, avatar_url }
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const { theme, toggle: toggleDark } = useTheme()
+  const darkMode = theme === 'dark'
   const searchRef = useRef(null)
   const autocompleteService = useRef(null)
   const debounceRef = useRef(null)
@@ -74,9 +78,11 @@ export default function HomePage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setIsLoggedIn(false); return }
       setIsLoggedIn(true)
-      supabase.from('users').select('user_role, full_name, avatar_url').eq('id', user.id).maybeSingle()
+      supabase.from('users').select('user_role, is_host, full_name, avatar_url').eq('id', user.id).maybeSingle()
         .then(({ data }) => {
           setUserRole(data?.user_role ?? 'user')
+          // is_host covers both owners (user_role='host') and team members (is_host=true)
+          if (data?.is_host && data.user_role === 'user') setUserRole('team_member')
           setUserProfile({ full_name: data?.full_name ?? '', avatar_url: data?.avatar_url ?? null })
         })
     })
@@ -183,7 +189,7 @@ export default function HomePage() {
   const filteredListings = listings.filter(l => l.type === mode).slice(0, 4)
 
   return (
-    <>
+    <div className={darkMode ? 'dm' : ''}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -282,7 +288,8 @@ export default function HomePage() {
         .instant-pill { position:absolute; top:12px; right:12px; background:white; padding:4px 10px; border-radius:100px; font-size:0.66rem; font-weight:700; color:#1A6EF4; }
         .card-body { padding:14px; }
         .card-name { font-weight:700; font-size:0.92rem; margin-bottom:3px; line-height:1.3; }
-        .card-loc { font-size:0.75rem; color:#6B5F54; margin-bottom:10px; }
+        .card-loc { font-size:0.75rem; color:#6B5F54; margin-bottom:6px; }
+        .snap-badge { display:inline-flex; align-items:center; gap:3px; font-size:0.62rem; font-weight:700; color:#A78BFA; background:linear-gradient(90deg,rgba(139,92,246,0.12),rgba(59,130,246,0.12)); border:1px solid rgba(139,92,246,0.25); border-radius:100px; padding:2px 8px; margin-bottom:8px; }
         .amenity-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
         .a-chip { font-size:0.63rem; background:#F3F0EB; color:#6B5F54; padding:2px 8px; border-radius:100px; font-weight:600; }
         .card-foot { display:flex; align-items:center; justify-content:space-between; }
@@ -314,6 +321,44 @@ export default function HomePage() {
         @media(max-width:1024px) { .listings-grid{grid-template-columns:repeat(2,1fr);} }
         @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .nav-links{display:none;} .hero,.w,.footer{padding-left:20px;padding-right:20px;} .nav-inner{padding:0 20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
         @media(max-width:480px) { .listings-grid{grid-template-columns:1fr;} }
+
+        /* ── Dark mode ── */
+        .dm { background:#0F0D0A; color:#F5F0EB; }
+        .dm .nav { background:rgba(15,13,10,0.92); border-bottom-color:rgba(255,255,255,0.07); }
+        .dm .logo { color:#F5F0EB; }
+        .dm .nav-link { color:#A89880; }
+        .dm .nav-link:hover { background:rgba(255,255,255,0.07); }
+        .dm .nav-outline { border-color:#3A3028; color:#F5F0EB; }
+        .dm .nav-dropdown { background:#1A1712; border-color:#2A2420; }
+        .dm .nav-dropdown-header { border-bottom-color:#2A2420; }
+        .dm .nav-dropdown-name { color:#F5F0EB; }
+        .dm .dd-item { color:#F5F0EB; }
+        .dm .dd-item:hover { background:#2A2420; }
+        .dm .dd-divider { border-top-color:#2A2420; }
+        .dm .toggle-pill { background:#1A1712; }
+        .dm .chip { background:#1A1712; border-color:#2A2420; color:#F5F0EB; }
+        .dm .search-box { background:#1A1712; border-color:#2A2420; }
+        .dm .search-field { border-right-color:#2A2420; }
+        .dm .sf-input { color:#F5F0EB; }
+        .dm .autocomplete-drop { background:#1A1712; border-color:#2A2420; }
+        .dm .sug-item:hover { background:#2A2420; }
+        .dm .listing-card { background:#1A1712; border-color:#2A2420; }
+        .dm .card-loc { color:#A89880; }
+        .dm .a-chip { background:#2A2420; color:#A89880; }
+        .dm .card-price small { color:#7A6E64; }
+        .dm .step-card { background:#1A1712; border-color:#2A2420; }
+        .dm .step-desc { color:#A89880; }
+        .dm .hero-sub { color:#A89880; }
+        .dm .choose-title { color:#F5F0EB; }
+        .dm .section-title { color:#F5F0EB; }
+        .dm .see-all { color:#F4601A; }
+        .dm .choose-label { color:#A89880; }
+        .dm .how-label { color:#A89880; }
+
+        .theme-toggle { width:38px; height:38px; border-radius:50%; border:1px solid #E8E2D9; background:white; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s; flex-shrink:0; }
+        .theme-toggle:hover { border-color:#D4CEC5; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+        .dm .theme-toggle { background:#1A1712; border-color:#3A3028; color:#F5F0EB; }
+        .dm .theme-toggle:hover { border-color:#4A4038; }
       `}</style>
 
 
@@ -323,15 +368,25 @@ export default function HomePage() {
         <div className="nav-inner">
           <a href="/home" className="logo">Snap<span>Reserve™</span></a>
           <div className="nav-links">
-            <a href="/listings?type=hotel" className="nav-link">Hotels</a>
-            <a href="/listings?type=private_stay" className="nav-link">Private Stays</a>
+            <a href="/home" className="nav-link">Home</a>
+            <a href="/about" className="nav-link">About</a>
+            <a href="/listings" className="nav-link">Explore</a>
+            <a href="/contact" className="nav-link">Contact</a>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <button
+              className="theme-toggle"
+              onClick={toggleDark}
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
             {isLoggedIn ? (
               <>
                 {/* Role-based host CTA */}
-                {userRole === 'host' && (
-                  <a href="/host/dashboard" className="nav-host-btn">Switch to Host</a>
+                {(userRole === 'host' || userRole === 'team_member') && (
+                  <a href="/host/dashboard" className="nav-host-btn">Host Portal</a>
                 )}
                 {userRole === 'pending_host' && (
                   <span className="nav-pending">⏳ Application Pending</span>
@@ -390,6 +445,7 @@ export default function HomePage() {
               </>
             ) : (
               <>
+                <a href="/become-a-host" className="nav-link">Become a Host</a>
                 <a href="/login" className="nav-outline">Log in</a>
                 <a href="/signup" className="nav-solid">Sign up</a>
               </>
@@ -571,6 +627,9 @@ export default function HomePage() {
                   <div className="card-body">
                     <div className="card-name">{listing.title}</div>
                     <div className="card-loc">📍 {listing.city}, {listing.state}</div>
+                    {listing.host_snap_verified && (
+                      <div className="snap-badge">🛡 SnapReserve Verified Host</div>
+                    )}
                     {amenities.length > 0 && (
                       <div className="amenity-chips">{amenities.map(a => <span key={a} className="a-chip">{a.trim()}</span>)}</div>
                     )}
@@ -606,10 +665,10 @@ export default function HomePage() {
       </div>
 
       {/* TOP DESTINATIONS */}
-      <div style={{ background:'#FAF8F5', padding:'0 40px 60px' }}>
+      <div style={{ background: darkMode ? '#0F0D0A' : '#FAF8F5', padding:'0 40px 60px' }}>
         <div style={{ maxWidth:1280, margin:'0 auto' }}>
           <div style={{ fontSize:'0.7rem', fontWeight:800, letterSpacing:'0.16em', textTransform:'uppercase', color: accent, marginBottom:10 }}>Browse by destination</div>
-          <h2 style={{ fontFamily:'Playfair Display,serif', fontSize:'1.9rem', fontWeight:700, marginBottom:24 }}>Top Destinations</h2>
+          <h2 style={{ fontFamily:'Playfair Display,serif', fontSize:'1.9rem', fontWeight:700, marginBottom:24, color: darkMode ? '#F5F0EB' : '#1A1410' }}>Top Destinations</h2>
 
           <div style={{ display:'grid', gridTemplateColumns:'1.45fr 1fr 1fr', gridTemplateRows:'1fr 1fr', gap:14, height:440 }}>
             <a href="/listings" style={{ gridRow:'1 / 3', borderRadius:20, overflow:'hidden', position:'relative', display:'block', textDecoration:'none', transition:'transform 0.25s' }}
@@ -645,7 +704,7 @@ export default function HomePage() {
       </div>
 
       {/* TWO HOST CTA CARDS */}
-      <div style={{ background:'#FAF8F5', padding:'0 40px 64px' }}>
+      <div style={{ background: darkMode ? '#0F0D0A' : '#FAF8F5', padding:'0 40px 64px' }}>
         <div style={{ maxWidth:1280, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
 
           <div style={{ borderRadius:24, overflow:'hidden', position:'relative', padding:'48px 44px', background:'linear-gradient(135deg, #0A1F6E 0%, #1242B4 45%, #0D2E8F 100%)', minHeight:280, display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
@@ -682,34 +741,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-logo">Snap<span>Reserve™</span></div>
-        <div className="footer-links">
-          <a href="/coming-soon?page=support">Support</a>
-          <a href="/terms">Terms</a>
-          <a href="/refund-policy">Privacy</a>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          {[
-            { href:'https://instagram.com/snapreserve', label:'Instagram', icon:<svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg> },
-            { href:'https://twitter.com/snapreserve', label:'X', icon:<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
-            { href:'https://tiktok.com/@snapreserve', label:'TikTok', icon:<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg> },
-            { href:'https://facebook.com/snapreserve', label:'Facebook', icon:<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> },
-            { href:'https://linkedin.com/company/snapreserve', label:'LinkedIn', icon:<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
-          ].map(s => (
-            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
-              style={{ width:34, height:34, borderRadius:8, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.45)', transition:'all 0.18s', textDecoration:'none' }}
-              onMouseEnter={e => { e.currentTarget.style.background='rgba(244,96,26,0.15)'; e.currentTarget.style.color='#F4601A'; e.currentTarget.style.borderColor='rgba(244,96,26,0.3)' }}
-              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.color='rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.1)' }}>
-              {s.icon}
-            </a>
-          ))}
-        </div>
-        <div style={{ fontSize:'0.72rem', color:'rgba(255,255,255,0.2)', width:'100%', textAlign:'center', marginTop:14, paddingTop:14, borderTop:'1px solid rgba(255,255,255,0.06)' }}>
-          © 2026 SnapReserve™ · All rights reserved
-        </div>
-      </footer>
-    </>
+      <Footer darkBg={true} />
+    </div>
   )
 }

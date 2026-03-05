@@ -1,8 +1,87 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════
+   SNAPRESERVE DESIGN TOKENS
+   Dark theme (default) + Light theme override
+   ══════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core palette — dark (default) */
+  --sr-bg:       #0f0e0c;
+  --sr-surface:  #161410;
+  --sr-card:     #1c1a16;
+  --sr-card2:    #221f1a;
+  --sr-border:   rgba(255,255,255,0.07);
+  --sr-border2:  rgba(255,255,255,0.12);
+  --sr-text:     #f0ebe3;
+  --sr-muted:    #8a7f72;
+  --sr-sub:      #5a5248;
+  --sr-overlay-xs: rgba(255,255,255,0.03);
+  --sr-overlay-sm: rgba(255,255,255,0.06);
+  --sr-overlay-md: rgba(255,255,255,0.10);
+
+  /* Accent */
+  --sr-orange:  #e8622a;
+  --sr-orange2: #f0845a;
+  --sr-ol:      rgba(232,98,42,0.12);
+  --sr-ob:      rgba(232,98,42,0.30);
+
+  /* Status */
+  --sr-green:   #3db87a;
+  --sr-greenl:  rgba(61,184,122,0.12);
+  --sr-blue:    #5a9fd4;
+  --sr-bluel:   rgba(90,159,212,0.12);
+  --sr-red:     #e05a4a;
+  --sr-redl:    rgba(224,90,74,0.12);
+  --sr-yellow:  #d4aa4a;
+  --sr-yellowl: rgba(212,170,74,0.12);
+
+  /* Solid borders (admin pages) */
+  --sr-border-solid: #2a2420;
+  --sr-border-mid:   #1f1b17;
+  --sr-darker:       #120e0a;
+
+  /* Legacy compat (admin pages still use these) */
+  --background: #0F0D0A;
+  --foreground: #F5F0EB;
+}
+
+/* ── LIGHT THEME ── */
+html[data-theme="light"] {
+  --sr-bg:       #faf6f0;
+  --sr-surface:  #f2ece2;
+  --sr-card:     #ffffff;
+  --sr-card2:    #f8f2ea;
+  --sr-border:   rgba(0,0,0,0.09);
+  --sr-border2:  rgba(0,0,0,0.16);
+  --sr-text:     #1a1208;
+  --sr-muted:    #5a4a38;
+  --sr-sub:      #8a7a6a;
+  --sr-overlay-xs: rgba(0,0,0,0.02);
+  --sr-overlay-sm: rgba(0,0,0,0.04);
+  --sr-overlay-md: rgba(0,0,0,0.08);
+
+  --sr-orange:  #d4541c;
+  --sr-orange2: #e87040;
+  --sr-ol:      rgba(212,84,28,0.09);
+  --sr-ob:      rgba(212,84,28,0.25);
+
+  --sr-green:   #1a8f52;
+  --sr-greenl:  rgba(26,143,82,0.10);
+  --sr-blue:    #2a6ea8;
+  --sr-bluel:   rgba(42,110,168,0.10);
+  --sr-red:     #b83828;
+  --sr-redl:    rgba(184,56,40,0.10);
+  --sr-yellow:  #9a7010;
+  --sr-yellowl: rgba(154,112,16,0.10);
+
+  /* Solid borders (admin pages) */
+  --sr-border-solid: #d8d0c8;
+  --sr-border-mid:   #e8e2da;
+  --sr-darker:       #f0ece6;
+
+  --background: #faf6f0;
+  --foreground: #1a1208;
 }
 
 @theme inline {
@@ -12,15 +91,17 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Smooth theme transitions */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+/* Don't animate transforms or dimensions */
+button, a, input, textarea, select {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, opacity 0.15s ease;
 }

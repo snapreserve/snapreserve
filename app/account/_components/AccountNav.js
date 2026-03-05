@@ -26,34 +26,34 @@ export default function AccountNav({ profile, isHost }) {
 
   return (
     <aside style={{
-      width: '240px', flexShrink: 0, background: 'white',
-      borderRight: '1px solid #E8E2D9', display: 'flex',
+      width: '240px', flexShrink: 0, background: 'var(--sr-card)',
+      borderRight: '1px solid var(--sr-border2)', display: 'flex',
       flexDirection: 'column', minHeight: '100vh', position: 'sticky', top: 0,
     }}>
       {/* Logo */}
       <a href="/" style={{
         display: 'block', padding: '20px 24px 16px',
         fontFamily: "'Playfair Display', serif", fontSize: '1.15rem',
-        fontWeight: 900, textDecoration: 'none', color: '#1A1410',
-        borderBottom: '1px solid #E8E2D9',
+        fontWeight: 900, textDecoration: 'none', color: 'var(--sr-text)',
+        borderBottom: '1px solid var(--sr-border2)',
       }}>
-        Snap<span style={{ color: '#F4601A' }}>Reserve</span>
+        Snap<span style={{ color: 'var(--sr-orange)' }}>Reserve</span>
       </a>
 
       {/* User info */}
-      <div style={{ padding: '20px 24px', borderBottom: '1px solid #E8E2D9' }}>
+      <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--sr-border2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '40px', height: '40px', borderRadius: '50%',
-            background: '#F4601A', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: 'white',
+            background: 'var(--sr-orange)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: 'var(--sr-card)',
             flexShrink: 0,
           }}>{initials}</div>
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1A1410', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--sr-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {profile?.full_name || 'My Account'}
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#A89880', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {profile?.email}
             </div>
           </div>
@@ -69,9 +69,9 @@ export default function AccountNav({ profile, isHost }) {
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '10px 24px', fontSize: '0.88rem', fontWeight: active ? 700 : 500,
               textDecoration: 'none', transition: 'background 0.15s',
-              color: active ? '#F4601A' : '#1A1410',
+              color: active ? 'var(--sr-orange)' : 'var(--sr-text)',
               background: active ? 'rgba(244,96,26,0.06)' : 'transparent',
-              borderLeft: active ? '3px solid #F4601A' : '3px solid transparent',
+              borderLeft: active ? '3px solid var(--sr-orange)' : '3px solid transparent',
             }}>
               <span style={{ fontSize: '1rem', lineHeight: 1 }}>{item.icon}</span>
               {item.label}
@@ -81,10 +81,21 @@ export default function AccountNav({ profile, isHost }) {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '16px 24px', borderTop: '1px solid #E8E2D9', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {!isHost && (
+      <div style={{ padding: '16px 24px', borderTop: '1px solid var(--sr-border2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {isHost ? (
+          <a href="/host/dashboard" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontSize: '0.82rem', fontWeight: 700, color: '#fff',
+            textDecoration: 'none', padding: '10px 14px',
+            background: 'var(--sr-orange)', borderRadius: '8px',
+            border: '1px solid var(--sr-orange)',
+          }}>
+            <span>🏠 Switch to Host Portal</span>
+            <span style={{ opacity: 0.8 }}>→</span>
+          </a>
+        ) : (
           <a href="/become-a-host" style={{
-            fontSize: '0.78rem', fontWeight: 700, color: '#F4601A',
+            fontSize: '0.78rem', fontWeight: 700, color: 'var(--sr-orange)',
             textDecoration: 'none', padding: '8px 14px',
             background: 'rgba(244,96,26,0.06)', borderRadius: '8px',
             border: '1px solid rgba(244,96,26,0.15)',
@@ -92,17 +103,12 @@ export default function AccountNav({ profile, isHost }) {
             List your property →
           </a>
         )}
-        {isHost && (
-          <a href="/host/dashboard" style={{ fontSize: '0.78rem', color: '#A89880', textDecoration: 'none' }}>
-            Host dashboard →
-          </a>
-        )}
-        <a href="/" style={{ fontSize: '0.78rem', color: '#A89880', textDecoration: 'none' }}>
+        <a href="/" style={{ fontSize: '0.78rem', color: 'var(--sr-muted)', textDecoration: 'none' }}>
           ← Browse properties
         </a>
         <button onClick={handleSignOut} style={{
-          background: 'none', border: '1px solid #E8E2D9', borderRadius: '8px',
-          padding: '7px 14px', fontSize: '0.78rem', fontWeight: 600, color: '#6B5F54',
+          background: 'none', border: '1px solid var(--sr-border2)', borderRadius: '8px',
+          padding: '7px 14px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--sr-sub)',
           cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
         }}>
           Sign out

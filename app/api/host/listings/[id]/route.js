@@ -23,7 +23,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json().catch(() => ({}))
   const { action } = body
 
-  if (!['go_live', 'unpublish', 'resubmit', 'submit_explanation'].includes(action)) {
+  if (!['go_live', 'unpublish', 'resubmit', 'submit_explanation', 'update_policies', 'send_followup'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
 
@@ -37,11 +37,34 @@ export async function PATCH(request, { params }) {
 
   if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
 
-  // listings.host_id → hosts.id (not users.id) — verify ownership via hosts table
+  // listings.host_id → hosts.id — verify ownership or active team membership
   const { data: hostRow } = await admin
     .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
-  if (!hostRow || hostRow.user_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  let callerRole = null
+  if (hostRow?.user_id === user.id) {
+    callerRole = 'owner'
+  } else {
+    const { data: membership } = await admin
+      .from('host_team_members')
+      .select('role')
+      .eq('host_id', listing.host_id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    if (membership) callerRole = membership.role
+  }
+
+  if (!callerRole) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Role gates: manager actions require owner or manager
+  const managerOnlyActions = ['go_live', 'unpublish', 'resubmit', 'submit_explanation', 'update_policies']
+  if (managerOnlyActions.includes(action) && !['owner', 'manager'].includes(callerRole)) {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+  }
+  // send_followup: owner, manager, staff allowed; finance cannot
+  if (action === 'send_followup' && callerRole === 'finance') {
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
   let updatePayload = {}
@@ -90,6 +113,49 @@ export async function PATCH(request, { params }) {
         }).catch(() => {})
       }
     }
+  } else if (action === 'update_policies') {
+    const {
+      checkin_start_time, checkin_end_time, checkout_time,
+      cancellation_policy, pet_policy, smoking_policy,
+      quiet_hours_start, quiet_hours_end,
+      security_deposit, min_booking_age, extra_guest_fee,
+      cleaning_fee, house_rules,
+    } = body
+    if (!checkin_start_time || !checkout_time) {
+      return NextResponse.json({ error: 'checkin_start_time and checkout_time are required' }, { status: 400 })
+    }
+    updatePayload = {
+      checkin_start_time,
+      checkin_end_time:    checkin_end_time    || null,
+      checkout_time,
+      cancellation_policy: cancellation_policy || 'flexible',
+      pet_policy:          pet_policy          || 'no_pets',
+      smoking_policy:      smoking_policy      || 'no_smoking',
+      quiet_hours_start:   quiet_hours_start   || null,
+      quiet_hours_end:     quiet_hours_end     || null,
+      security_deposit:    security_deposit    ? parseFloat(security_deposit)  : 0,
+      min_booking_age:     min_booking_age     ? parseInt(min_booking_age)     : 18,
+      extra_guest_fee:     extra_guest_fee     ? parseFloat(extra_guest_fee)   : 0,
+      cleaning_fee:        cleaning_fee != null ? parseFloat(cleaning_fee)     : undefined,
+      house_rules:         house_rules         || null,
+    }
+    // remove undefined keys
+    Object.keys(updatePayload).forEach(k => updatePayload[k] === undefined && delete updatePayload[k])
+  } else if (action === 'send_followup') {
+    if (!['pending_review', 'pending'].includes(listing.status)) {
+      return NextResponse.json({ error: 'Follow-ups can only be sent for listings under review' }, { status: 400 })
+    }
+    const message = body.message?.trim()
+    if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 })
+    if (message.length > 1000) return NextResponse.json({ error: 'Message too long (max 1000 chars)' }, { status: 400 })
+
+    const { error: fuErr } = await admin.from('listing_follow_ups').insert({
+      listing_id:   id,
+      host_user_id: user.id,
+      message,
+    })
+    if (fuErr) return NextResponse.json({ error: fuErr.message }, { status: 500 })
+    return NextResponse.json({ success: true })
   } else if (action === 'resubmit') {
     if (listing.status !== 'changes_requested') {
       return NextResponse.json({ error: 'Only listings with changes requested can be resubmitted' }, { status: 400 })

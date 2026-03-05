@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/get-user-session'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
+import { notifyHost } from '@/lib/notify-host'
 import { headers } from 'next/headers'
 
 export async function POST(request, { params }) {
@@ -21,7 +22,7 @@ export async function POST(request, { params }) {
   // Fetch booking and verify ownership
   const { data: booking, error: fetchErr } = await admin
     .from('bookings')
-    .select('*')
+    .select('*, listings(title)')
     .eq('id', id)
     .eq('guest_id', user.id)
     .maybeSingle()
@@ -51,15 +52,31 @@ export async function POST(request, { params }) {
   const { error: updateErr } = await admin
     .from('bookings')
     .update({
-      status: 'cancelled',
-      cancelled_at: now,
-      cancelled_by: user.id,
+      status:             'cancelled',
+      cancelled_at:        now,
+      cancelled_by:        user.id,
+      cancelled_by_role:  'guest',
+      cancelled_by_id:     user.id,
       cancellation_reason: reason || null,
-      refund_amount: refundAmount,
+      refund_amount:       refundAmount,
     })
     .eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  // Notify host — resolve host user_id via hosts table
+  try {
+    const { data: hostRow } = await admin.from('hosts').select('user_id').eq('id', booking.host_id).maybeSingle()
+    if (hostRow?.user_id) {
+      await notifyHost({
+        hostUserId: hostRow.user_id,
+        listingId:  booking.listing_id,
+        type:       'warning',
+        subject:    'Booking cancelled by guest',
+        body:       `A guest has cancelled booking #${booking.reference || id.slice(0,8).toUpperCase()} for "${booking.listings?.title || 'your property'}". Check-in was ${booking.check_in}.${reason ? `\n\nGuest reason: ${reason}` : ''}`,
+      })
+    }
+  } catch (e) { console.error('[cancel-by-guest] notify-host error:', e.message) }
 
   await logAction({
     actorId: user.id,

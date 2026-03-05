@@ -9,8 +9,29 @@ async function getConvForUser(admin, id, userId) {
     .eq('id', id)
     .single()
   if (!data) return null
-  if (data.guest_user_id !== userId && data.host_user_id !== userId) return null
-  return data
+
+  // Direct guest or primary host
+  if (data.guest_user_id === userId || data.host_user_id === userId) return data
+
+  // Team member access (not Finance)
+  const { data: membership } = await admin
+    .from('host_team_members')
+    .select('host_id, role')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (!membership || membership.role === 'finance') return null
+
+  // Verify this conversation belongs to the user's org
+  const { data: hostRow } = await admin
+    .from('hosts').select('user_id').eq('id', membership.host_id).maybeSingle()
+
+  if (hostRow?.user_id === data.host_user_id) {
+    return { ...data, _isTeamMember: true }
+  }
+
+  return null
 }
 
 // GET — fetch thread + messages, mark incoming as read
@@ -107,7 +128,7 @@ export async function PATCH(request, { params }) {
   const conv = await getConvForUser(admin, id, user.id)
   if (!conv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const isHost = conv.host_user_id === user.id
+  const isHost = conv.host_user_id === user.id || !!conv._isTeamMember
 
   if (action === 'block') {
     if (!isHost) return NextResponse.json({ error: 'Only the host can block a user.' }, { status: 403 })

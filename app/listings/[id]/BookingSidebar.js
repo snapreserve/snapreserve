@@ -15,11 +15,9 @@ export default function BookingSidebar({ listing }) {
       ? Math.max(0, Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000))
       : 0
 
-  const serviceFeePct = 0.032
   const subtotal = listing.price_per_night * (nights || 1)
   const cleaningFee = listing.cleaning_fee || 0
-  const serviceFee = Math.round(subtotal * serviceFeePct)
-  const total = subtotal + cleaningFee + serviceFee
+  const total = subtotal + cleaningFee
 
   function handleReserve() {
     if (!checkIn || !checkOut || nights < 1) {
@@ -97,12 +95,6 @@ export default function BookingSidebar({ listing }) {
           <span className="pb-label">Cleaning fee</span>
           <span>${cleaningFee}</span>
         </div>
-        <div className="pb-row">
-          <span className="pb-label">
-            Service fee <span className="pb-fee">(3.2%)</span>
-          </span>
-          <span>{nights > 0 ? `$${serviceFee}` : '—'}</span>
-        </div>
         <div className="pb-row total">
           <span>Total</span>
           <span>{nights > 0 ? `$${total}` : '—'}</span>
@@ -119,10 +111,6 @@ export default function BookingSidebar({ listing }) {
         </div>
       )}
 
-      <div className="fee-highlight">
-        <div className="fh-title">Industry-lowest 3.2% fee</div>
-        <div className="fh-sub">You save vs. other platforms every time</div>
-      </div>
     </div>
   )
 }

@@ -51,18 +51,38 @@ export async function PATCH(request, { params }) {
     if (userErr) return NextResponse.json({ error: userErr.message }, { status: 500 })
 
     // Create hosts row (idempotent — upsert on user_id)
-    await admin
+    const { error: hostsErr } = await admin
       .from('hosts')
       .upsert(
         {
-          user_id: app.user_id,
-          host_status: 'active',
-          host_type: app.host_type || null,
-          display_name: app.display_name || null,
+          user_id:             app.user_id,
+          host_status:         'active',
+          host_type:           app.host_type || null,
+          display_name:        app.display_name || null,
           verification_status: 'unverified',
         },
-        { onConflict: 'user_id', ignoreDuplicates: true }
+        { onConflict: 'user_id', ignoreDuplicates: false }
       )
+    if (hostsErr) {
+      console.error('[host-application.approve] hosts upsert failed:', hostsErr.message)
+      return NextResponse.json({ error: `Failed to create host profile: ${hostsErr.message}` }, { status: 500 })
+    }
+
+    // Seed the owner row in host_team_members (idempotent)
+    const { data: newHost } = await admin.from('hosts').select('id').eq('user_id', app.user_id).maybeSingle()
+    if (newHost) {
+      const { error: teamErr } = await admin.from('host_team_members').upsert(
+        {
+          host_id:     newHost.id,
+          user_id:     app.user_id,
+          role:        'owner',
+          status:      'active',
+          accepted_at: new Date().toISOString(),
+        },
+        { onConflict: 'host_id,user_id', ignoreDuplicates: true }
+      )
+      if (teamErr) console.error('[host-application.approve] host_team_members upsert failed:', teamErr.message)
+    }
 
     await logAction({
       actorId: user.id,

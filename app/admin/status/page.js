@@ -27,10 +27,10 @@ export default async function AdminStatusPage() {
   return (
     <>
       <div style={{
-        background: '#1A1712', borderBottom: '1px solid #2A2420',
+        background: 'var(--sr-surface)', borderBottom: '1px solid var(--sr-border-solid)',
         padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <h1 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#F5F0EB' }}>
+        <h1 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--sr-text)' }}>
           Status Page
         </h1>
         <a
@@ -38,7 +38,7 @@ export default async function AdminStatusPage() {
           target="_blank"
           rel="noreferrer"
           style={{
-            background: 'rgba(255,255,255,0.07)', color: '#F5F0EB',
+            background: 'rgba(255,255,255,0.07)', color: 'var(--sr-text)',
             border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
             padding: '7px 14px', fontSize: '0.8rem', fontWeight: 600,
             textDecoration: 'none',

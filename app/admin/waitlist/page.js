@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -7,7 +8,7 @@ async function getWaitlist() {
   const supabase = createAdminClient()
   const { data, count } = await supabase
     .from('waitlist')
-    .select('id, email, created_at', { count: 'exact' })
+    .select('id, email, first_name, last_name, user_type, message, region, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
   return { entries: data ?? [], total: count ?? 0 }
 }

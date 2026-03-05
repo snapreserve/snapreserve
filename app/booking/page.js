@@ -174,8 +174,7 @@ function BookingPageContent() {
   const localBreakdown = listing && nights > 0 ? (() => {
     const subtotal    = listing.price_per_night * nights
     const cleaningFee = listing.cleaning_fee || 0
-    const serviceFee  = Math.round(subtotal * 0.032)
-    return { nights, pricePerNight: listing.price_per_night, subtotal, cleaningFee, serviceFee, total: subtotal + cleaningFee + serviceFee }
+    return { nights, pricePerNight: listing.price_per_night, subtotal, cleaningFee, total: subtotal + cleaningFee }
   })() : null
 
   const displayBreakdown = breakdown || localBreakdown
@@ -389,12 +388,6 @@ function BookingPageContent() {
                       <span className="br-label">Cleaning fee</span>
                       <span>${displayBreakdown.cleaningFee}</span>
                     </div>
-                    <div className="br-row">
-                      <span className="br-label">
-                        Service fee<span className="br-fee-tag">(3.2%)</span>
-                      </span>
-                      <span>${displayBreakdown.serviceFee}</span>
-                    </div>
                     <div className="br-row total">
                       <span>Total</span>
                       <span>${displayBreakdown.total.toLocaleString()}</span>
@@ -402,21 +395,6 @@ function BookingPageContent() {
                   </div>
                 )}
 
-                <div style={{
-                  marginTop: '16px',
-                  background: 'linear-gradient(135deg,rgba(244,96,26,0.06),rgba(26,110,244,0.06))',
-                  border: '1px solid rgba(244,96,26,0.15)',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#F4601A', marginBottom: '2px' }}>
-                    Industry-lowest 3.2% fee
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#6B5F54' }}>
-                    You save vs. other platforms every time
-                  </div>
-                </div>
               </div>
             )}
           </div>

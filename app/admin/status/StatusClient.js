@@ -134,14 +134,14 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
   }
 
   const selectStyle = {
-    background: '#0F0D0A', border: '1px solid #2A2420', borderRadius: '8px',
-    padding: '7px 10px', color: '#F5F0EB', fontSize: '0.82rem',
+    background: 'var(--sr-bg)', border: '1px solid var(--sr-border-solid)', borderRadius: '8px',
+    padding: '7px 10px', color: 'var(--sr-text)', fontSize: '0.82rem',
     fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
   }
 
   const inputStyle = {
-    width: '100%', background: '#0F0D0A', border: '1px solid #2A2420',
-    borderRadius: '8px', padding: '9px 12px', color: '#F5F0EB',
+    width: '100%', background: 'var(--sr-bg)', border: '1px solid var(--sr-border-solid)',
+    borderRadius: '8px', padding: '9px 12px', color: 'var(--sr-text)',
     fontSize: '0.85rem', outline: 'none', fontFamily: 'inherit',
   }
 
@@ -150,7 +150,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
       {toast && (
         <div style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
-          background: '#1A1712', border: `1px solid ${toast.type === 'error' ? 'rgba(248,113,113,0.4)' : 'rgba(74,222,128,0.4)'}`,
+          background: 'var(--sr-surface)', border: `1px solid ${toast.type === 'error' ? 'rgba(248,113,113,0.4)' : 'rgba(74,222,128,0.4)'}`,
           borderRadius: '10px', padding: '12px 18px', fontSize: '0.84rem', fontWeight: 500,
           color: toast.type === 'error' ? '#F87171' : '#4ADE80',
         }}>
@@ -161,7 +161,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
       {/* Components */}
       <div style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A89880' }}>
+          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-muted)' }}>
             System Components
           </h2>
           <a
@@ -169,7 +169,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             target="_blank"
             rel="noreferrer"
             style={{
-              fontSize: '0.78rem', color: '#F4601A', fontWeight: 600,
+              fontSize: '0.78rem', color: 'var(--sr-orange)', fontWeight: 600,
               textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
             }}
           >
@@ -177,18 +177,18 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
           </a>
         </div>
 
-        <div style={{ background: '#1A1712', border: '1px solid #2A2420', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: '12px', overflow: 'hidden' }}>
           {components.map((comp, i) => (
             <div key={comp.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '14px 20px',
-              borderBottom: i < components.length - 1 ? '1px solid #2A2420' : 'none',
+              borderBottom: i < components.length - 1 ? '1px solid var(--sr-border-solid)' : 'none',
             }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#F5F0EB', marginBottom: '2px' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--sr-text)', marginBottom: '2px' }}>
                   {comp.name}
                 </div>
-                <div style={{ fontSize: '0.74rem', color: '#6B5E52' }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--sr-sub)' }}>
                   Updated {fmt(comp.updated_at)}
                 </div>
               </div>
@@ -213,13 +213,13 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
       {/* Active incidents */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A89880' }}>
+          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-muted)' }}>
             Active Incidents
           </h2>
           <button
             onClick={() => setShowNewIncident(true)}
             style={{
-              background: '#F4601A', color: 'white', border: 'none', borderRadius: '8px',
+              background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: '8px',
               padding: '8px 16px', fontSize: '0.82rem', fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}
@@ -230,8 +230,8 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
 
         {incidents.length === 0 && (
           <div style={{
-            background: '#1A1712', border: '1px solid #2A2420', borderRadius: '12px',
-            padding: '32px', textAlign: 'center', color: '#6B5E52', fontSize: '0.86rem',
+            background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: '12px',
+            padding: '32px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem',
           }}>
             No active incidents. All systems normal.
           </div>
@@ -239,27 +239,27 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
 
         {incidents.map(incident => (
           <div key={incident.id} style={{
-            background: '#1A1712', border: '1px solid #2A2420',
-            borderLeft: '3px solid #F4601A',
+            background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)',
+            borderLeft: '3px solid var(--sr-orange)',
             borderRadius: '12px', padding: '18px 20px', marginBottom: '12px',
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#F5F0EB', marginBottom: '4px' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--sr-text)', marginBottom: '4px' }}>
                   {incident.title}
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <span style={{
                     fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
                     padding: '2px 8px', borderRadius: '100px',
-                    background: 'rgba(244,96,26,0.15)', color: '#F4601A',
+                    background: 'rgba(244,96,26,0.15)', color: 'var(--sr-orange)',
                   }}>
                     {incident.status}
                   </span>
                   <span style={{
                     fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
                     padding: '2px 8px', borderRadius: '100px',
-                    background: 'rgba(255,255,255,0.06)', color: '#A89880',
+                    background: 'rgba(255,255,255,0.06)', color: 'var(--sr-muted)',
                   }}>
                     {incident.impact} impact
                   </span>
@@ -268,7 +268,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
               <button
                 onClick={() => { setUpdateModal({ id: incident.id, title: incident.title }); setUpdateForm({ status: 'monitoring', message: '' }) }}
                 style={{
-                  background: 'rgba(255,255,255,0.07)', color: '#F5F0EB', border: 'none',
+                  background: 'rgba(255,255,255,0.07)', color: 'var(--sr-text)', border: 'none',
                   borderRadius: '8px', padding: '7px 14px', fontSize: '0.8rem',
                   fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
                 }}
@@ -277,9 +277,9 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
               </button>
             </div>
             {incident.message && (
-              <p style={{ fontSize: '0.82rem', color: '#A89880', lineHeight: 1.6 }}>{incident.message}</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--sr-muted)', lineHeight: 1.6 }}>{incident.message}</p>
             )}
-            <div style={{ fontSize: '0.72rem', color: '#6B5E52', marginTop: '6px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: '6px' }}>
               Created {fmt(incident.created_at)}
             </div>
           </div>
@@ -295,13 +295,13 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
           }}
         >
-          <div style={{ background: '#1A1712', border: '1px solid #2A2420', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#F5F0EB', marginBottom: '20px' }}>
+          <div style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '20px' }}>
               Create Incident
             </h2>
 
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                 Title
               </label>
               <input
@@ -314,7 +314,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                   Impact
                 </label>
                 <select
@@ -326,12 +326,12 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                   Affected components
                 </label>
-                <div style={{ background: '#0F0D0A', border: '1px solid #2A2420', borderRadius: '8px', padding: '8px 10px', maxHeight: '120px', overflowY: 'auto' }}>
+                <div style={{ background: 'var(--sr-bg)', border: '1px solid var(--sr-border-solid)', borderRadius: '8px', padding: '8px 10px', maxHeight: '120px', overflowY: 'auto' }}>
                   {components.map(c => (
-                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.8rem', color: '#A89880', cursor: 'pointer', marginBottom: '4px' }}>
+                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.8rem', color: 'var(--sr-muted)', cursor: 'pointer', marginBottom: '4px' }}>
                       <input
                         type="checkbox"
                         checked={newIncident.affected.includes(c.id)}
@@ -350,7 +350,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                 Initial message (shown on status page)
               </label>
               <textarea
@@ -365,14 +365,14 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={() => setShowNewIncident(false)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.07)', color: '#A89880', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.07)', color: 'var(--sr-muted)', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 Cancel
               </button>
               <button
                 onClick={createIncident}
                 disabled={creatingIncident}
-                style={{ flex: 2, background: '#F4601A', color: 'white', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', opacity: creatingIncident ? 0.6 : 1 }}
+                style={{ flex: 2, background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit', opacity: creatingIncident ? 0.6 : 1 }}
               >
                 {creatingIncident ? 'Creating…' : 'Create incident'}
               </button>
@@ -390,12 +390,12 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
           }}
         >
-          <div style={{ background: '#1A1712', border: '1px solid #2A2420', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#F5F0EB', marginBottom: '4px' }}>Post update</h2>
-            <p style={{ fontSize: '0.8rem', color: '#6B5E52', marginBottom: '20px' }}>{updateModal.title}</p>
+          <div style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '4px' }}>Post update</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--sr-sub)', marginBottom: '20px' }}>{updateModal.title}</p>
 
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                 New status
               </label>
               <select
@@ -408,7 +408,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-muted)', marginBottom: '6px' }}>
                 Update message
               </label>
               <textarea
@@ -424,7 +424,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={() => setUpdateModal(null)}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.07)', color: '#A89880', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.07)', color: 'var(--sr-muted)', border: 'none', borderRadius: '8px', padding: '11px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 Cancel
               </button>
@@ -433,7 +433,7 @@ export default function StatusClient({ initialComponents, initialIncidents }) {
                 disabled={updatingIncident}
                 style={{
                   flex: 2,
-                  background: updateForm.status === 'resolved' ? '#16A34A' : '#F4601A',
+                  background: updateForm.status === 'resolved' ? '#16A34A' : 'var(--sr-orange)',
                   color: 'white', border: 'none', borderRadius: '8px', padding: '11px',
                   fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'inherit',
                   opacity: updatingIncident ? 0.6 : 1,

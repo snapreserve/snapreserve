@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 import stripe from '@/lib/stripe'
+import { calcPlatformFee } from '@/lib/platform-fee'
 
 export async function POST(request) {
   try {
@@ -34,9 +35,8 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid dates provided.' }, { status: 400 })
     }
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (checkInDate < today) {
+    const todayStr = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD" in UTC
+    if (check_in < todayStr) {
       return Response.json({ error: 'Check-in date must be today or in the future.' }, { status: 400 })
     }
 
@@ -86,12 +86,13 @@ export async function POST(request) {
       .maybeSingle()
     if (hostRow?.user_id) hostUserId = hostRow.user_id
 
-    // Calculate amounts
-    const serviceFeePct = 0.032
-    const subtotal = pricePerNight * nights
+    // Calculate amounts — NO guest-facing service fee; host pays platform fee instead
+    const subtotal    = pricePerNight * nights
     const cleaningFee = listing.cleaning_fee || 0
-    const serviceFee = Math.round(subtotal * serviceFeePct)
-    const totalAmount = subtotal + cleaningFee + serviceFee
+    const totalAmount = subtotal + cleaningFee   // guests pay clean total, no added fees
+
+    // Platform fee charged to host (7% + $1) — stored for host payout calculation
+    const { platformFee, platformFixedFee } = calcPlatformFee(totalAmount)
 
     // Get user email for receipt
     const { data: userProfile } = await admin
@@ -133,10 +134,12 @@ export async function POST(request) {
         check_out,
         nights,
         guests: guestsCount,
-        price_per_night: pricePerNight,
-        cleaning_fee: cleaningFee,
-        service_fee: serviceFee,
-        total_amount: totalAmount,
+        price_per_night:    pricePerNight,
+        cleaning_fee:       cleaningFee,
+        service_fee:        0,             // legacy column — no guest-facing fee
+        total_amount:       totalAmount,
+        platform_fee:       platformFee,
+        platform_fixed_fee: platformFixedFee,
         status: 'pending',
         payment_status: 'pending',
         payment_intent_id: paymentIntent.id,
@@ -169,7 +172,6 @@ export async function POST(request) {
         pricePerNight,
         subtotal,
         cleaningFee,
-        serviceFee,
         total: totalAmount,
       },
     })

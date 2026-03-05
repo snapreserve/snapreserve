@@ -220,6 +220,9 @@ export async function proxy(request) {
   // ----------------------------------------------------------------
   // Existing protected routes (user-facing)
   // ----------------------------------------------------------------
+  // Public routes: invite acceptance page + its validation API
+  if (path.startsWith('/team/join') || path === '/api/host/team/accept') return supabaseResponse
+
   const protectedRoutes = ['/dashboard', '/host', '/booking', '/trips', '/account']
   const isProtected = protectedRoutes.some(r => path.startsWith(r))
 

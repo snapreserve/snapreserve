@@ -49,5 +49,19 @@ export async function GET(request) {
     { onConflict: 'id', ignoreDuplicates: true }
   )
 
+  // Block suspended accounts from logging in via OAuth
+  const { data: userRow } = await admin
+    .from('users')
+    .select('suspended_at, is_active')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (userRow?.suspended_at || userRow?.is_active === false) {
+    await supabase.auth.signOut()
+    return NextResponse.redirect(
+      `${origin}/login?error=account_suspended`
+    )
+  }
+
   return NextResponse.redirect(`${origin}${next}`)
 }

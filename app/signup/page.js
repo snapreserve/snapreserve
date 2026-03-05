@@ -1,10 +1,13 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function SignupPage() {
+function SignupInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || ''
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,15 +41,11 @@ export default function SignupPage() {
       return
     }
 
-    // Create profile row — guest by default (is_host = false)
-    if (data.user) {
-      await supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        is_host: false,
-        is_verified: false,
-      })
+    // If email confirmation is not required (session exists immediately), redirect now
+    if (data.session && next) {
+      router.push(next)
+      router.refresh()
+      return
     }
 
     setSuccess(true)
@@ -119,7 +118,7 @@ export default function SignupPage() {
 
             {/* Login / Sign up toggle */}
             <div style={{ display:'flex', background:'#EDEBE7', borderRadius:100, padding:4, marginBottom:30 }}>
-              <a href="/login" style={{ flex:1, padding:'10px', borderRadius:100, textAlign:'center', fontWeight:700, fontSize:13, color:'#6B5F54', textDecoration:'none' }}>Log in</a>
+              <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ flex:1, padding:'10px', borderRadius:100, textAlign:'center', fontWeight:700, fontSize:13, color:'#6B5F54', textDecoration:'none' }}>Log in</a>
               <div style={{ flex:1, padding:'10px', borderRadius:100, background:'white', textAlign:'center', fontWeight:700, fontSize:13, boxShadow:'0 2px 10px rgba(0,0,0,0.08)', color:'#1A1410' }}>Sign up</div>
             </div>
 
@@ -128,9 +127,9 @@ export default function SignupPage() {
                 <div style={{ fontSize:40, marginBottom:16 }}>🎉</div>
                 <div style={{ fontFamily:'Playfair Display,serif', fontSize:24, fontWeight:700, marginBottom:10, color:'#1A1410' }}>Check your email!</div>
                 <div style={{ fontSize:13, color:'#6B5F54', lineHeight:1.7, marginBottom:24 }}>
-                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then return here to continue.
                 </div>
-                <a href="/login" style={{ background:'#F4601A', color:'white', padding:'12px 28px', borderRadius:100, fontWeight:700, fontSize:13, textDecoration:'none', display:'inline-block' }}>Back to login →</a>
+                <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ background:'#F4601A', color:'white', padding:'12px 28px', borderRadius:100, fontWeight:700, fontSize:13, textDecoration:'none', display:'inline-block' }}>Back to login →</a>
               </div>
             ) : (
               <>
@@ -180,7 +179,7 @@ export default function SignupPage() {
                 </form>
 
                 <div style={{ textAlign:'center', fontSize:13, color:'#6B5F54' }}>
-                  Already have an account? <a href="/login" style={{ color:'#F4601A', fontWeight:700, textDecoration:'none' }}>Log in →</a>
+                  Already have an account? <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ color:'#F4601A', fontWeight:700, textDecoration:'none' }}>Log in →</a>
                 </div>
               </>
             )}
@@ -188,5 +187,13 @@ export default function SignupPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#FAF8F5' }} />}>
+      <SignupInner />
+    </Suspense>
   )
 }
