@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import SharedHeader from '@/app/components/SharedHeader'
 
 // Card themes for listings without real images
 const CARD_THEMES = [
@@ -45,18 +46,9 @@ function ListingsInner() {
   const [loading,      setLoading]      = useState(true)
   const [destination,  setDestination]  = useState(cityParam || '')
   const [activeFilters,setActiveFilters]= useState(['all'])
-  const [user,         setUser]         = useState(null)
-  const [userRole,     setUserRole]     = useState(null)
 
   useEffect(() => {
     fetchListings()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        supabase.from('users').select('user_role').eq('id', session.user.id).single()
-          .then(({ data }) => { if (data) setUserRole(data.user_role) })
-      }
-    })
   }, [])
 
   useEffect(() => { applyFilters() }, [listings, destination, activeFilters, cityParam, stateParam, countryParam])
@@ -109,19 +101,6 @@ function ListingsInner() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; color:#1A1410; background:#FAF8F5; }
-
-        /* ── NAV ── */
-        .nav { background:rgba(250,248,245,0.96); backdrop-filter:blur(12px); border-bottom:1px solid #E8E2D9; position:sticky; top:0; z-index:100; }
-        .nav-inner { max-width:1280px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
-        .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; text-decoration:none; color:#1A1410; flex-shrink:0; }
-        .logo span { color:#F4601A; }
-        .nav-links { display:flex; gap:2px; }
-        .nav-link { padding:8px 14px; border-radius:100px; font-size:0.83rem; font-weight:600; color:#6B5F54; text-decoration:none; transition:background 0.15s; white-space:nowrap; }
-        .nav-link:hover { background:rgba(0,0,0,0.06); color:#1A1410; }
-        .nav-link.active { color:#F4601A; font-weight:700; border-bottom:2px solid #F4601A; border-radius:0; padding-bottom:6px; }
-        .nav-signup { padding:9px 20px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; transition:opacity 0.15s; white-space:nowrap; }
-        .nav-signup:hover { opacity:0.88; }
-        .nav-outline { padding:9px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #D4CEC5; color:#1A1410; text-decoration:none; }
 
         /* ── HERO ── */
         .hero { padding:52px 40px 0; max-width:1280px; margin:0 auto; }
@@ -190,16 +169,11 @@ function ListingsInner() {
         .footer-copy { font-size:0.72rem; color:rgba(255,255,255,0.25); }
 
         @media(max-width:1024px) { .cards-grid{grid-template-columns:repeat(2,1fr);} .search-bar{grid-template-columns:1fr 1fr auto;} .sb-field:nth-child(3),.sb-field:nth-child(4){display:none;} }
-        @media(max-width:768px) { .nav-links{display:none;} .cards-grid{grid-template-columns:1fr 1fr;} .nav-inner,.hero,.pills-row,.main,.footer{padding-left:20px;padding-right:20px;} .search-bar{grid-template-columns:1fr auto;border-radius:14px;} .sb-field:nth-child(2),.sb-field:nth-child(3),.sb-field:nth-child(4){display:none;} }
+        @media(max-width:768px) { .cards-grid{grid-template-columns:1fr 1fr;} .hero,.pills-row,.main,.footer{padding-left:20px;padding-right:20px;} .search-bar{grid-template-columns:1fr auto;border-radius:14px;} .sb-field:nth-child(2),.sb-field:nth-child(3),.sb-field:nth-child(4){display:none;} }
         @media(max-width:540px) { .cards-grid{grid-template-columns:1fr;} }
 
         /* ── Dark mode ── */
         html[data-theme="dark"] body { background:#0F0D0A; color:#F5F0EB; }
-        html[data-theme="dark"] .nav { background:rgba(15,13,10,0.96); border-bottom-color:#2A2420; }
-        html[data-theme="dark"] .nav-link { color:#A89880; }
-        html[data-theme="dark"] .nav-link:hover { color:#F5F0EB; background:rgba(255,255,255,0.06); }
-        html[data-theme="dark"] .nav-link.active { color:#F4601A; }
-        html[data-theme="dark"] .nav-outline { border-color:#2A2420; color:#F5F0EB; }
         html[data-theme="dark"] .pills-wrap { background:#1A1712; border-color:#2A2420; }
         html[data-theme="dark"] .pill { background:#1A1712; border-color:#2A2420; color:#A89880; }
         html[data-theme="dark"] .pill:hover { border-color:#F4601A; color:#F4601A; }
@@ -222,28 +196,7 @@ function ListingsInner() {
         html[data-theme="dark"] .footer { background:#0A0805; }
       `}</style>
 
-      {/* NAV */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <a href="/home" className="logo">Snap<span>Reserve™</span></a>
-          <div className="nav-links">
-            <a href="/home"          className="nav-link">Home</a>
-            <a href="/about"         className="nav-link">About</a>
-            <a href="/listings"      className="nav-link active">Explore</a>
-            <a href="/contact"       className="nav-link">Contact</a>
-          </div>
-          <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-            {user ? (
-              <>
-                {userRole === 'host' && <a href="/host/dashboard" className="nav-outline">Host Dashboard</a>}
-                <a href="/account/profile" className="nav-signup">My Account</a>
-              </>
-            ) : (
-              <a href="/signup" className="nav-signup">Sign Up Now</a>
-            )}
-          </div>
-        </div>
-      </nav>
+      <SharedHeader />
 
       {/* HERO */}
       <div className="hero">

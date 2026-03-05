@@ -1,3 +1,5 @@
+import SharedHeader from '@/app/components/SharedHeader'
+
 export const metadata = { title: 'About — SnapReserve', description: 'Learn about SnapReserve — the modern booking platform connecting travelers with hotels and private stays.' }
 
 export default function AboutPage() {
@@ -7,19 +9,6 @@ export default function AboutPage() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; color:var(--sr-text); background:var(--sr-bg); }
-
-        /* NAV */
-        .nav { background:var(--sr-surface); backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,0,0,0.07); position:sticky; top:0; z-index:100; }
-        .nav-inner { max-width:1280px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-        .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; text-decoration:none; color:var(--sr-text); flex-shrink:0; }
-        .logo span { color:#F4601A; }
-        .nav-links { display:flex; gap:4px; }
-        .nav-link { padding:8px 14px; border-radius:100px; font-size:0.83rem; font-weight:600; color:var(--sr-muted); text-decoration:none; transition:background 0.15s; }
-        .nav-link:hover { background:rgba(0,0,0,0.06); }
-        .nav-link.active { color:var(--sr-text); font-weight:700; }
-        .nav-outline { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #D4CEC5; color:var(--sr-text); text-decoration:none; }
-        .nav-solid { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; }
-        .nav-actions { display:flex; gap:8px; align-items:center; }
 
         /* LAYOUT */
         .w { max-width:1280px; margin:0 auto; padding:0 40px; }
@@ -112,29 +101,12 @@ export default function AboutPage() {
           .ab-float { flex-direction:row; flex-wrap:wrap; }
           .ab-stat { flex:1 1 160px; }
           .values-grid { grid-template-columns:1fr; }
-          .nav-links { display:none; }
-          .nav-inner,.w,.section,.footer { padding-left:20px; padding-right:20px; }
+          .w,.section,.footer { padding-left:20px; padding-right:20px; }
           .ab-hero { padding:60px 20px; }
         }
       `}</style>
 
-      {/* NAV */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <a href="/home" className="logo">Snap<span>Reserve™</span></a>
-          <div className="nav-links">
-            <a href="/home" className="nav-link">Home</a>
-            <a href="/about" className="nav-link active">About</a>
-            <a href="/listings" className="nav-link">Explore</a>
-            <a href="/contact" className="nav-link">Contact</a>
-          </div>
-          <div className="nav-actions">
-            <a href="/become-a-host" className="nav-link">Become a Host</a>
-            <a href="/login" className="nav-outline">Log in</a>
-            <a href="/signup" className="nav-solid">Sign up</a>
-          </div>
-        </div>
-      </nav>
+      <SharedHeader />
 
       {/* HERO */}
       <section className="ab-hero">

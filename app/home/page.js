@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Footer from '@/app/components/Footer'
 import { useTheme } from '@/app/components/ThemeProvider'
+import SharedHeader from '@/app/components/SharedHeader'
 
 const cityImages = {
   'New York': 'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=800&q=80',
@@ -62,49 +63,25 @@ export default function HomePage() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [userRole, setUserRole] = useState(null)
-  const [userProfile, setUserProfile] = useState(null) // { full_name, avatar_url }
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const { theme, toggle: toggleDark } = useTheme()
+  const { theme } = useTheme()
   const darkMode = theme === 'dark'
   const searchRef = useRef(null)
   const autocompleteService = useRef(null)
   const debounceRef = useRef(null)
-  const dropdownRef = useRef(null)
 
   useEffect(() => { fetchData() }, [])
   useEffect(() => { setActiveChip(null) }, [mode])
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setIsLoggedIn(false); return }
-      setIsLoggedIn(true)
-      supabase.from('users').select('user_role, is_host, full_name, avatar_url').eq('id', user.id).maybeSingle()
+      if (!user) return
+      supabase.from('users').select('user_role, is_host').eq('id', user.id).maybeSingle()
         .then(({ data }) => {
-          setUserRole(data?.user_role ?? 'user')
-          // is_host covers both owners (user_role='host') and team members (is_host=true)
-          if (data?.is_host && data.user_role === 'user') setUserRole('team_member')
-          setUserProfile({ full_name: data?.full_name ?? '', avatar_url: data?.avatar_url ?? null })
+          if (!data) return
+          setUserRole(data.user_role ?? 'user')
+          if (data.is_host && data.user_role === 'user') setUserRole('team_member')
         })
     })
   }, [])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!dropdownOpen) return
-    function handleClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [dropdownOpen])
-
-  async function handleLogout() {
-    setDropdownOpen(false)
-    await supabase.auth.signOut()
-    router.push('/home')
-  }
 
   async function fetchData() {
     const { data } = await supabase.from('listings').select('*').eq('is_active', true).order('rating', { ascending: false })
@@ -194,35 +171,6 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; color:#1A1410; }
-
-        .nav { background:rgba(250,248,245,0.92); backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,0,0,0.07); position:sticky; top:0; z-index:100; }
-        .nav-inner { max-width:1280px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; }
-        .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; text-decoration:none; color:#1A1410; }
-        .logo span { color:#F4601A; }
-        .nav-links { display:flex; gap:4px; }
-        .nav-link { padding:8px 14px; border-radius:100px; font-size:0.83rem; font-weight:600; color:#6B5F54; text-decoration:none; transition:background 0.15s; }
-        .nav-link:hover { background:rgba(0,0,0,0.06); }
-        .nav-outline { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #D4CEC5; color:#1A1410; text-decoration:none; }
-        .nav-solid { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; }
-        .nav-host-btn { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; border:none; cursor:pointer; font-family:inherit; transition:background 0.15s; }
-        .nav-host-btn:hover { background:#FF7A35; }
-        .nav-pending { padding:8px 16px; border-radius:100px; font-size:0.83rem; font-weight:600; background:rgba(217,119,6,0.1); color:#D97706; border:1px solid rgba(217,119,6,0.25); text-decoration:none; cursor:default; }
-        /* Avatar + Dropdown */
-        .nav-avatar-wrap { position:relative; }
-        .nav-avatar { width:36px; height:36px; border-radius:50%; background:#F4601A; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:800; color:white; cursor:pointer; border:2px solid transparent; transition:border-color 0.15s; flex-shrink:0; overflow:hidden; user-select:none; }
-        .nav-avatar:hover { border-color:rgba(244,96,26,0.4); }
-        .nav-avatar img { width:100%; height:100%; object-fit:cover; }
-        .nav-dropdown { position:absolute; top:calc(100% + 10px); right:0; background:white; border:1px solid #E8E2D9; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:200px; padding:8px; z-index:200; animation:dropIn 0.15s ease; }
-        @keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-        .nav-dropdown-header { padding:10px 12px 8px; border-bottom:1px solid #F3F0EB; margin-bottom:4px; }
-        .nav-dropdown-name { font-size:0.84rem; font-weight:700; color:#1A1410; }
-        .nav-dropdown-role { font-size:0.72rem; color:#A89880; margin-top:2px; }
-        .dd-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; font-size:0.84rem; font-weight:600; color:#1A1410; text-decoration:none; cursor:pointer; transition:background 0.12s; border:none; background:none; width:100%; font-family:inherit; }
-        .dd-item:hover { background:#FAF8F5; }
-        .dd-item .dd-icon { font-size:1rem; width:20px; text-align:center; flex-shrink:0; }
-        .dd-divider { border:none; border-top:1px solid #F3F0EB; margin:4px 0; }
-        .dd-item.danger { color:#DC2626; }
-        .dd-item.danger:hover { background:#FEF2F2; }
 
         .hero { padding:52px 40px 44px; text-align:center; transition:background 0.4s; }
 
@@ -319,22 +267,11 @@ export default function HomePage() {
         .sug-item:hover { background:#FAF8F5; }
 
         @media(max-width:1024px) { .listings-grid{grid-template-columns:repeat(2,1fr);} }
-        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .nav-links{display:none;} .hero,.w,.footer{padding-left:20px;padding-right:20px;} .nav-inner{padding:0 20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
+        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .hero,.w,.footer{padding-left:20px;padding-right:20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
         @media(max-width:480px) { .listings-grid{grid-template-columns:1fr;} }
 
         /* ── Dark mode ── */
         .dm { background:#0F0D0A; color:#F5F0EB; }
-        .dm .nav { background:rgba(15,13,10,0.92); border-bottom-color:rgba(255,255,255,0.07); }
-        .dm .logo { color:#F5F0EB; }
-        .dm .nav-link { color:#A89880; }
-        .dm .nav-link:hover { background:rgba(255,255,255,0.07); }
-        .dm .nav-outline { border-color:#3A3028; color:#F5F0EB; }
-        .dm .nav-dropdown { background:#1A1712; border-color:#2A2420; }
-        .dm .nav-dropdown-header { border-bottom-color:#2A2420; }
-        .dm .nav-dropdown-name { color:#F5F0EB; }
-        .dm .dd-item { color:#F5F0EB; }
-        .dm .dd-item:hover { background:#2A2420; }
-        .dm .dd-divider { border-top-color:#2A2420; }
         .dm .toggle-pill { background:#1A1712; }
         .dm .chip { background:#1A1712; border-color:#2A2420; color:#F5F0EB; }
         .dm .search-box { background:#1A1712; border-color:#2A2420; }
@@ -355,104 +292,11 @@ export default function HomePage() {
         .dm .choose-label { color:#A89880; }
         .dm .how-label { color:#A89880; }
 
-        .theme-toggle { width:38px; height:38px; border-radius:50%; border:1px solid #E8E2D9; background:white; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s; flex-shrink:0; }
-        .theme-toggle:hover { border-color:#D4CEC5; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        .dm .theme-toggle { background:#1A1712; border-color:#3A3028; color:#F5F0EB; }
-        .dm .theme-toggle:hover { border-color:#4A4038; }
       `}</style>
 
 
 
-      {/* NAV */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <a href="/home" className="logo">Snap<span>Reserve™</span></a>
-          <div className="nav-links">
-            <a href="/home" className="nav-link">Home</a>
-            <a href="/about" className="nav-link">About</a>
-            <a href="/listings" className="nav-link">Explore</a>
-            <a href="/contact" className="nav-link">Contact</a>
-          </div>
-          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <button
-              className="theme-toggle"
-              onClick={toggleDark}
-              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={darkMode ? 'Light mode' : 'Dark mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            {isLoggedIn ? (
-              <>
-                {/* Role-based host CTA */}
-                {(userRole === 'host' || userRole === 'team_member') && (
-                  <a href="/host/dashboard" className="nav-host-btn">Host Portal</a>
-                )}
-                {userRole === 'pending_host' && (
-                  <span className="nav-pending">⏳ Application Pending</span>
-                )}
-                {(userRole === 'user' || userRole === null) && (
-                  <a href="/become-a-host" className="nav-link">Become a Host</a>
-                )}
-
-                {/* Profile avatar with dropdown */}
-                <div className="nav-avatar-wrap" ref={dropdownRef}>
-                  <div
-                    className="nav-avatar"
-                    onClick={() => setDropdownOpen(o => !o)}
-                    role="button"
-                    aria-label="Account menu"
-                  >
-                    {userProfile?.avatar_url?.startsWith('http')
-                      ? <img src={userProfile.avatar_url} alt="avatar" />
-                      : userProfile?.avatar_url
-                        ? <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{userProfile.avatar_url}</span>
-                        : (userProfile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?')
-                    }
-                  </div>
-
-                  {dropdownOpen && (
-                    <div className="nav-dropdown">
-                      {userProfile?.full_name && (
-                        <div className="nav-dropdown-header">
-                          <div className="nav-dropdown-name">{userProfile.full_name}</div>
-                          <div className="nav-dropdown-role">
-                            {userRole === 'host' ? 'Approved Host' : userRole === 'pending_host' ? 'Application Pending' : 'Member'}
-                          </div>
-                        </div>
-                      )}
-                      <a href="/dashboard" className="dd-item" onClick={() => setDropdownOpen(false)}>
-                        <span className="dd-icon">🔍</span> Explore Dashboard
-                      </a>
-                      <a href="/trips" className="dd-item" onClick={() => setDropdownOpen(false)}>
-                        <span className="dd-icon">🧳</span> My Trips
-                      </a>
-                      {userRole === 'host' && (
-                        <a href="/host/dashboard" className="dd-item" onClick={() => setDropdownOpen(false)}>
-                          <span className="dd-icon">🏠</span> Host Dashboard
-                        </a>
-                      )}
-                      <a href="/account/profile" className="dd-item" onClick={() => setDropdownOpen(false)}>
-                        <span className="dd-icon">⚙️</span> Settings
-                      </a>
-                      <hr className="dd-divider" />
-                      <button className="dd-item danger" onClick={handleLogout}>
-                        <span className="dd-icon">↪</span> Log out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <a href="/become-a-host" className="nav-link">Become a Host</a>
-                <a href="/login" className="nav-outline">Log in</a>
-                <a href="/signup" className="nav-solid">Sign up</a>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <SharedHeader />
 
       {/* ── HERO ── */}
       <div className="hero" style={{ background: heroBg }}>

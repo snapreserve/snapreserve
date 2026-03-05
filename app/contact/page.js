@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import SharedHeader from '@/app/components/SharedHeader'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', type: 'Traveler looking to book stays', message: '', country: '' })
@@ -68,19 +69,6 @@ export default function ContactPage() {
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; color:var(--sr-text); background:var(--sr-bg); }
 
-        /* NAV */
-        .nav { background:var(--sr-surface); backdrop-filter:blur(12px); border-bottom:1px solid rgba(0,0,0,0.07); position:sticky; top:0; z-index:100; }
-        .nav-inner { max-width:1280px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-        .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:900; text-decoration:none; color:var(--sr-text); flex-shrink:0; }
-        .logo span { color:#F4601A; }
-        .nav-links { display:flex; gap:4px; }
-        .nav-link { padding:8px 14px; border-radius:100px; font-size:0.83rem; font-weight:600; color:var(--sr-muted); text-decoration:none; transition:background 0.15s; }
-        .nav-link:hover { background:rgba(0,0,0,0.06); }
-        .nav-link.active { color:var(--sr-text); font-weight:700; }
-        .nav-outline { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; border:1px solid #D4CEC5; color:var(--sr-text); text-decoration:none; }
-        .nav-solid { padding:8px 18px; border-radius:100px; font-size:0.83rem; font-weight:700; background:#F4601A; color:white; text-decoration:none; }
-        .nav-actions { display:flex; gap:8px; align-items:center; }
-
         /* HERO */
         .contact-hero { padding:72px 40px 0; max-width:1280px; margin:0 auto; display:grid; grid-template-columns:1fr 520px; gap:60px; align-items:start; }
         .eyebrow { font-size:0.68rem; font-weight:800; letter-spacing:0.2em; text-transform:uppercase; color:#F4601A; display:flex; align-items:center; gap:8px; margin-bottom:14px; }
@@ -147,26 +135,10 @@ export default function ContactPage() {
         .footer-copy { font-size:0.72rem; color:rgba(255,255,255,0.25); }
 
         @media(max-width:900px) { .contact-hero { grid-template-columns:1fr; } .cf-card { margin-bottom:40px; } }
-        @media(max-width:768px) { .nav-links { display:none; } .nav-inner,.contact-hero,.geo-strip,.footer { padding-left:20px; padding-right:20px; } .contact-hero { padding-top:44px; } .cf-row { grid-template-columns:1fr; } }
+        @media(max-width:768px) { .contact-hero,.geo-strip,.footer { padding-left:20px; padding-right:20px; } .contact-hero { padding-top:44px; } .cf-row { grid-template-columns:1fr; } }
       `}</style>
 
-      {/* NAV */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <a href="/home" className="logo">Snap<span>Reserve™</span></a>
-          <div className="nav-links">
-            <a href="/home" className="nav-link">Home</a>
-            <a href="/about" className="nav-link">About</a>
-            <a href="/listings" className="nav-link">Explore</a>
-            <a href="/contact" className="nav-link active">Contact</a>
-          </div>
-          <div className="nav-actions">
-            <a href="/become-a-host" className="nav-link">Become a Host</a>
-            <a href="/login" className="nav-outline">Log in</a>
-            <a href="/signup" className="nav-solid">Sign up</a>
-          </div>
-        </div>
-      </nav>
+      <SharedHeader />
 
       {/* HERO */}
       <div className="contact-hero">
