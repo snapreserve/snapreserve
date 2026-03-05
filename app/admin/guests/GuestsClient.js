@@ -86,6 +86,12 @@ const STYLES = `
   .gs-btn-deact:hover { background:rgba(107,94,82,0.25); }
   .gs-btn-react { background:rgba(52,211,153,0.1); color:#34D399; border-color:rgba(52,211,153,0.3); }
   .gs-btn-react:hover { background:rgba(52,211,153,0.2); }
+  .gs-btn-approve { background:rgba(52,211,153,0.1); color:#34D399; border-color:rgba(52,211,153,0.3); }
+  .gs-btn-approve:hover { background:rgba(52,211,153,0.2); }
+  .gs-btn-reject { background:rgba(248,113,113,0.1); color:#F87171; border-color:rgba(248,113,113,0.3); }
+  .gs-btn-reject:hover { background:rgba(248,113,113,0.2); }
+  .gs-btn-verify { background:rgba(96,165,250,0.1); color:#60A5FA; border-color:rgba(96,165,250,0.3); }
+  .gs-btn-verify:hover { background:rgba(96,165,250,0.2); }
   /* bar chart */
   .gs-bar       { display:flex; align-items:flex-end; gap:6px; height:80px; margin:10px 0; }
   .gs-bar-col   { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
@@ -209,6 +215,8 @@ export default function GuestsClient({ initialGuests, role }) {
 
   const canManage    = ['admin', 'super_admin', 'trust_safety'].includes(role)
   const canReinstate = ['super_admin', 'trust_safety'].includes(role)
+  const canApprove   = ['support', 'admin', 'super_admin'].includes(role)
+  const canReject    = ['admin', 'super_admin'].includes(role)
 
   /* ── stats ── */
   const stats = useMemo(() => {
@@ -329,16 +337,27 @@ export default function GuestsClient({ initialGuests, role }) {
 
       const now = new Date().toISOString()
       function applyAction(g) {
-        if (action === 'suspend')     return { ...g, suspended_at: now, is_active: false, suspension_category: form.suspCategory }
-        if (action === 'deactivate')  return { ...g, deleted_at:   now, is_active: false }
-        if (action === 'reactivate')  return { ...g, suspended_at: null, is_active: true, suspension_category: null }
+        if (action === 'suspend')          return { ...g, suspended_at: now, is_active: false, suspension_category: form.suspCategory }
+        if (action === 'deactivate')       return { ...g, deleted_at:   now, is_active: false }
+        if (action === 'reactivate')       return { ...g, suspended_at: null, is_active: true, suspension_category: null }
+        if (action === 'approve_account')  return { ...g, approval_status: 'approved' }
+        if (action === 'reject_account')   return { ...g, approval_status: 'rejected' }
+        if (action === 'verify_user')      return { ...g, verification_status: 'verified' }
+        if (action === 'unverify_user')    return { ...g, verification_status: 'pending' }
         return g
       }
 
       setGuests(prev => prev.map(g => g.id === guest.id ? applyAction(g) : g))
       if (selected?.id === guest.id) setSelected(applyAction)
 
-      showToast(action === 'deactivate' ? 'Account deactivated.' : `Account ${action}d.`)
+      const actionLabels = {
+        deactivate: 'Account deactivated.',
+        approve_account: 'Account approved.',
+        reject_account: 'Account rejected.',
+        verify_user: 'User verified.',
+        unverify_user: 'Verification removed.',
+      }
+      showToast(actionLabels[action] ?? `Account ${action}d.`)
       setModal(null)
     } catch (e) {
       showToast(e.message, 'err')
@@ -432,8 +451,17 @@ export default function GuestsClient({ initialGuests, role }) {
                     </div>
 
                     {/* Status */}
-                    <div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span className="gs-badge" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
+                      {g.approval_status && g.approval_status !== 'approved' && (
+                        <span className="gs-badge" style={{
+                          background: g.approval_status === 'rejected' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)',
+                          color: g.approval_status === 'rejected' ? '#F87171' : '#FBBF24',
+                          fontSize: '0.6rem',
+                        }}>
+                          {g.approval_status === 'rejected' ? 'Rejected' : 'Pending'}
+                        </span>
+                      )}
                     </div>
 
                     {/* Bookings */}
@@ -515,6 +543,10 @@ export default function GuestsClient({ initialGuests, role }) {
                         {(() => { const b = guestStatus(sel); return <span className="gs-badge" style={{ background: b.bg, color: b.color }}>{b.label}</span> })()}
                         {sel.is_host && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.1)', color: 'var(--sr-orange)' }}>Host</span>}
                         {sel.is_owner && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.2)', color: 'var(--sr-orange)', border: '1px solid var(--sr-orange)' }}>Protected Owner</span>}
+                        {sel.approval_status === 'approved' && <span className="gs-badge" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399' }}>Approved</span>}
+                        {sel.approval_status === 'pending'  && <span className="gs-badge" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>Pending Approval</span>}
+                        {sel.approval_status === 'rejected' && <span className="gs-badge" style={{ background: 'rgba(248,113,113,0.1)', color: '#F87171' }}>Approval Rejected</span>}
+                        {sel.verification_status === 'verified' && <span className="gs-badge" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>✓ Verified</span>}
                       </div>
 
                       {/* 4-stat grid */}
@@ -547,10 +579,22 @@ export default function GuestsClient({ initialGuests, role }) {
                       </div>
 
                       {/* Action buttons */}
-                      {(canManage || canReinstate) && (
+                      {(canManage || canReinstate || canApprove) && (
                         <div className="gs-section">
                           <div className="gs-sec-title">Actions</div>
                           <div className="gs-actions">
+                            {!sel.is_owner && canApprove && sel.approval_status !== 'approved' && (
+                              <button className="gs-btn gs-btn-approve" onClick={() => openModal('approve_account', sel)}>Approve Account</button>
+                            )}
+                            {!sel.is_owner && canReject && sel.approval_status === 'pending' && (
+                              <button className="gs-btn gs-btn-reject" onClick={() => openModal('reject_account', sel)}>Reject Account</button>
+                            )}
+                            {!sel.is_owner && canApprove && sel.verification_status !== 'verified' && (
+                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Verify User</button>
+                            )}
+                            {!sel.is_owner && canReject && sel.verification_status === 'verified' && (
+                              <button className="gs-btn gs-btn-deact" onClick={() => openModal('unverify_user', sel)}>Remove Verification</button>
+                            )}
                             {canManage && !sel.suspended_at && sel.is_active && <>
                               <button
                                 className="gs-btn gs-btn-susp"
@@ -751,8 +795,20 @@ export default function GuestsClient({ initialGuests, role }) {
                     <div>
                       <div className="gs-section">
                         <div className="gs-sec-title">Admin Controls</div>
-                        {canManage || canReinstate ? (
+                        {canManage || canReinstate || canApprove ? (
                           <div className="gs-actions">
+                            {!sel.is_owner && canApprove && sel.approval_status !== 'approved' && (
+                              <button className="gs-btn gs-btn-approve" onClick={() => openModal('approve_account', sel)}>Approve Account</button>
+                            )}
+                            {!sel.is_owner && canReject && sel.approval_status === 'pending' && (
+                              <button className="gs-btn gs-btn-reject" onClick={() => openModal('reject_account', sel)}>Reject Account</button>
+                            )}
+                            {!sel.is_owner && canApprove && sel.verification_status !== 'verified' && (
+                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Verify User</button>
+                            )}
+                            {!sel.is_owner && canReject && sel.verification_status === 'verified' && (
+                              <button className="gs-btn gs-btn-deact" onClick={() => openModal('unverify_user', sel)}>Remove Verification</button>
+                            )}
                             {canManage && !sel.suspended_at && sel.is_active && <>
                               <button
                                 className="gs-btn gs-btn-susp"
@@ -892,10 +948,45 @@ export default function GuestsClient({ initialGuests, role }) {
               </div>
             </>}
 
+            {modal.action === 'approve_account' && <>
+              <h2>Approve Account</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-success">
+                This will grant the user access to the platform.
+              </div>
+            </>}
+
+            {modal.action === 'reject_account' && <>
+              <h2>Reject Account</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-warning">
+                This will deny the user access to the platform.
+              </div>
+            </>}
+
+            {modal.action === 'verify_user' && <>
+              <h2>Verify User</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-success">
+                This will mark the user as verified. A "Verified" badge will appear on their profile.
+              </div>
+            </>}
+
+            {modal.action === 'unverify_user' && <>
+              <h2>Remove Verification</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-warning">
+                This will remove the verified badge from the user's profile.
+              </div>
+            </>}
+
             <div className="gs-mfooter">
               <button className="gs-mbtn gs-mbtn-cancel" onClick={() => setModal(null)}>Cancel</button>
               <button
-                className={`gs-mbtn gs-mbtn-ok${modal.action === 'deactivate' ? ' danger' : modal.action === 'reactivate' ? ' success' : ''}`}
+                className={`gs-mbtn gs-mbtn-ok${
+                  modal.action === 'deactivate' || modal.action === 'reject_account' || modal.action === 'unverify_user' ? ' danger' :
+                  modal.action === 'reactivate' || modal.action === 'approve_account' || modal.action === 'verify_user' ? ' success' : ''
+                }`}
                 disabled={
                   loading ||
                   (modal.action === 'suspend'    && (!form.suspCategory || !form.adminNotes.trim())) ||
@@ -903,7 +994,12 @@ export default function GuestsClient({ initialGuests, role }) {
                 }
                 onClick={confirmAction}
               >
-                {loading ? 'Processing…' : modal.action === 'reactivate' ? 'Reinstate' : 'Confirm'}
+                {loading ? 'Processing…' :
+                  modal.action === 'reactivate' ? 'Reinstate' :
+                  modal.action === 'approve_account' ? 'Approve' :
+                  modal.action === 'reject_account' ? 'Reject' :
+                  modal.action === 'verify_user' ? 'Verify' :
+                  modal.action === 'unverify_user' ? 'Remove' : 'Confirm'}
               </button>
             </div>
           </div>

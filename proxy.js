@@ -26,6 +26,26 @@ async function isWaitlistV2Enabled(supabase) {
   }
 }
 
+function isOwnerEmail(user) {
+  return user?.email === 'owner@snapreserve.app'
+}
+
+const _approvalCache = new Map() // userId → { status, expiry }
+async function getApprovalStatus(supabase, userId) {
+  const cached = _approvalCache.get(userId)
+  if (cached && Date.now() < cached.expiry) return cached.status
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('approval_status')
+      .eq('id', userId)
+      .maybeSingle()
+    const status = data?.approval_status ?? 'pending'
+    _approvalCache.set(userId, { status, expiry: Date.now() + 60_000 })
+    return status
+  } catch { return 'pending' } // fail closed
+}
+
 // Inline base64url decode — works in Edge Runtime (no Buffer)
 function decodeJwtPayload(token) {
   try {
@@ -89,19 +109,35 @@ export async function proxy(request) {
     path.startsWith('/api/') || path.startsWith('/auth/')
 
   // ----------------------------------------------------------------
-  // Waitlist v2 site-lock — runs FIRST, unauthenticated visitors only
-  // Takes precedence over maintenance mode so /waitlist is always shown
+  // Waitlist v2 + Approval gate
+  // Applies to ALL non-owner consumer traffic; admin routes are exempt
   // ----------------------------------------------------------------
-  if (!isPublicBypassPath && !user) {
-    const waitlistPath = path === '/waitlist' || path.startsWith('/waitlist/') ||
-                         path === '/login'    || path === '/signup'
-    if (!waitlistPath) {
+  if (!isPublicBypassPath && !isAdminOrSuperAdmin) {
+    const isOwner = isOwnerEmail(user)
+    const isBypassPath =
+      path === '/waitlist' || path.startsWith('/waitlist/') ||
+      path === '/login'    || path === '/signup' ||
+      path === '/pending-approval'
+
+    if (!isOwner && !isBypassPath) {
+      // Waitlist lock — blocks everyone (logged-in or not)
       const locked = await isWaitlistV2Enabled(supabase)
       if (locked) {
         const url = request.nextUrl.clone()
         url.pathname = '/waitlist'
         url.search   = ''
         return NextResponse.redirect(url)
+      }
+
+      // Approval gate — only for authenticated users
+      if (user) {
+        const approvalStatus = await getApprovalStatus(supabase, user.id)
+        if (approvalStatus !== 'approved') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/pending-approval'
+          url.search   = ''
+          return NextResponse.redirect(url)
+        }
       }
     }
   }

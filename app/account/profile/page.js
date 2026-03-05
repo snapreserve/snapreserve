@@ -10,29 +10,54 @@ const COUNTRIES = [
   'India', 'China', 'South Africa', 'Nigeria', 'Other',
 ]
 
-const inputStyle = {
-  width: '100%', padding: '11px 14px', border: '1.5px solid #E8E2D9',
-  borderRadius: '10px', fontSize: '0.9rem', fontFamily: 'inherit',
-  background: 'white', outline: 'none', color: '#1A1410',
-  transition: 'border-color 0.15s',
-}
-const labelStyle = {
-  display: 'block', fontSize: '0.75rem', fontWeight: 700,
-  textTransform: 'uppercase', letterSpacing: '0.08em',
-  color: '#6B5F54', marginBottom: '6px',
-}
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  .pf-shell { display:grid; grid-template-columns:220px 1fr; gap:20px; align-items:start; max-width:900px; }
+  .pf-card  { background:var(--sr-surface); border:1px solid var(--sr-border2); border-radius:16px; padding:24px; }
+  .pf-form-card { background:var(--sr-surface); border:1px solid var(--sr-border2); border-radius:16px; padding:28px; }
+  .pf-av   { width:72px; height:72px; border-radius:50%; background:var(--sr-orange); display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:700; color:#fff; margin:0 auto 12px; cursor:pointer; overflow:hidden; border:3px solid var(--sr-border2); transition:border-color .15s; }
+  .pf-av:hover { border-color:var(--sr-orange); }
+  .pf-name { font-size:0.96rem; font-weight:800; color:var(--sr-text); text-align:center; margin-bottom:2px; }
+  .pf-since { font-size:0.7rem; color:var(--sr-sub); text-align:center; margin-bottom:14px; }
+  .pf-badges { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:16px; }
+  .pf-badge { padding:3px 10px; border-radius:100px; font-size:0.7rem; font-weight:700; }
+  .pf-badge.verified  { background:rgba(52,211,153,0.1); color:#34D399; border:1px solid rgba(52,211,153,0.3); }
+  .pf-badge.host      { background:rgba(244,96,26,0.1);  color:var(--sr-orange); border:1px solid rgba(244,96,26,0.25); }
+  .pf-badge.traveler  { background:rgba(96,165,250,0.1); color:#60A5FA; border:1px solid rgba(96,165,250,0.3); }
+  .pf-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .pf-stat  { background:var(--sr-bg); border-radius:10px; padding:10px; text-align:center; }
+  .pf-sv    { font-size:1.2rem; font-weight:800; color:var(--sr-text); line-height:1; }
+  .pf-sl    { font-size:0.62rem; font-weight:600; color:var(--sr-sub); text-transform:uppercase; letter-spacing:.07em; margin-top:3px; }
+  .pf-avatar-btn { width:100%; background:none; border:1px solid var(--sr-border2); border-radius:8px; padding:7px 12px; font-size:0.75rem; font-weight:600; color:var(--sr-muted); cursor:pointer; font-family:inherit; transition:all .14s; }
+  .pf-avatar-btn:hover { border-color:var(--sr-orange); color:var(--sr-orange); }
+  .pf-sec-title { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--sr-sub); margin-bottom:16px; }
+  .pf-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .pf-field { display:flex; flex-direction:column; gap:5px; margin-bottom:16px; }
+  .pf-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--sr-sub); }
+  .pf-input { width:100%; padding:10px 13px; border:1.5px solid var(--sr-border2); border-radius:9px; font-size:0.88rem; font-family:inherit; background:var(--sr-bg); outline:none; color:var(--sr-text); transition:border-color .15s; }
+  .pf-input:focus { border-color:var(--sr-orange); }
+  .pf-input[readonly] { opacity:.55; cursor:default; }
+  .pf-input-note { font-size:0.68rem; color:var(--sr-sub); margin-top:3px; }
+  .pf-save { background:var(--sr-orange); color:#fff; border:none; border-radius:10px; padding:11px 26px; font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+  .pf-save:disabled { opacity:.5; cursor:not-allowed; }
+  .pf-host-cta { display:flex; align-items:center; justify-content:space-between; gap:16px; background:var(--sr-surface); border:1px solid var(--sr-border2); border-radius:16px; padding:20px 24px; max-width:900px; margin-top:20px; }
+  .pf-emoji-picker { background:var(--sr-surface); border:1px solid var(--sr-border2); border-radius:14px; padding:18px; margin-bottom:20px; max-width:900px; }
+  .pf-emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; }
+  .pf-emoji-btn { width:38px; height:38px; border-radius:9px; border:2px solid transparent; background:var(--sr-bg); font-size:1.35rem; cursor:pointer; padding:0; transition:all .12s; }
+  .pf-emoji-btn:hover { border-color:var(--sr-orange); }
+  .pf-emoji-btn.sel { border-color:var(--sr-orange); background:rgba(244,96,26,0.08); }
+  @media(max-width:720px) { .pf-shell { grid-template-columns:1fr; } .pf-grid2 { grid-template-columns:1fr; } }
+`
 
 export default function ProfilePage() {
-  const [profile, setProfile]     = useState(null)
-  const [form, setForm]           = useState({
-    first_name: '', last_name: '', phone: '', city: '', country: '',
-  })
-  const [avatarUrl, setAvatarUrl] = useState(null)
-  const [loading, setLoading]     = useState(true)
-  const [saving, setSaving]       = useState(false)
-  const [saved, setSaved]         = useState(false)
-  const [error, setError]         = useState('')
-  const [pickerOpen, setPickerOpen] = useState(false)
+  const [profile,     setProfile]     = useState(null)
+  const [form,        setForm]        = useState({ first_name: '', last_name: '', phone: '', city: '', country: '' })
+  const [avatarUrl,   setAvatarUrl]   = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [saving,      setSaving]      = useState(false)
+  const [saved,       setSaved]       = useState(false)
+  const [error,       setError]       = useState('')
+  const [pickerOpen,  setPickerOpen]  = useState(false)
   const [emojiSaving, setEmojiSaving] = useState(false)
 
   useEffect(() => {
@@ -68,10 +93,7 @@ export default function ProfilePage() {
 
   async function handleSave(e) {
     e.preventDefault()
-    setSaving(true)
-    setError('')
-    setSaved(false)
-
+    setSaving(true); setError(''); setSaved(false)
     const res = await fetch('/api/account/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -81,176 +103,186 @@ export default function ProfilePage() {
     setSaving(false)
     if (!res.ok) { setError(json.error || 'Failed to save'); return }
     setSaved(true)
+    setProfile(p => ({ ...p, full_name: [form.first_name, form.last_name].filter(Boolean).join(' ') }))
     setTimeout(() => setSaved(false), 3000)
   }
 
-  function Field({ label, name, type = 'text', readOnly = false, children }) {
-    return (
-      <div>
-        <label style={labelStyle}>{label}</label>
-        {children ?? (
-          <input
-            type={type}
-            value={readOnly ? (profile?.email ?? '') : (form[name] ?? '')}
-            onChange={readOnly ? undefined : e => setForm(f => ({ ...f, [name]: e.target.value }))}
-            readOnly={readOnly}
-            style={{ ...inputStyle, background: readOnly ? '#F3F0EB' : 'white', color: readOnly ? '#A89880' : '#1A1410' }}
-            onFocus={e => { if (!readOnly) e.target.style.borderColor = '#F4601A' }}
-            onBlur={e => { e.target.style.borderColor = '#E8E2D9' }}
-          />
-        )}
-      </div>
-    )
-  }
-
-  const isEmoji = avatarUrl && !avatarUrl.startsWith('http')
-  const initials = [form.first_name?.[0], form.last_name?.[0]].filter(Boolean).join('').toUpperCase() || profile?.email?.[0]?.toUpperCase() || '?'
+  const isEmoji    = avatarUrl && !avatarUrl.startsWith('http')
+  const initials   = [form.first_name?.[0], form.last_name?.[0]].filter(Boolean).join('').toUpperCase() || profile?.email?.[0]?.toUpperCase() || '?'
+  const displayName = [form.first_name, form.last_name].filter(Boolean).join(' ') || profile?.email || 'My Account'
+  const isVerified  = profile?.verification_status === 'verified'
+  const memberSince = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : null
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#A89880', fontSize: '0.9rem', padding: '40px 0' }}>
-      <div style={{ width: 18, height: 18, border: '2px solid #E8E2D9', borderTopColor: '#F4601A', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--sr-sub)', fontSize: '0.9rem', padding: '40px 0' }}>
+      <div style={{ width: 18, height: 18, border: '2px solid var(--sr-border2)', borderTopColor: 'var(--sr-orange)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
       Loading profile…
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
   return (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.7rem', fontWeight: 700, marginBottom: '6px' }}>
+    <>
+      <style>{STYLES}</style>
+
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--sr-text)', marginBottom: 4, letterSpacing: '-0.02em' }}>
           Profile &amp; Settings
         </h1>
-        <p style={{ fontSize: '0.88rem', color: '#6B5F54' }}>
+        <p style={{ fontSize: '0.84rem', color: 'var(--sr-sub)' }}>
           Manage your personal information and preferences.
         </p>
       </div>
 
-      {/* Avatar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-        <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="pf-shell">
+        {/* Left: profile card */}
+        <div className="pf-card">
+          {/* Avatar */}
           <div
+            className="pf-av"
             onClick={() => setPickerOpen(o => !o)}
             title="Choose avatar"
             style={{
-              width: 80, height: 80, borderRadius: '50%',
-              background: (isEmoji || avatarUrl?.startsWith('http')) ? 'transparent' : '#F4601A',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: isEmoji ? '2.2rem' : '1.5rem', fontWeight: 700, color: 'white',
-              cursor: 'pointer', overflow: 'hidden',
-              border: '3px solid white',
-              boxShadow: pickerOpen ? '0 0 0 2px #F4601A' : '0 0 0 2px #E8E2D9',
-              transition: 'box-shadow 0.15s',
+              background: isEmoji || avatarUrl?.startsWith('http') ? 'transparent' : 'var(--sr-orange)',
+              fontSize: isEmoji ? '2rem' : '1.4rem',
+              boxShadow: pickerOpen ? '0 0 0 3px var(--sr-orange)' : undefined,
             }}
           >
             {isEmoji ? avatarUrl
               : avatarUrl?.startsWith('http') ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : initials}
           </div>
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '3px' }}>
-            {[form.first_name, form.last_name].filter(Boolean).join(' ') || profile?.email}
+
+          <div className="pf-name">{displayName}</div>
+          {memberSince && <div className="pf-since">Member since {memberSince}</div>}
+
+          {/* Badges */}
+          <div className="pf-badges">
+            {isVerified && <span className="pf-badge verified">✓ Verified</span>}
+            {profile?.is_host && <span className="pf-badge host">🏠 Host</span>}
+            {(profile?.booking_count ?? 0) > 0 && <span className="pf-badge traveler">✈️ Traveler</span>}
           </div>
-          <button
-            onClick={() => setPickerOpen(o => !o)}
-            style={{ background: 'none', border: '1px solid #E8E2D9', borderRadius: '8px', padding: '5px 14px', fontSize: '0.78rem', fontWeight: 600, color: '#6B5F54', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '4px' }}
-          >
-            {pickerOpen ? 'Close picker' : 'Choose avatar'}
+
+          {/* Stats */}
+          <div className="pf-stats">
+            <div className="pf-stat">
+              <div className="pf-sv">{profile?.booking_count ?? 0}</div>
+              <div className="pf-sl">Trips</div>
+            </div>
+            <div className="pf-stat">
+              <div className="pf-sv">{profile?.saved_count ?? 0}</div>
+              <div className="pf-sl">Saved</div>
+            </div>
+            <div className="pf-stat" style={{ gridColumn: '1/-1' }}>
+              <div className="pf-sv">
+                ${(profile?.total_spent ?? 0) >= 1000
+                  ? `${((profile?.total_spent ?? 0) / 1000).toFixed(1)}k`
+                  : (profile?.total_spent ?? 0)}
+              </div>
+              <div className="pf-sl">Total Spent</div>
+            </div>
+          </div>
+
+          <button className="pf-avatar-btn" onClick={() => setPickerOpen(o => !o)}>
+            {pickerOpen ? 'Close picker' : '🎨 Choose avatar'}
           </button>
-          <div style={{ fontSize: '0.72rem', color: '#A89880' }}>Pick a city emoji to represent you</div>
+        </div>
+
+        {/* Right: form */}
+        <div className="pf-form-card">
+          <div className="pf-sec-title">Personal Information</div>
+          <form onSubmit={handleSave}>
+            <div className="pf-grid2">
+              <div className="pf-field">
+                <label className="pf-label">First Name</label>
+                <input className="pf-input" value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} />
+              </div>
+              <div className="pf-field">
+                <label className="pf-label">Last Name</label>
+                <input className="pf-input" value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="pf-field">
+              <label className="pf-label">Email Address</label>
+              <input className="pf-input" type="email" value={profile?.email ?? ''} readOnly />
+              <div className="pf-input-note">To change your email, contact support.</div>
+            </div>
+
+            <div className="pf-field">
+              <label className="pf-label">Phone Number</label>
+              <input className="pf-input" type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+
+            <div className="pf-grid2">
+              <div className="pf-field">
+                <label className="pf-label">City</label>
+                <input className="pf-input" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
+              </div>
+              <div className="pf-field">
+                <label className="pf-label">Country</label>
+                <select
+                  className="pf-input"
+                  value={form.country}
+                  onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <option value="">Select country…</option>
+                  {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: '8px', padding: '10px 14px', fontSize: '0.82rem', color: '#F87171', marginBottom: 16 }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <button type="submit" disabled={saving} className="pf-save">
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+              {saved && <span style={{ fontSize: '0.84rem', color: '#34D399', fontWeight: 600 }}>✓ Saved</span>}
+            </div>
+          </form>
         </div>
       </div>
 
-      {/* Emoji picker */}
+      {/* Avatar emoji picker */}
       {pickerOpen && (
-        <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', padding: '20px', marginBottom: '28px', maxWidth: '360px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '14px' }}>Choose your city</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
+        <div className="pf-emoji-picker" style={{ marginTop: 20 }}>
+          <div className="pf-sec-title">Choose your city emoji</div>
+          <div className="pf-emoji-grid">
             {AVATAR_EMOJIS.map(emoji => (
-              <button key={emoji} onClick={() => handleEmojiSelect(emoji)} disabled={emojiSaving}
-                style={{ width: 38, height: 38, borderRadius: '10px', border: 'none', background: avatarUrl === emoji ? '#FFF0E8' : '#F9F6F2', outline: avatarUrl === emoji ? '2px solid #F4601A' : '2px solid transparent', fontSize: '1.4rem', cursor: 'pointer', padding: 0 }}
-              >{emoji}</button>
+              <button
+                key={emoji}
+                className={`pf-emoji-btn${avatarUrl === emoji ? ' sel' : ''}`}
+                onClick={() => handleEmojiSelect(emoji)}
+                disabled={emojiSaving}
+              >
+                {emoji}
+              </button>
             ))}
           </div>
           {avatarUrl && (
-            <button onClick={() => handleEmojiSelect('')} style={{ marginTop: '14px', background: 'none', border: 'none', fontSize: '0.75rem', color: '#A89880', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+            <button
+              onClick={() => handleEmojiSelect('')}
+              style={{ marginTop: 12, background: 'none', border: 'none', fontSize: '0.72rem', color: 'var(--sr-sub)', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            >
               Remove avatar (use initials)
             </button>
           )}
         </div>
       )}
 
-      {/* Personal Information */}
-      <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', padding: '28px', maxWidth: '600px', marginBottom: '24px' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '20px' }}>
-          Personal Information
-        </div>
-
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* First / Last name row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <Field label="First Name" name="first_name" />
-            <Field label="Last Name"  name="last_name" />
-          </div>
-
-          <Field label="Email Address" name="email" readOnly>
-            <input
-              type="email"
-              value={profile?.email ?? ''}
-              readOnly
-              style={{ ...inputStyle, background: '#F3F0EB', color: '#A89880' }}
-            />
-            <p style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '4px' }}>
-              To change your email, contact support.
-            </p>
-          </Field>
-
-          <Field label="Phone Number" name="phone" type="tel" />
-
-          {/* City / Country row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <Field label="City" name="city" />
-            <div>
-              <label style={labelStyle}>Country</label>
-              <select
-                value={form.country}
-                onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
-                style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B5F54' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
-                onFocus={e => e.target.style.borderColor = '#F4601A'}
-                onBlur={e => e.target.style.borderColor = '#E8E2D9'}
-              >
-                <option value="">Select country…</option>
-                {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {error && (
-            <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: '8px', padding: '10px 14px', fontSize: '0.82rem', color: '#DC2626' }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '4px' }}>
-            <button
-              type="submit"
-              disabled={saving}
-              style={{ background: '#F4601A', color: 'white', border: 'none', borderRadius: '10px', padding: '12px 28px', fontSize: '0.9rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.6 : 1 }}
-            >
-              {saving ? 'Saving…' : 'Save Changes'}
-            </button>
-            {saved && <span style={{ fontSize: '0.84rem', color: '#16A34A', fontWeight: 600 }}>✓ Saved successfully</span>}
-          </div>
-        </form>
-      </div>
-
-      {/* Hosting status */}
-      <div style={{ background: profile?.is_host ? '#FFF8F5' : 'white', border: `1px solid ${profile?.is_host ? '#F4E0D4' : '#E8E2D9'}`, borderRadius: '16px', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', maxWidth: '600px' }}>
+      {/* Hosting CTA */}
+      <div className="pf-host-cta">
         <div>
-          <div style={{ fontWeight: 700, fontSize: '0.96rem', marginBottom: '5px', color: '#1A1410' }}>
+          <div style={{ fontWeight: 700, fontSize: '0.96rem', marginBottom: 5, color: 'var(--sr-text)' }}>
             {profile?.is_host ? '🏠 You\'re a host' : '🏠 Become a host'}
           </div>
-          <p style={{ fontSize: '0.82rem', color: '#6B5F54', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--sr-muted)', lineHeight: 1.6 }}>
             {profile?.is_host
               ? 'Manage your listings and bookings from your host dashboard.'
               : 'List your space and start earning. Switch back to guest mode at any time.'}
@@ -258,11 +290,11 @@ export default function ProfilePage() {
         </div>
         <a
           href={profile?.is_host ? '/host/dashboard' : '/become-a-host'}
-          style={{ flexShrink: 0, background: profile?.is_host ? '#1A1410' : '#F4601A', color: 'white', borderRadius: '10px', padding: '10px 18px', fontSize: '0.84rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          style={{ flexShrink: 0, background: profile?.is_host ? 'var(--sr-surface)' : 'var(--sr-orange)', color: profile?.is_host ? 'var(--sr-text)' : '#fff', border: `1px solid var(--sr-border2)`, borderRadius: '10px', padding: '10px 18px', fontSize: '0.84rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}
         >
-          {profile?.is_host ? 'Host dashboard' : 'Get started'}
+          {profile?.is_host ? 'Host dashboard →' : 'Get started →'}
         </a>
       </div>
-    </div>
+    </>
   )
 }

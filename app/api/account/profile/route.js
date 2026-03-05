@@ -9,7 +9,7 @@ export async function GET() {
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('users')
-    .select('first_name, last_name, full_name, email, phone, avatar_url, city, country, created_at, is_verified, is_host, user_role')
+    .select('first_name, last_name, full_name, email, phone, avatar_url, city, country, created_at, is_host, user_role, verification_status')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -30,10 +30,18 @@ export async function GET() {
       is_host:    false,
     }
     await admin.from('users').upsert(fallback, { onConflict: 'id' })
-    return NextResponse.json(fallback)
+    return NextResponse.json({ ...fallback, booking_count: 0, total_spent: 0, saved_count: 0 })
   }
 
-  return NextResponse.json(data)
+  // Fetch stats
+  const [{ count: bookingCount }, { data: spendData }, { count: savedCount }] = await Promise.all([
+    admin.from('bookings').select('id', { count: 'exact', head: true }).eq('guest_id', user.id).neq('status', 'cancelled'),
+    admin.from('bookings').select('total_amount').eq('guest_id', user.id).neq('status', 'cancelled'),
+    admin.from('saved_listings').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ])
+  const totalSpent = (spendData ?? []).reduce((s, b) => s + Number(b.total_amount || 0), 0)
+
+  return NextResponse.json({ ...data, booking_count: bookingCount ?? 0, total_spent: totalSpent, saved_count: savedCount ?? 0 })
 }
 
 export async function PATCH(request) {

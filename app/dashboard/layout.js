@@ -1,11 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import AccountNav from './_components/AccountNav'
+import AccountNav from '../account/_components/AccountNav'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AccountLayout({ children }) {
+export default async function DashboardLayout({ children }) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,7 +19,7 @@ export default async function AccountLayout({ children }) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/account/profile')
+  if (!user) redirect('/login?next=/dashboard')
 
   const { data: profile } = await supabase
     .from('users')
@@ -27,17 +27,12 @@ export default async function AccountLayout({ children }) {
     .eq('id', user.id)
     .maybeSingle()
 
-  // Deactivated account — sign them out
   if (profile?.is_active === false) redirect('/login?error=account_deactivated')
 
-  // Team members (host role but no hosts row) → host portal only
   if (profile?.user_role === 'host') {
     const { data: hostRow } = await supabase
       .from('hosts').select('id').eq('user_id', user.id).maybeSingle()
-    if (!hostRow) {
-      // Pure team member — redirect to host portal
-      redirect('/host/dashboard')
-    }
+    if (!hostRow) redirect('/host/dashboard')
   }
 
   return (

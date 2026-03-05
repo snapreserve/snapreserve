@@ -59,9 +59,70 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, suspension_category, admin_notes, reason } = body
 
-  const validActions = ['suspend', 'deactivate', 'reactivate']
+  const validActions = ['suspend', 'deactivate', 'reactivate', 'approve_account', 'reject_account', 'verify_user', 'unverify_user']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  }
+
+  const h = await headers()
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const ua = h.get('user-agent') ?? 'unknown'
+
+  // Approval actions — handled inline, skip rest of flow
+  if (action === 'approve_account') {
+    if (!['support', 'admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    await adminClient.from('users').update({ approval_status: 'approved' }).eq('id', id)
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.approve_account', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'reject_account') {
+    if (!['admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    await adminClient.from('users').update({ approval_status: 'rejected' }).eq('id', id)
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.reject_account', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'verify_user') {
+    if (!['support', 'admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    await adminClient.from('users').update({ verification_status: 'verified' }).eq('id', id)
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.verify_user', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'unverify_user') {
+    if (!['admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    await adminClient.from('users').update({ verification_status: 'pending' }).eq('id', id)
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.unverify_user', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
   }
 
   // Check override session for privilege escalation
@@ -92,10 +153,6 @@ export async function PATCH(request, { params }) {
   if (action === 'deactivate' && !admin_notes?.trim()) {
     return NextResponse.json({ error: 'admin_notes required' }, { status: 400 })
   }
-
-  const h = await headers()
-  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  const ua = h.get('user-agent') ?? 'unknown'
 
   const adminClient = createAdminClient()
 
