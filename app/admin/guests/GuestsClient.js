@@ -49,7 +49,7 @@ const STYLES = `
   .gs-table  { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; }
   .gs-row    { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.2fr; gap:12px; padding:13px 20px; border-bottom:1px solid var(--sr-border-solid); align-items:center; cursor:pointer; transition:background 0.1s; }
   .gs-row:last-child { border-bottom:none; }
-  .gs-row.hdr  { background:#141210; cursor:default; }
+  .gs-row.hdr  { background:var(--sr-bg); cursor:default; }
   .gs-row.hdr span { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); }
   .gs-row:not(.hdr):hover { background:rgba(244,96,26,0.04); }
   .gs-row.sel  { background:rgba(244,96,26,0.07); border-left:3px solid var(--sr-orange); }

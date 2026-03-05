@@ -80,7 +80,7 @@ export default function WaitlistClient({ entries, total }) {
         .table-wrap { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; }
         .table-row { display:grid; grid-template-columns:180px 1fr 120px 140px 150px 130px; border-bottom:1px solid var(--sr-border-solid); }
         .table-row:last-child { border-bottom:none; }
-        .table-row.hdr { background:#141210; }
+        .table-row.hdr { background:var(--sr-bg); }
         .th { padding:10px 16px; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.09em; color:var(--sr-sub); }
         .td { padding:13px 16px; font-size:0.83rem; color:var(--sr-text); display:flex; align-items:center; border-left:1px solid var(--sr-border-solid); overflow:hidden; }
         .td:first-child { border-left:none; }

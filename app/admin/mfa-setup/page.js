@@ -68,27 +68,27 @@ function MfaSetupContent() {
     <>
       <style>{`
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'DM Sans',-apple-system,sans-serif; background:#0F0D0A; color:#F5F0EB; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-        .card { background:#1A1712; border:1px solid #2A2420; border-radius:20px; padding:40px; width:100%; max-width:420px; margin:20px; }
-        .logo { font-size:1rem; font-weight:800; color:#F4601A; margin-bottom:6px; }
+        body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        .card { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:20px; padding:40px; width:100%; max-width:420px; margin:20px; }
+        .logo { font-size:1rem; font-weight:800; color:var(--sr-orange); margin-bottom:6px; }
         .title { font-size:1.3rem; font-weight:700; margin-bottom:6px; }
-        .subtitle { font-size:0.82rem; color:#A89880; margin-bottom:28px; line-height:1.5; }
-        .step-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#F4601A; margin-bottom:20px; }
+        .subtitle { font-size:0.82rem; color:var(--sr-muted); margin-bottom:28px; line-height:1.5; }
+        .step-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--sr-orange); margin-bottom:20px; }
         .qr-wrap { background:#fff; border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
         .qr-wrap img { max-width:180px; width:100%; }
-        .secret-box { background:#0F0D0A; border:1px solid #2A2420; border-radius:10px; padding:12px 16px; margin-bottom:20px; }
-        .secret-label { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B5E52; margin-bottom:4px; }
-        .secret-val { font-size:0.82rem; color:#A89880; letter-spacing:0.06em; word-break:break-all; font-family:monospace; }
-        .form-label { font-size:0.78rem; font-weight:600; color:#A89880; margin-bottom:8px; }
-        .code-input { width:100%; background:#0F0D0A; border:1px solid #2A2420; border-radius:10px; padding:13px 16px; font-size:1.1rem; letter-spacing:0.2em; text-align:center; color:#F5F0EB; outline:none; font-family:monospace; }
-        .code-input:focus { border-color:#F4601A; }
+        .secret-box { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:12px 16px; margin-bottom:20px; }
+        .secret-label { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); margin-bottom:4px; }
+        .secret-val { font-size:0.82rem; color:var(--sr-muted); letter-spacing:0.06em; word-break:break-all; font-family:monospace; }
+        .form-label { font-size:0.78rem; font-weight:600; color:var(--sr-muted); margin-bottom:8px; }
+        .code-input { width:100%; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:13px 16px; font-size:1.1rem; letter-spacing:0.2em; text-align:center; color:var(--sr-text); outline:none; font-family:monospace; }
+        .code-input:focus { border-color:var(--sr-orange); }
         .error-msg { background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); color:#F87171; border-radius:8px; padding:10px 14px; font-size:0.82rem; margin-bottom:14px; }
-        .submit-btn { width:100%; background:#F4601A; border:none; border-radius:11px; padding:14px; font-size:0.92rem; font-weight:700; color:white; cursor:pointer; font-family:inherit; margin-top:16px; transition:opacity 0.15s; }
+        .submit-btn { width:100%; background:var(--sr-orange); border:none; border-radius:11px; padding:14px; font-size:0.92rem; font-weight:700; color:white; cursor:pointer; font-family:inherit; margin-top:16px; transition:opacity 0.15s; }
         .submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
         .success { text-align:center; padding:20px 0; }
         .success-icon { font-size:2.5rem; margin-bottom:12px; }
         .success-msg { font-size:0.88rem; color:#4ADE80; font-weight:600; }
-        .hint { font-size:0.74rem; color:#6B5E52; margin-top:16px; line-height:1.6; }
+        .hint { font-size:0.74rem; color:var(--sr-sub); margin-top:16px; line-height:1.6; }
       `}</style>
 
       <div className="card">

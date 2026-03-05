@@ -43,10 +43,10 @@ export function ThemeProvider({ children }) {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
-  // Suppress hydration mismatch by not rendering children until mounted
-  if (!mounted) return (
-    <div style={{ visibility: 'hidden' }}>{children}</div>
-  )
+  // Render immediately — data-theme is pre-set by the anti-FOUC inline script.
+  // The ThemeContext value defaults to 'dark' until mounted, which is fine since
+  // UI chrome (toggles) only shows the correct state after hydration.
+  if (!mounted) return <ThemeContext.Provider value={{ theme: 'dark', setTheme: () => {}, toggle: () => {} }}>{children}</ThemeContext.Provider>
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggle }}>

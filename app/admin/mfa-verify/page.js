@@ -62,19 +62,19 @@ function MfaVerifyContent() {
     <>
       <style>{`
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'DM Sans',-apple-system,sans-serif; background:#0F0D0A; color:#F5F0EB; min-height:100vh; display:flex; align-items:center; justify-content:center; }
-        .card { background:#1A1712; border:1px solid #2A2420; border-radius:20px; padding:40px; width:100%; max-width:380px; margin:20px; }
-        .logo { font-size:1rem; font-weight:800; color:#F4601A; margin-bottom:6px; }
+        body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        .card { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:20px; padding:40px; width:100%; max-width:380px; margin:20px; }
+        .logo { font-size:1rem; font-weight:800; color:var(--sr-orange); margin-bottom:6px; }
         .title { font-size:1.3rem; font-weight:700; margin-bottom:6px; }
-        .subtitle { font-size:0.82rem; color:#A89880; margin-bottom:28px; line-height:1.5; }
+        .subtitle { font-size:0.82rem; color:var(--sr-muted); margin-bottom:28px; line-height:1.5; }
         .lock-icon { font-size:2.5rem; text-align:center; margin-bottom:20px; }
-        .form-label { font-size:0.78rem; font-weight:600; color:#A89880; margin-bottom:8px; }
-        .code-input { width:100%; background:#0F0D0A; border:1px solid #2A2420; border-radius:10px; padding:16px; font-size:1.4rem; letter-spacing:0.3em; text-align:center; color:#F5F0EB; outline:none; font-family:monospace; }
-        .code-input:focus { border-color:#F4601A; }
+        .form-label { font-size:0.78rem; font-weight:600; color:var(--sr-muted); margin-bottom:8px; }
+        .code-input { width:100%; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:16px; font-size:1.4rem; letter-spacing:0.3em; text-align:center; color:var(--sr-text); outline:none; font-family:monospace; }
+        .code-input:focus { border-color:var(--sr-orange); }
         .error-msg { background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); color:#F87171; border-radius:8px; padding:10px 14px; font-size:0.82rem; margin-bottom:14px; }
-        .submit-btn { width:100%; background:#F4601A; border:none; border-radius:11px; padding:14px; font-size:0.92rem; font-weight:700; color:white; cursor:pointer; font-family:inherit; margin-top:16px; transition:opacity 0.15s; }
+        .submit-btn { width:100%; background:var(--sr-orange); border:none; border-radius:11px; padding:14px; font-size:0.92rem; font-weight:700; color:white; cursor:pointer; font-family:inherit; margin-top:16px; transition:opacity 0.15s; }
         .submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        .hint { font-size:0.74rem; color:#6B5E52; margin-top:16px; text-align:center; }
+        .hint { font-size:0.74rem; color:var(--sr-sub); margin-top:16px; text-align:center; }
       `}</style>
 
       <div className="card">
@@ -83,7 +83,7 @@ function MfaVerifyContent() {
         <div className="title">Two-factor verification</div>
         <div className="subtitle">Enter the 6-digit code from your authenticator app to continue.</div>
 
-        {!ready && !error && <div style={{color:'#A89880',fontSize:'0.84rem'}}>Loading…</div>}
+        {!ready && !error && <div style={{color:'var(--sr-muted)',fontSize:'0.84rem'}}>Loading…</div>}
 
         {error && !ready && <div className="error-msg">⚠ {error}</div>}
 

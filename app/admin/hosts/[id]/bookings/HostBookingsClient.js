@@ -61,7 +61,7 @@ export default function HostBookingsClient({ hostId, hostName, initialBookings, 
         .table-wrap{background:var(--sr-surface);border:1px solid var(--sr-border-solid);border-radius:12px;overflow:hidden;}
         .tr{display:grid;grid-template-columns:90px 1.8fr 1fr 90px 90px 90px 80px 90px 80px;gap:10px;padding:11px 16px;border-bottom:1px solid var(--sr-border-solid);align-items:center;font-size:0.79rem;}
         .tr:last-child{border-bottom:none;}
-        .tr.hdr{background:#141210;}
+        .tr.hdr{background:var(--sr-bg);}
         .tr.hdr span{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--sr-sub);}
         .badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:0.65rem;font-weight:700;}
         .empty{padding:48px;text-align:center;color:var(--sr-sub);font-size:0.86rem;}

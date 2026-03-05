@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import SignOutButton from '../admin/_components/SignOutButton'
 import ThemeToggle from '../components/ThemeToggle'
+import SuperAdminNav from './_components/SuperAdminNav'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,15 +11,10 @@ export default function SuperAdminLayout({ children }) {
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); }
         .sa-shell { display:flex; min-height:100vh; }
-        .sa-sidebar { width:220px; background:var(--sr-surface); border-right:1px solid var(--sr-border-solid); display:flex; flex-direction:column; padding:24px 0; flex-shrink:0; position:sticky; top:0; height:100vh; }
+        .sa-sidebar { width:220px; background:var(--sr-surface); border-right:1px solid var(--sr-border-solid); display:flex; flex-direction:column; padding:24px 0; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto; }
         .sa-logo { padding:0 20px 24px; border-bottom:1px solid var(--sr-border-solid); margin-bottom:16px; }
         .sa-logo span { font-size:1rem; font-weight:800; color:var(--sr-orange); }
         .sa-logo small { display:block; font-size:0.62rem; color:var(--sr-orange); font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.1em; opacity:0.7; }
-        .nav-section { padding:0 12px; margin-bottom:8px; }
-        .nav-label { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--sr-sub); padding:0 8px; margin-bottom:6px; }
-        .nav-link { display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:8px; color:var(--sr-muted); font-size:0.85rem; font-weight:500; text-decoration:none; transition:all 0.15s; }
-        .nav-link:hover { background:var(--sr-border-solid); color:var(--sr-text); }
-        .icon { font-size:1rem; width:20px; text-align:center; }
         .sa-badge { margin:12px 20px 0; background:rgba(244,96,26,0.12); border:1px solid rgba(244,96,26,0.25); border-radius:8px; padding:8px 12px; font-size:0.7rem; font-weight:700; color:var(--sr-orange); text-transform:uppercase; letter-spacing:0.08em; text-align:center; }
         .sa-footer { margin-top:auto; padding:16px 12px; border-top:1px solid var(--sr-border-solid); }
         .sa-main { flex:1; overflow:auto; }
@@ -31,26 +26,7 @@ export default function SuperAdminLayout({ children }) {
             <span>SnapReserve</span>
             <small>⚡ Super Admin</small>
           </div>
-          <div className="nav-section">
-            <div className="nav-label">Admin</div>
-            <Link href="/admin" className="nav-link"><span className="icon">📊</span>Overview</Link>
-            <Link href="/admin/listings" className="nav-link"><span className="icon">🏨</span>Listings</Link>
-            <Link href="/admin/hosts" className="nav-link"><span className="icon">👤</span>Hosts</Link>
-            <Link href="/admin/guests" className="nav-link"><span className="icon">🧳</span>Guests</Link>
-            <Link href="/admin/bookings" className="nav-link"><span className="icon">📅</span>Bookings</Link>
-            <Link href="/admin/reports" className="nav-link"><span className="icon">🚩</span>Reports</Link>
-            <Link href="/admin/refunds" className="nav-link"><span className="icon">💸</span>Refunds</Link>
-            <Link href="/admin/waitlist" className="nav-link"><span className="icon">📩</span>Waitlist</Link>
-          </div>
-          <div className="nav-section">
-            <div className="nav-label">Super Admin</div>
-            <Link href="/superadmin" className="nav-link"><span className="icon">⚡</span>Dashboard</Link>
-            <Link href="/superadmin/roles" className="nav-link"><span className="icon">🔑</span>Roles</Link>
-            <Link href="/superadmin/audit" className="nav-link"><span className="icon">📋</span>Audit Log</Link>
-            <Link href="/superadmin/invites" className="nav-link"><span className="icon">✉️</span>Invites</Link>
-            <Link href="/superadmin/settings" className="nav-link"><span className="icon">⚙️</span>Settings</Link>
-            <Link href="/superadmin/override" className="nav-link"><span className="icon">🔐</span>Override Mode</Link>
-          </div>
+          <SuperAdminNav />
           <div className="sa-badge">super_admin</div>
           <div className="sa-footer">
             <ThemeToggle style={{width:'100%',marginBottom:'8px',justifyContent:'center'}} />

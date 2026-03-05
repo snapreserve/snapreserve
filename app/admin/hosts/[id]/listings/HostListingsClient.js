@@ -46,7 +46,7 @@ export default function HostListingsClient({ hostId, hostName, initialListings, 
         .table-wrap{background:var(--sr-surface);border:1px solid var(--sr-border-solid);border-radius:12px;overflow:hidden;}
         .tr{display:grid;grid-template-columns:2fr 100px 80px 90px 90px 80px 90px;gap:12px;padding:12px 18px;border-bottom:1px solid var(--sr-border-solid);align-items:center;}
         .tr:last-child{border-bottom:none;}
-        .tr.hdr{background:#141210;}
+        .tr.hdr{background:var(--sr-bg);}
         .tr.hdr span{font-size:0.67rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--sr-sub);}
         .title-cell{font-size:0.83rem;font-weight:600;color:var(--sr-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .sub-cell{font-size:0.71rem;color:var(--sr-muted);margin-top:1px;}

@@ -69,13 +69,13 @@ export default function HostApplicationsClient({ applications: initial }) {
   return (
     <>
       <style>{`
-        .tabs { display:flex; gap:4px; background:#141210; border:1px solid var(--sr-border-solid); border-radius:10px; padding:4px; margin-bottom:24px; width:fit-content; }
+        .tabs { display:flex; gap:4px; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:4px; margin-bottom:24px; width:fit-content; }
         .tab-btn { padding:7px 18px; border-radius:7px; border:none; background:transparent; color:var(--sr-muted); font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.15s; display:flex; align-items:center; gap:8px; }
         .tab-btn.active { background:var(--sr-border-solid); color:var(--sr-text); }
         .count-badge { background:#3A302A; border-radius:100px; padding:1px 7px; font-size:0.7rem; font-weight:700; }
         .tab-btn.active .count-badge { background:var(--sr-orange); color:white; }
         .table-wrap { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; }
-        .table-hdr { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 120px; gap:12px; padding:12px 20px; background:#141210; }
+        .table-hdr { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 120px; gap:12px; padding:12px 20px; background:var(--sr-bg); }
         .table-hdr span { font-size:0.66rem; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--sr-sub); }
         .table-row { display:grid; grid-template-columns:2fr 1.2fr 1fr 1fr 120px; gap:12px; padding:14px 20px; border-top:1px solid var(--sr-border-solid); align-items:center; }
         .applicant-name { font-size:0.88rem; font-weight:600; color:var(--sr-text); }
@@ -94,7 +94,7 @@ export default function HostApplicationsClient({ applications: initial }) {
         .modal { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:16px; padding:28px; width:100%; max-width:440px; }
         .modal h2 { font-size:1.05rem; font-weight:700; color:var(--sr-text); margin-bottom:8px; }
         .modal p { font-size:0.85rem; color:var(--sr-muted); margin-bottom:20px; line-height:1.6; }
-        .modal textarea { width:100%; background:#141210; border:1px solid var(--sr-border-solid); border-radius:10px; padding:12px 14px; font-size:0.86rem; font-family:inherit; color:var(--sr-text); resize:vertical; min-height:80px; outline:none; margin-bottom:20px; }
+        .modal textarea { width:100%; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:12px 14px; font-size:0.86rem; font-family:inherit; color:var(--sr-text); resize:vertical; min-height:80px; outline:none; margin-bottom:20px; }
         .modal textarea:focus { border-color:var(--sr-orange); }
         .modal-btns { display:flex; gap:10px; justify-content:flex-end; }
         .btn-cancel { padding:9px 20px; border-radius:9px; font-size:0.84rem; font-weight:600; border:1px solid var(--sr-border-solid); background:transparent; color:var(--sr-muted); cursor:pointer; font-family:inherit; }

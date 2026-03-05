@@ -2,7 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import StagingBanner from "./components/StagingBanner"
 import { ThemeProvider } from "./components/ThemeProvider"
-import ThemeToggle from "./components/ThemeToggle"
+import FloatingThemeToggle from "./components/FloatingThemeToggle"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,16 +23,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+        {/* Anti-FOUC: set data-theme from localStorage before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('sr-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}else if(window.matchMedia&&!window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','light')}}catch(e){}})()` }} />
         <ThemeProvider>
           <StagingBanner />
           {children}
-          <ThemeToggle style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 9000,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          }} />
+          <FloatingThemeToggle />
         </ThemeProvider>
       </body>
     </html>

@@ -75,7 +75,7 @@ export default async function AdminOverview() {
         .table-wrap { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; margin-bottom:24px; }
         .table-row { display:grid; grid-template-columns:1.5fr 120px 100px 110px 100px; gap:12px; padding:13px 20px; border-bottom:1px solid var(--sr-border-solid); align-items:center; }
         .table-row:last-child { border-bottom:none; }
-        .table-row.hdr { background:#141210; }
+        .table-row.hdr { background:var(--sr-bg); }
         .table-row.hdr span { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); }
         .listing-title { font-size:0.86rem; font-weight:600; color:var(--sr-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .listing-host { font-size:0.73rem; color:var(--sr-muted); margin-top:2px; }

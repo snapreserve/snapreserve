@@ -142,7 +142,7 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
         .country-bar-count{font-size:0.72rem;font-weight:700;color:var(--sr-muted);width:28px;text-align:right}
 
         /* Tabs */
-        .tabs{display:flex;gap:4px;margin-bottom:20px;background:#141210;border:1px solid var(--sr-border-solid);border-radius:10px;padding:4px;width:fit-content}
+        .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--sr-bg);border:1px solid var(--sr-border-solid);border-radius:10px;padding:4px;width:fit-content}
         .tab{padding:7px 16px;border-radius:7px;font-size:0.78rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--sr-sub);font-family:inherit;transition:all 0.15s}
         .tab.active{background:var(--sr-surface);color:var(--sr-text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
 
@@ -158,7 +158,7 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
         .table-wrap{background:var(--sr-surface);border:1px solid var(--sr-border-solid);border-radius:12px;overflow:hidden}
         .table-row{display:grid;grid-template-columns:1fr 160px 90px 100px 130px;border-bottom:1px solid var(--sr-border-solid)}
         .table-row:last-child{border-bottom:none}
-        .table-row.hdr{background:#141210}
+        .table-row.hdr{background:var(--sr-bg)}
         .th{padding:10px 16px;font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.09em;color:var(--sr-sub)}
         .td{padding:12px 16px;font-size:0.82rem;color:var(--sr-text);display:flex;align-items:center;border-left:1px solid var(--sr-border-solid);overflow:hidden}
         .td:first-child{border-left:none}
