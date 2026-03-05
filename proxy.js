@@ -82,7 +82,34 @@ export async function proxy(request) {
   // These API routes must work even during maintenance
   const isPaymentApiRoute = path.startsWith('/api/webhooks') || path.startsWith('/api/checkout')
 
-  if (!isAdminOrSuperAdmin && !isMaintenancePage && !isConsoleSubdomain && !isStatusSubdomain && !isApiAdminRoute && !isPaymentApiRoute) {
+  const isPublicBypassPath =
+    isAdminOrSuperAdmin || isMaintenancePage ||
+    isConsoleSubdomain  || isStatusSubdomain ||
+    isApiAdminRoute     || isPaymentApiRoute ||
+    path.startsWith('/api/') || path.startsWith('/auth/')
+
+  // ----------------------------------------------------------------
+  // Waitlist v2 site-lock — runs FIRST, unauthenticated visitors only
+  // Takes precedence over maintenance mode so /waitlist is always shown
+  // ----------------------------------------------------------------
+  if (!isPublicBypassPath && !user) {
+    const waitlistPath = path === '/waitlist' || path.startsWith('/waitlist/') ||
+                         path === '/login'    || path === '/signup'
+    if (!waitlistPath) {
+      const locked = await isWaitlistV2Enabled(supabase)
+      if (locked) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/waitlist'
+        url.search   = ''
+        return NextResponse.redirect(url)
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Maintenance mode — redirect all non-admin traffic
+  // ----------------------------------------------------------------
+  if (!isPublicBypassPath && !isMaintenancePage) {
     const { data: maintenanceSetting } = await supabase
       .from('platform_settings')
       .select('value')
@@ -92,27 +119,6 @@ export async function proxy(request) {
     if (maintenanceSetting?.value === true) {
       const url = request.nextUrl.clone()
       url.pathname = '/maintenance'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // Waitlist v2 site-lock — unauthenticated visitors only
-  // ----------------------------------------------------------------
-  const isWaitlistBypassPath =
-    path === '/waitlist' || path.startsWith('/waitlist/') ||
-    path === '/login'    || path === '/signup' ||
-    isAdminOrSuperAdmin  || isMaintenancePage  ||
-    isConsoleSubdomain   || isStatusSubdomain  ||
-    isApiAdminRoute      || isPaymentApiRoute  ||
-    path.startsWith('/api/') || path.startsWith('/auth/')
-
-  if (!isWaitlistBypassPath && !user) {
-    const locked = await isWaitlistV2Enabled(supabase)
-    if (locked) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/waitlist'
-      url.search   = ''
       return NextResponse.redirect(url)
     }
   }

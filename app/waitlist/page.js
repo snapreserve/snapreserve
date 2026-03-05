@@ -493,7 +493,7 @@ export default function WaitlistPage() {
 
           <p>
             SnapReserve is building the most transparent booking platform ever made.
-            Join the waitlist to get early access, founding-member perks, and zero platform fees for life.
+            Join the waitlist to get early access and founding-member perks. First 1,000 members lock in 6.5% platform fee + $1 per booking — for life.
           </p>
 
           <div className="wl-count">
@@ -637,7 +637,7 @@ export default function WaitlistPage() {
         {/* Features */}
         <div className="wl-features">
           {[
-            { icon: '🏡', title: 'Zero fees for founders', desc: 'First 1,000 members lock in 0% platform fee' },
+            { icon: '🏡', title: 'Founding member rate', desc: 'First 1,000 members lock in 6.5% + $1/booking' },
             { icon: '🌍', title: '90+ cities at launch', desc: 'Hotels, stays & experiences worldwide' },
             { icon: '⭐', title: 'Transparent reviews', desc: 'Honest, un-gamed ratings on every stay' },
             { icon: '⚡', title: 'Instant confirmation', desc: 'No waiting — book and go in minutes' },
