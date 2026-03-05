@@ -5,6 +5,27 @@ const MAIN_SITE = 'https://snapreserve.app'
 const CONSOLE_HOST = 'console.snapreserve.app'
 const STATUS_HOST = 'status.snapreserve.app'
 
+// Waitlist v2 site-lock cache (~30 s TTL per worker instance)
+let _waitlistEnabled = null
+let _waitlistExpiry  = 0
+
+async function isWaitlistV2Enabled(supabase) {
+  const now = Date.now()
+  if (_waitlistEnabled !== null && now < _waitlistExpiry) return _waitlistEnabled
+  try {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'waitlist_v2_enabled')
+      .maybeSingle()
+    _waitlistEnabled = data?.value === true
+    _waitlistExpiry  = now + 30_000
+    return _waitlistEnabled
+  } catch {
+    return false
+  }
+}
+
 // Inline base64url decode — works in Edge Runtime (no Buffer)
 function decodeJwtPayload(token) {
   try {
@@ -71,6 +92,27 @@ export async function proxy(request) {
     if (maintenanceSetting?.value === true) {
       const url = request.nextUrl.clone()
       url.pathname = '/maintenance'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Waitlist v2 site-lock — unauthenticated visitors only
+  // ----------------------------------------------------------------
+  const isWaitlistBypassPath =
+    path === '/waitlist' || path.startsWith('/waitlist/') ||
+    path === '/login'    || path === '/signup' ||
+    isAdminOrSuperAdmin  || isMaintenancePage  ||
+    isConsoleSubdomain   || isStatusSubdomain  ||
+    isApiAdminRoute      || isPaymentApiRoute  ||
+    path.startsWith('/api/') || path.startsWith('/auth/')
+
+  if (!isWaitlistBypassPath && !user) {
+    const locked = await isWaitlistV2Enabled(supabase)
+    if (locked) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/waitlist'
+      url.search   = ''
       return NextResponse.redirect(url)
     }
   }
