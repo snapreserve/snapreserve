@@ -40,7 +40,6 @@ export default function SettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
   const [supportEmail, setSupportEmail] = useState('')
-  const [allowedCountries, setAllowedCountries] = useState('')
   const [saving, setSaving] = useState({})
   const [toast, setToast] = useState(null)
   const router = useRouter()
@@ -55,11 +54,6 @@ export default function SettingsPage() {
         setMaintenanceMode(s.maintenance_mode?.value ?? false)
         setWaitlistEnabled(s.waitlist_enabled?.value ?? true)
         setSupportEmail(s.support_email?.value ?? '')
-        setAllowedCountries(
-          s.allowed_countries?.value
-            ? JSON.stringify(s.allowed_countries.value, null, 2)
-            : ''
-        )
       })
       .catch(() => router.push('/admin'))
   }, [])
@@ -103,21 +97,6 @@ export default function SettingsPage() {
 
   async function saveEmail() {
     await saveSetting('support_email', supportEmail.trim())
-  }
-
-  async function saveCountries() {
-    const trimmed = allowedCountries.trim()
-    if (!trimmed) {
-      await saveSetting('allowed_countries', null)
-      return
-    }
-    try {
-      const parsed = JSON.parse(trimmed)
-      if (!Array.isArray(parsed)) throw new Error('Must be a JSON array')
-      await saveSetting('allowed_countries', parsed)
-    } catch (e) {
-      showToast(`Invalid format: ${e.message}. Use ["US","CA"] or leave empty.`, 'error')
-    }
   }
 
   function fmt(ts) {
@@ -213,32 +192,6 @@ export default function SettingsPage() {
             onClick={saveEmail}
           >
             {saving.support_email ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-
-        {/* Allowed Countries */}
-        <div className="section">
-          <div className="section-header">
-            <div>
-              <div className="section-title">Allowed Countries</div>
-              <div className="section-desc">JSON array of ISO country codes. Leave empty to allow all countries.</div>
-              {settings.allowed_countries?.updated_at && (
-                <div className="updated-text">Last updated: {fmt(settings.allowed_countries.updated_at)}</div>
-              )}
-            </div>
-          </div>
-          <textarea
-            className="form-textarea"
-            placeholder='["US", "CA", "GB", "AU"]'
-            value={allowedCountries}
-            onChange={e => setAllowedCountries(e.target.value)}
-          />
-          <button
-            className="save-btn"
-            disabled={saving.allowed_countries}
-            onClick={saveCountries}
-          >
-            {saving.allowed_countries ? 'Saving...' : 'Save'}
           </button>
         </div>
 
