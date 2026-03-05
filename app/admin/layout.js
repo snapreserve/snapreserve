@@ -88,6 +88,7 @@ export default async function AdminLayout({ children }) {
             <Link href="/admin/refunds" className="nav-link"><span className="icon">💸</span>Refunds</Link>
             <Link href="/admin/finance" className="nav-link"><span className="icon">📈</span>Finance</Link>
             <Link href="/admin/waitlist" className="nav-link"><span className="icon">📩</span>Waitlist</Link>
+            <Link href="/admin/international-leads" className="nav-link"><span className="icon">🌍</span>Intl Leads</Link>
             <Link href="/admin/status" className="nav-link"><span className="icon">🟢</span>Status</Link>
           </div>
           {isSuperAdmin && (

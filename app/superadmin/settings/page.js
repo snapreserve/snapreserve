@@ -40,6 +40,7 @@ export default function SettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
   const [waitlistV2Enabled, setWaitlistV2Enabled] = useState(false)
+  const [intlLeadsEnabled, setIntlLeadsEnabled]   = useState(false)
   const [supportEmail, setSupportEmail] = useState('')
   const [saving, setSaving] = useState({})
   const [toast, setToast] = useState(null)
@@ -55,6 +56,7 @@ export default function SettingsPage() {
         setMaintenanceMode(s.maintenance_mode?.value ?? false)
         setWaitlistEnabled(s.waitlist_enabled?.value ?? true)
         setWaitlistV2Enabled(s.waitlist_v2_enabled?.value ?? false)
+        setIntlLeadsEnabled(s.intl_leads_enabled?.value ?? false)
         setSupportEmail(s.support_email?.value ?? '')
       })
       .catch(() => router.push('/admin'))
@@ -100,6 +102,11 @@ export default function SettingsPage() {
   async function toggleWaitlistV2(val) {
     setWaitlistV2Enabled(val)
     await saveSetting('waitlist_v2_enabled', val)
+  }
+
+  async function toggleIntlLeads(val) {
+    setIntlLeadsEnabled(val)
+    await saveSetting('intl_leads_enabled', val)
   }
 
   async function saveEmail() {
@@ -197,6 +204,31 @@ export default function SettingsPage() {
               <span className="toggle-slider" />
             </label>
             <span className="toggle-label">{waitlistV2Enabled ? 'Enabled — site locked to /waitlist' : 'Disabled — site is open'}</span>
+          </div>
+        </div>
+
+        {/* International Leads */}
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <div className="section-title">🌍 International Expansion Leads</div>
+              <div className="section-desc">Shows "Outside the US?" section on the waitlist page to capture global leads.</div>
+              {settings.intl_leads_enabled?.updated_at && (
+                <div className="updated-text">Last updated: {fmt(settings.intl_leads_enabled.updated_at)}</div>
+              )}
+            </div>
+          </div>
+          <div className="toggle-wrap">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={intlLeadsEnabled}
+                onChange={e => toggleIntlLeads(e.target.checked)}
+                disabled={saving.intl_leads_enabled}
+              />
+              <span className="toggle-slider" />
+            </label>
+            <span className="toggle-label">{intlLeadsEnabled ? 'Enabled — international section visible' : 'Disabled — US only'}</span>
           </div>
         </div>
 

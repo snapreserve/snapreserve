@@ -4,7 +4,7 @@ import { logAction } from '@/lib/audit-log'
 import { getAdminSession } from '@/lib/get-admin-session'
 import { headers } from 'next/headers'
 
-const ALLOWED_KEYS = ['maintenance_mode', 'support_email', 'waitlist_enabled', 'waitlist_v2_enabled']
+const ALLOWED_KEYS = ['maintenance_mode', 'support_email', 'waitlist_enabled', 'waitlist_v2_enabled', 'intl_leads_enabled']
 
 export async function GET() {
   const { role, error } = await getAdminSession()

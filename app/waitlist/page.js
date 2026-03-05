@@ -346,6 +346,97 @@ const STYLES = `
     margin-bottom: 16px;
   }
 
+  /* ── International section ── */
+  .wl-intl {
+    max-width: 560px;
+    margin: 0 auto 48px;
+    background: rgba(26,23,18,0.7);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 28px 32px;
+    position: relative;
+  }
+  .wl-intl-shine {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(96,165,250,0.3), transparent);
+    border-radius: 20px 20px 0 0;
+  }
+  .wl-intl-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .wl-intl-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #F5F0EB;
+  }
+  .wl-intl-globe {
+    font-size: 1.2rem;
+  }
+  .wl-intl-sub {
+    font-size: 0.8rem;
+    color: rgba(245,240,235,0.4);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .wl-intl-success {
+    text-align: center;
+    padding: 12px 0;
+  }
+  .wl-intl-success-icon {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  .wl-intl-success p {
+    font-size: 0.85rem;
+    color: rgba(245,240,235,0.5);
+    line-height: 1.6;
+  }
+  .wl-intl-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .wl-intl-submit {
+    width: 100%;
+    background: rgba(96,165,250,0.15);
+    color: #60A5FA;
+    border: 1px solid rgba(96,165,250,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.18s;
+  }
+  .wl-intl-submit:hover:not(:disabled) { background: rgba(96,165,250,0.25); }
+  .wl-intl-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .wl-role-btns { display: flex; gap: 8px; }
+  .wl-role-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(245,240,235,0.5);
+    transition: all 0.15s;
+  }
+  .wl-role-btn.selected {
+    border-color: rgba(96,165,250,0.5);
+    background: rgba(96,165,250,0.1);
+    color: #60A5FA;
+  }
+
   /* ── Features row ── */
   .wl-features {
     display: flex;
@@ -411,18 +502,38 @@ const STYLES = `
 const ROLE_OPTIONS = ['Guest traveler', 'Property owner', 'Hotel manager', 'Travel agent', 'Corporate travel', 'Other']
 const INTEREST_OPTIONS = ['Book unique stays', 'List my property', 'Team / corporate travel', 'Short-term rentals', 'All of the above']
 
+const COUNTRIES = [
+  'Canada','United Kingdom','Australia','Germany','France','Netherlands','Spain','Italy',
+  'Portugal','Sweden','Norway','Denmark','Switzerland','Austria','Belgium','Ireland',
+  'New Zealand','Singapore','Japan','South Korea','UAE','Saudi Arabia','India','Brazil',
+  'Mexico','Argentina','Colombia','Chile','South Africa','Nigeria','Kenya','Ghana',
+  'Egypt','Israel','Turkey','Poland','Czech Republic','Hungary','Romania','Greece',
+  'Other',
+]
+
 export default function WaitlistPage() {
-  const [count, setCount] = useState(null)
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', city: '', role: '', interest: '', referred_by: '' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(null) // { referral_code, position }
-  const [copied, setCopied] = useState(false)
+  const [count, setCount]           = useState(null)
+  const [intlEnabled, setIntlEnabled] = useState(false)
+  const [form, setForm]             = useState({ first_name: '', last_name: '', email: '', city: '', role: '', interest: '', referred_by: '' })
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [success, setSuccess]       = useState(null)
+  const [copied, setCopied]         = useState(false)
+
+  // International lead form
+  const [intlForm, setIntlForm]     = useState({ email: '', country: '', role: 'guest' })
+  const [intlLoading, setIntlLoading] = useState(false)
+  const [intlError, setIntlError]   = useState('')
+  const [intlSuccess, setIntlSuccess] = useState(false)
 
   useEffect(() => {
     fetch('/api/waitlist-v2/count')
       .then(r => r.json())
       .then(d => { if (d.count != null) setCount(d.count) })
+      .catch(() => {})
+    fetch('/api/waitlist-v2/config')
+      .then(r => r.json())
+      .then(d => { if (d.intl_leads_enabled) setIntlEnabled(true) })
       .catch(() => {})
   }, [])
 
@@ -448,6 +559,26 @@ export default function WaitlistPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleIntlSubmit(e) {
+    e.preventDefault()
+    setIntlLoading(true)
+    setIntlError('')
+    try {
+      const res  = await fetch('/api/waitlist-v2/international', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(intlForm),
+      })
+      const data = await res.json()
+      if (!res.ok && !data.already_registered) throw new Error(data.error ?? 'Something went wrong')
+      setIntlSuccess(true)
+    } catch (err) {
+      setIntlError(err.message)
+    } finally {
+      setIntlLoading(false)
     }
   }
 
@@ -633,6 +764,80 @@ export default function WaitlistPage() {
             )}
           </div>
         </section>
+
+        {/* International section */}
+        {intlEnabled && (
+          <div className="wl-intl">
+            <div className="wl-intl-shine" />
+            <div className="wl-intl-header">
+              <span className="wl-intl-globe">🌍</span>
+              <span className="wl-intl-title">Outside the United States?</span>
+            </div>
+            <p className="wl-intl-sub">
+              We're expanding globally. Drop your email and we'll notify you the moment we launch in your country.
+            </p>
+
+            {intlSuccess ? (
+              <div className="wl-intl-success">
+                <div className="wl-intl-success-icon">✅</div>
+                <p>You're on the international list!<br />We'll reach out when we launch in your country.</p>
+              </div>
+            ) : (
+              <>
+                {intlError && <div className="wl-error">{intlError}</div>}
+                <form onSubmit={handleIntlSubmit}>
+                  <div className="wl-field">
+                    <label>Email address</label>
+                    <input
+                      className="wl-input"
+                      type="email"
+                      placeholder="you@example.com"
+                      required
+                      value={intlForm.email}
+                      onChange={e => setIntlForm(f => ({ ...f, email: e.target.value }))}
+                    />
+                  </div>
+                  <div className="wl-intl-row">
+                    <div className="wl-field" style={{marginBottom:0}}>
+                      <label>Country</label>
+                      <select
+                        className="wl-select"
+                        required
+                        value={intlForm.country}
+                        onChange={e => setIntlForm(f => ({ ...f, country: e.target.value }))}
+                      >
+                        <option value="">Select country…</option>
+                        {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="wl-field" style={{marginBottom:0}}>
+                      <label>I am a…</label>
+                      <div className="wl-role-btns">
+                        <button
+                          type="button"
+                          className={`wl-role-btn${intlForm.role === 'guest' ? ' selected' : ''}`}
+                          onClick={() => setIntlForm(f => ({ ...f, role: 'guest' }))}
+                        >
+                          🧳 Guest
+                        </button>
+                        <button
+                          type="button"
+                          className={`wl-role-btn${intlForm.role === 'host' ? ' selected' : ''}`}
+                          onClick={() => setIntlForm(f => ({ ...f, role: 'host' }))}
+                        >
+                          🏡 Host
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="submit" className="wl-intl-submit" disabled={intlLoading} style={{marginTop:16}}>
+                    {intlLoading ? 'Submitting…' : 'Notify me at launch →'}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Features */}
         <div className="wl-features">
