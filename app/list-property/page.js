@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -68,7 +68,7 @@ const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','
 
 const BETA_TERMS_VERSION = '1.0'
 
-export default function ListPropertyPage() {
+function ListPropertyInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [user, setUser] = useState(null)
@@ -1192,4 +1192,8 @@ export default function ListPropertyPage() {
       </div>
     </>
   )
+}
+
+export default function ListPropertyPage() {
+  return <Suspense><ListPropertyInner /></Suspense>
 }

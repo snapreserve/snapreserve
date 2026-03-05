@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 function fmt(d) {
@@ -21,7 +21,7 @@ const REPORT_REASONS = [
   'Other',
 ]
 
-export default function MessagesPage() {
+function MessagesInner() {
   const searchParams   = useSearchParams()
   const [convs,        setConvs]        = useState([])
   const [userId,       setUserId]       = useState(null)
@@ -379,4 +379,8 @@ export default function MessagesPage() {
       )}
     </div>
   )
+}
+
+export default function MessagesPage() {
+  return <Suspense><MessagesInner /></Suspense>
 }
