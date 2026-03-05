@@ -106,11 +106,17 @@ export default function SettingsPage() {
   }
 
   async function saveCountries() {
+    const trimmed = allowedCountries.trim()
+    if (!trimmed) {
+      await saveSetting('allowed_countries', null)
+      return
+    }
     try {
-      const parsed = JSON.parse(allowedCountries)
+      const parsed = JSON.parse(trimmed)
+      if (!Array.isArray(parsed)) throw new Error('Must be a JSON array')
       await saveSetting('allowed_countries', parsed)
-    } catch {
-      showToast('Invalid JSON for allowed_countries', 'error')
+    } catch (e) {
+      showToast(`Invalid format: ${e.message}. Use ["US","CA"] or leave empty.`, 'error')
     }
   }
 
@@ -215,7 +221,7 @@ export default function SettingsPage() {
           <div className="section-header">
             <div>
               <div className="section-title">Allowed Countries</div>
-              <div className="section-desc">JSON array of ISO 3166-1 alpha-2 country codes</div>
+              <div className="section-desc">JSON array of ISO country codes. Leave empty to allow all countries.</div>
               {settings.allowed_countries?.updated_at && (
                 <div className="updated-text">Last updated: {fmt(settings.allowed_countries.updated_at)}</div>
               )}
