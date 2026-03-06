@@ -93,7 +93,7 @@ export default function ReportButton({ listingId }) {
                   Report submitted
                 </div>
                 <p style={{ fontSize: '0.86rem', color: '#6B5F54', lineHeight: 1.7, marginBottom: '24px' }}>
-                  Thank you for helping keep SnapReserve safe. Our team will review your report within 24 hours.
+                  Thank you for helping keep SnapReserve™ safe. Our team will review your report within 24 hours.
                 </p>
                 <button
                   onClick={handleClose}

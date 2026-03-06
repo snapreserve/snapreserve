@@ -165,7 +165,7 @@ export async function POST(request) {
   const inviteLink = `${appUrl}/team/join?token=${token}`
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-  const orgName   = hostRow.display_name || 'a SnapReserve organisation'
+  const orgName   = hostRow.display_name || 'a SnapReserve™ organisation'
 
   // In-app message if invitee already has an account
   if (inviteeUser) {
@@ -184,7 +184,7 @@ export async function POST(request) {
   }))
   await sendEmail({
     to:      inviteEmail,
-    subject: `You've been invited to join ${orgName} on SnapReserve`,
+    subject: `You've been invited to join ${orgName} on SnapReserve™`,
     html,
     text,
   })

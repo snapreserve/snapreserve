@@ -37,7 +37,7 @@ function MfaSetupContent() {
       }
 
       // Begin enrollment
-      const { data, error: enrollError } = await sb.auth.mfa.enroll({ factorType: 'totp', issuer: 'SnapReserve' })
+      const { data, error: enrollError } = await sb.auth.mfa.enroll({ factorType: 'totp', issuer: 'SnapReserve™' })
       if (enrollError) { setError(enrollError.message); setStep('error'); return }
 
       setQrCode(data.totp.qr_code)
@@ -92,7 +92,7 @@ function MfaSetupContent() {
       `}</style>
 
       <div className="card">
-        <div className="logo">SnapReserve</div>
+        <div className="logo">SnapReserve™</div>
 
         {step === 'loading' && (
           <>
@@ -151,7 +151,7 @@ function MfaSetupContent() {
           </>
         )}
 
-        <div className="hint">MFA is required for all SnapReserve admin accounts. You will need your authenticator app every time you log in.</div>
+        <div className="hint">MFA is required for all SnapReserve™ admin accounts. You will need your authenticator app every time you log in.</div>
       </div>
     </>
   )

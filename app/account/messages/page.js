@@ -37,6 +37,14 @@ function MessagesInner() {
   const [toast,        setToast]        = useState(null)
   const bottomRef = useRef(null)
 
+  // SnapReserve™ Support messages (host_messages for current user)
+  const [supportMsgs,    setSupportMsgs]    = useState([])
+  const [supportLoading, setSupportLoading] = useState(true)
+  const [supportUnread,  setSupportUnread]  = useState(0)
+  const [supportDraft,   setSupportDraft]   = useState('')
+  const [supportSending, setSupportSending] = useState(false)
+  const supportRef = useRef(null)
+
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
@@ -50,6 +58,17 @@ function MessagesInner() {
         setConvs(data.conversations || [])
         setUserId(data.userId)
         setLoading(false)
+      })
+  }, [])
+
+  // Load SnapReserve™ support messages
+  useEffect(() => {
+    fetch('/api/account/support-messages')
+      .then(r => r.json())
+      .then(data => {
+        setSupportMsgs(data.messages || [])
+        setSupportUnread(data.unreadCount || 0)
+        setSupportLoading(false)
       })
   }, [])
 
@@ -120,6 +139,32 @@ function MessagesInner() {
     }
   }
 
+  async function sendReply(e) {
+    e?.preventDefault()
+    if (!supportDraft.trim() || supportSending) return
+    // Reply goes to the most recent unreplied message
+    const unreplied = [...supportMsgs].reverse().find(m => !m.reply_body)
+    if (!unreplied) return
+    setSupportSending(true)
+    const res = await fetch(`/api/host/messages/${unreplied.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ reply: supportDraft.trim() }),
+    })
+    setSupportSending(false)
+    if (res.ok) {
+      setSupportMsgs(prev => prev.map(m =>
+        m.id === unreplied.id
+          ? { ...m, reply_body: supportDraft.trim(), replied_at: new Date().toISOString() }
+          : m
+      ))
+      setSupportDraft('')
+      setTimeout(() => supportRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    } else {
+      showToast('Failed to send reply.', 'error')
+    }
+  }
+
   async function submitReport() {
     if (!reportReason) return
     setReporting(true)
@@ -136,7 +181,7 @@ function MessagesInner() {
   const conv     = thread?.conversation
   const isHost   = conv && userId && conv.host_user_id === userId
   const isGuest  = conv && userId && conv.guest_user_id === userId
-  const unread   = convs.reduce((n, c) => n + (userId === c.guest_user_id ? c.guest_unread_count : c.host_unread_count), 0)
+  const unread   = convs.reduce((n, c) => n + (userId === c.guest_user_id ? c.guest_unread_count : c.host_unread_count), 0) + supportUnread
   const blocked  = conv?.status === 'blocked'
 
   return (
@@ -167,8 +212,43 @@ function MessagesInner() {
       <div style={{ display: 'flex', gap: '16px', minHeight: '560px' }}>
         {/* ── Left: conversation list ─────────────────────────── */}
         <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+
+          {/* SnapReserve™ Support entry — shown if any support messages exist */}
+          {!supportLoading && supportMsgs.length > 0 && (
+            <button
+              onClick={() => { setActiveId('__support__'); setSupportUnread(0) }}
+              style={{
+                width: '100%', textAlign: 'left',
+                background: activeId === '__support__' ? 'white' : 'transparent',
+                border: activeId === '__support__' ? '1.5px solid #F4601A' : '1px solid #E8E2D9',
+                borderRadius: '12px', padding: '12px 14px', cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all 0.15s',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flex: 1, minWidth: 0 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#F4601A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: 'white', fontWeight: 800, flexShrink: 0 }}>S</div>
+                  <div style={{ fontWeight: supportUnread > 0 ? 700 : 600, fontSize: '0.84rem', color: '#1A1410', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    SnapReserve™ Support
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.66rem', color: '#A89880', flexShrink: 0 }}>{fmt(supportMsgs.at(-1)?.created_at)}</div>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: '#6B5F54', marginTop: '2px', paddingLeft: '29px' }}>SnapReserve™ Team</div>
+              <div style={{ fontSize: '0.74rem', color: '#A89880', marginTop: '3px', paddingLeft: '29px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {supportMsgs.at(-1)?.subject || 'No messages yet'}
+              </div>
+              {supportUnread > 0 && (
+                <div style={{ marginTop: '6px', paddingLeft: '29px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#F4601A' }} />
+                  <span style={{ fontSize: '0.66rem', color: '#F4601A', fontWeight: 700 }}>{supportUnread} new</span>
+                </div>
+              )}
+            </button>
+          )}
+
           {loading && <div style={{ color: '#A89880', fontSize: '0.84rem' }}>Loading…</div>}
-          {!loading && convs.length === 0 && (
+          {!loading && convs.length === 0 && supportMsgs.length === 0 && (
             <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '12px', padding: '32px', textAlign: 'center', color: '#A89880', fontSize: '0.84rem' }}>
               <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>💬</div>
               No conversations yet.<br />
@@ -225,6 +305,97 @@ function MessagesInner() {
               <div style={{ fontSize: '2.5rem' }}>💬</div>
               <div style={{ fontSize: '0.88rem' }}>Select a conversation</div>
             </div>
+          ) : activeId === '__support__' ? (
+            // ── SnapReserve™ Support thread ──────────────────────
+            <>
+              {/* Header */}
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #E8E2D9', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#F4601A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'white', fontWeight: 800, flexShrink: 0 }}>S</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.94rem', color: '#1A1410' }}>SnapReserve™ Support</div>
+                  <div style={{ fontSize: '0.74rem', color: '#A89880' }}>Official messages from the SnapReserve™ team</div>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {supportMsgs.length === 0 && (
+                  <div style={{ textAlign: 'center', color: '#A89880', fontSize: '0.84rem', marginTop: '40px' }}>No messages yet.</div>
+                )}
+                {supportMsgs.map(m => (
+                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* SnapReserve™ message */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#F4601A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', color: 'white', fontWeight: 800, flexShrink: 0, marginTop: 2 }}>S</div>
+                      <div style={{ maxWidth: '78%' }}>
+                        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#A89880', marginBottom: '3px' }}>SnapReserve™ · {fmt(m.created_at)}</div>
+                        {m.subject && <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#1A1410', marginBottom: '5px' }}>{m.subject}</div>}
+                        <div style={{ padding: '10px 14px', borderRadius: '4px 16px 16px 16px', background: '#F3F0EB', color: '#1A1410', fontSize: '0.88rem', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+                          {m.body}
+                        </div>
+                      </div>
+                    </div>
+                    {/* User reply */}
+                    {m.reply_body && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div style={{ maxWidth: '70%' }}>
+                          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#A89880', marginBottom: '3px', textAlign: 'right' }}>You · {fmt(m.replied_at)}</div>
+                          <div style={{ padding: '10px 14px', borderRadius: '16px 16px 4px 16px', background: '#F4601A', color: 'white', fontSize: '0.88rem', lineHeight: 1.65 }}>
+                            {m.reply_body}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div ref={supportRef} />
+              </div>
+
+              {/* Compose — only if most recent message has no reply */}
+              {(() => {
+                const unreplied = [...supportMsgs].reverse().find(m => !m.reply_body)
+                if (!unreplied) return (
+                  <div style={{ padding: '12px 20px', borderTop: '1px solid #E8E2D9', textAlign: 'center', color: '#A89880', fontSize: '0.8rem' }}>
+                    Your reply has been sent. Our team will follow up here.
+                  </div>
+                )
+                return (
+                  <>
+                    {/* Quick replies */}
+                    <div style={{ padding: '10px 16px 0', borderTop: '1px solid #E8E2D9', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {['I\'ll re-upload clearer photos', 'Can you clarify what was wrong?', 'Please reconsider my application'].map(qr => (
+                        <button
+                          key={qr}
+                          onClick={() => setSupportDraft(qr)}
+                          style={{ padding: '4px 10px', border: '1px solid #E8E2D9', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 600, color: '#6B5F54', cursor: 'pointer', background: 'white', fontFamily: 'inherit', transition: 'all 0.14s' }}
+                          onMouseOver={e => { e.currentTarget.style.borderColor = '#F4601A'; e.currentTarget.style.color = '#F4601A' }}
+                          onMouseOut={e => { e.currentTarget.style.borderColor = '#E8E2D9'; e.currentTarget.style.color = '#6B5F54' }}
+                        >
+                          {qr}
+                        </button>
+                      ))}
+                    </div>
+                    <form onSubmit={sendReply} style={{ display: 'flex', gap: '8px', padding: '10px 16px 12px' }}>
+                      <input
+                        value={supportDraft}
+                        onChange={e => setSupportDraft(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() } }}
+                        placeholder="Reply to SnapReserve™ Support…"
+                        maxLength={2000}
+                        style={{ flex: 1, padding: '10px 14px', border: '1px solid #E8E2D9', borderRadius: '10px', fontSize: '0.88rem', fontFamily: 'inherit', outline: 'none' }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={supportSending || !supportDraft.trim()}
+                        style={{ background: '#F4601A', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 22px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (supportSending || !supportDraft.trim()) ? 0.5 : 1 }}
+                      >
+                        {supportSending ? '…' : 'Send'}
+                      </button>
+                    </form>
+                  </>
+                )
+              })()}
+            </>
           ) : threadLoading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A89880', fontSize: '0.84rem' }}>Loading…</div>
           ) : (

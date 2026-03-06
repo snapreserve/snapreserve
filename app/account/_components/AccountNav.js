@@ -58,11 +58,12 @@ export default function AccountNav({ profile, isHost }) {
       {/* Logo */}
       <a href="/" style={{
         display: 'block', padding: '20px 24px 16px',
-        fontFamily: "'Playfair Display', serif", fontSize: '1.15rem',
-        fontWeight: 900, textDecoration: 'none', color: 'var(--sr-text)',
+        fontFamily: "'Cormorant Garamond', serif", fontSize: '1.35rem',
+        fontWeight: 700, textDecoration: 'none', color: 'var(--sr-text)',
+        letterSpacing: '-0.01em', lineHeight: 1,
         borderBottom: '1px solid var(--sr-border2)',
       }}>
-        Snap<span style={{ color: 'var(--sr-orange)' }}>Reserve</span>
+        Snap<span style={{ color: 'var(--sr-orange)' }}>Reserve</span><sup style={{ fontSize: '0.52em', verticalAlign: 'super', opacity: 0.65 }}>™</sup>
       </a>
 
       {/* User info */}

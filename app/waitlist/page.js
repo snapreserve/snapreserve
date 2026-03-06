@@ -623,7 +623,7 @@ export default function WaitlistPage() {
           </h1>
 
           <p>
-            SnapReserve is building the most transparent booking platform ever made.
+            SnapReserve™ is building the most transparent booking platform ever made.
             Join the waitlist to get early access and founding-member perks. First 1,000 members lock in 6.5% platform fee + $1 per booking — for life.
           </p>
 
@@ -758,7 +758,7 @@ export default function WaitlistPage() {
 
                 <div className="wl-legal">
                   By joining you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
-                  We'll only email you about SnapReserve — no spam, ever.
+                  We'll only email you about SnapReserve™ — no spam, ever.
                 </div>
               </>
             )}
@@ -857,7 +857,7 @@ export default function WaitlistPage() {
 
         {/* Footer */}
         <footer className="wl-footer">
-          <div>© {new Date().getFullYear()} SnapReserve. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} SnapReserve™. All rights reserved.</div>
           <div style={{ display: 'flex', gap: 20 }}>
             <a href="#">Privacy</a>
             <a href="#">Terms</a>

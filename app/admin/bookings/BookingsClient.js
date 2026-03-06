@@ -689,7 +689,7 @@ function PanelContent({ booking: b, tab, canCancel, onCancel }) {
         )}
         {serviceFee > 0 && (
           <div className="b-pay-row">
-            <span className="b-pay-lbl">Service fee (SnapReserve)</span>
+            <span className="b-pay-lbl">Service fee (SnapReserve™)</span>
             <span className="b-pay-val">{fmtMoney(serviceFee)}</span>
           </div>
         )}

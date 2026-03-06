@@ -198,7 +198,7 @@ export async function PATCH(request, { params }) {
       listingId:  listing.id,
       type:       'rejection',
       subject:    `Your listing has been permanently removed`,
-      body:       `We're sorry, but your listing "${listing.title}" has been permanently removed from SnapReserve following a policy review.\n\nReason: ${rejectionReason}\n\nPlease contact support if you have questions.`,
+      body:       `We're sorry, but your listing "${listing.title}" has been permanently removed from SnapReserve™ following a policy review.\n\nReason: ${rejectionReason}\n\nPlease contact support if you have questions.`,
     })
 
     await logAction({
@@ -243,7 +243,7 @@ export async function PATCH(request, { params }) {
       listingId:  listing.id,
       type:       'reactivation',
       subject:    `Your listing is now live`,
-      body:       `Great news! Your listing "${listing.title}" has been reviewed and is now live on SnapReserve.${resolution_note ? `\n\nAdmin note: ${resolution_note}` : ''}`,
+      body:       `Great news! Your listing "${listing.title}" has been reviewed and is now live on SnapReserve™.${resolution_note ? `\n\nAdmin note: ${resolution_note}` : ''}`,
     })
 
     await logAction({

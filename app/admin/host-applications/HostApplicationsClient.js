@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 const HOST_TYPE_LABELS = {
   hotel:            '🏨 Hotel or Resort',
@@ -35,6 +35,39 @@ function fmtFull(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+// ── Rejection reasons ──────────────────────────────────────────────
+const REJECTION_REASONS = [
+  { key: 'blurry',     icon: '📸', title: 'ID photos are unclear or blurry',   desc: 'Text, photo, or barcode not clearly readable' },
+  { key: 'mismatch',   icon: '👤', title: 'Name or details don\'t match',       desc: 'Name on ID doesn\'t match the application' },
+  { key: 'expired',    icon: '📅', title: 'ID document is expired',             desc: 'The submitted document\'s expiry date has passed' },
+  { key: 'face',       icon: '🤳', title: 'Selfie doesn\'t match ID photo',     desc: 'Face match confidence below required threshold' },
+  { key: 'incomplete', icon: '📋', title: 'Incomplete submission',              desc: 'A required document side or file is missing' },
+  { key: 'other',      icon: '✏️',  title: 'Other — write custom message',       desc: 'I\'ll explain the reason in my own words' },
+]
+
+const REASON_SUBJECT = {
+  blurry:     'Your host application — ID photo quality',
+  mismatch:   'Your host application — name mismatch',
+  expired:    'Your host application — expired document',
+  face:       'Your host application — selfie verification',
+  incomplete: 'Your host application — incomplete submission',
+  other:      'Your host application — update from SnapReserve™',
+}
+
+function buildRejectionBody(reasonKey, firstName, custom) {
+  const bases = {
+    blurry:     `We've reviewed your submitted documents but unfortunately could not verify your identity at this time.\n\nReason: The photos of your ID were unclear or blurry — text, photo, or barcode was not clearly readable.\n\nTo fix this: Re-upload in good lighting, lay your ID flat on a dark surface, and ensure all text is sharp. You can resubmit at any time.`,
+    mismatch:   `We've reviewed your documents but found a discrepancy.\n\nReason: The name on your submitted ID does not match the name on your application.\n\nPlease check you submitted the correct ID, or reply here to clarify. If you've recently changed your name, please include supporting documentation.`,
+    expired:    `Thank you for submitting your documents. Unfortunately we cannot proceed with an expired ID.\n\nReason: The document you submitted appears to have expired.\n\nPlease resubmit with a currently valid driver's license or passport.`,
+    face:       `We reviewed your selfie but were unable to confirm the match with your ID photo.\n\nReason: The face match confidence was below our required threshold.\n\nTo fix this: Retake your selfie in bright, even lighting, face the camera directly, and ensure both your full face and the full ID are clearly visible.`,
+    incomplete: `It looks like your submission was incomplete.\n\nReason: A required document or side was missing.\n\nPlease return to the verification page and upload all required photos. Reply here if you need help.`,
+    other:      `We've reviewed your identity documents and unfortunately we were unable to approve your application at this time.`,
+  }
+  const base = bases[reasonKey] || bases.other
+  const customPart = custom?.trim() ? `\n\n${custom.trim()}` : ''
+  return `Hi ${firstName || 'there'},\n\n${base}${customPart}\n\nIf you have questions or additional information to share, please reply to this message — our team will get back to you within 24 hours.`
+}
+
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,15 +94,16 @@ const STYLES = `
   .b-appd { background:rgba(22,163,74,.12); color:#16a34a; border:1px solid rgba(22,163,74,.25); }
   .b-rejd { background:rgba(220,38,38,.12); color:#dc2626; border:1px solid rgba(220,38,38,.25); }
   .b-doc  { background:rgba(37,99,235,.12); color:#3b82f6; border:1px solid rgba(37,99,235,.25); }
+  .b-replied { background:rgba(244,96,26,.12); color:var(--sr-orange); border:1px solid rgba(244,96,26,.25); }
   .ha-itime { font-size:0.65rem; color:var(--sr-sub); font-family:'DM Mono',monospace; margin-left:auto; white-space:nowrap; padding-top:2px; flex-shrink:0; }
   .ha-empty { padding:48px 20px; text-align:center; color:var(--sr-sub); font-size:0.82rem; }
 
   /* ── Detail pane ── */
-  .ha-detail { flex:1; overflow-y:auto; background:var(--sr-bg); display:flex; flex-direction:column; }
+  .ha-detail { flex:1; overflow:hidden; background:var(--sr-bg); display:flex; flex-direction:column; }
   .ha-empty-detail { flex:1; display:flex; align-items:center; justify-content:center; color:var(--sr-sub); font-size:0.84rem; }
 
   /* Detail header */
-  .ha-dhead { padding:18px 24px; border-bottom:1px solid var(--sr-border-solid); background:var(--sr-surface); flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .ha-dhead { padding:15px 22px; border-bottom:1px solid var(--sr-border-solid); background:var(--sr-surface); flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .ha-dh-left { display:flex; align-items:center; gap:12px; min-width:0; }
   .ha-dh-name { font-size:1rem; font-weight:700; color:var(--sr-text); margin-bottom:2px; }
   .ha-dh-meta { font-size:0.7rem; color:var(--sr-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -79,11 +113,17 @@ const STYLES = `
   .ha-btn-approve:hover { background:#15803d; box-shadow:0 4px 14px rgba(22,163,74,.3); }
   .ha-btn-reject { background:rgba(220,38,38,.12); border:1px solid rgba(220,38,38,.25); color:#dc2626; }
   .ha-btn-reject:hover { background:rgba(220,38,38,.2); }
-  .ha-btn-info { background:rgba(37,99,235,.1); border:1px solid rgba(37,99,235,.2); color:#3b82f6; }
-  .ha-btn-info:hover { background:rgba(37,99,235,.18); }
+  .ha-btn-msg { background:rgba(244,96,26,.1); border:1px solid rgba(244,96,26,.25); color:var(--sr-orange); }
+  .ha-btn-msg:hover { background:rgba(244,96,26,.18); }
+
+  /* Detail tabs */
+  .ha-dtabs { display:flex; border-bottom:1px solid var(--sr-border-solid); background:var(--sr-surface); flex-shrink:0; padding:0 20px; }
+  .ha-dtab { padding:10px 12px; font-size:0.72rem; font-weight:700; color:var(--sr-sub); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .13s; white-space:nowrap; display:flex; align-items:center; gap:5px; font-family:inherit; background:none; border-top:none; border-left:none; border-right:none; }
+  .ha-dtab.act { color:var(--sr-orange); border-bottom-color:var(--sr-orange); }
+  .ha-dtab-badge { background:var(--sr-orange); color:#fff; font-size:0.6rem; font-weight:700; padding:1px 5px; border-radius:100px; }
 
   /* Detail body */
-  .ha-dbody { padding:24px; flex:1; }
+  .ha-dbody { padding:22px 24px; flex:1; overflow-y:auto; }
   .ha-sec { margin-bottom:22px; }
   .ha-sec-title { font-size:0.63rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--sr-sub); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
   .ha-sec-title::after { content:''; flex:1; height:1px; background:var(--sr-border-solid); }
@@ -129,17 +169,62 @@ const STYLES = `
   .decision-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
   .ha-btn-lg { padding:12px; border-radius:9px; font-size:0.84rem; font-weight:700; width:100%; font-family:'DM Sans',sans-serif; cursor:pointer; border:none; transition:all .15s; }
 
-  /* Modal */
+  /* Messages panel */
+  .ha-msgs-wrap { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .ha-thread { flex:1; overflow-y:auto; padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+  .ha-msg-row { display:flex; gap:9px; }
+  .ha-msg-row.admin { justify-content:flex-end; }
+  .ha-msg-row.host  { justify-content:flex-start; }
+  .ha-msg-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:700; flex-shrink:0; color:#fff; }
+  .ha-msg-bub { max-width:72%; padding:10px 13px; border-radius:12px; font-size:0.82rem; line-height:1.65; white-space:pre-wrap; }
+  .ha-msg-row.admin .ha-msg-bub { background:rgba(244,96,26,.1); border:1px solid rgba(244,96,26,.22); color:var(--sr-text); border-bottom-right-radius:3px; }
+  .ha-msg-row.host  .ha-msg-bub { background:var(--sr-surface); border:1px solid var(--sr-border-solid); color:var(--sr-text); border-bottom-left-radius:3px; }
+  .ha-msg-sender { font-size:0.62rem; font-weight:700; opacity:.55; margin-bottom:4px; letter-spacing:.06em; text-transform:uppercase; }
+  .ha-msg-time { font-size:0.62rem; opacity:.45; margin-top:4px; font-family:'DM Mono',monospace; text-align:right; }
+  .ha-msg-sys { text-align:center; padding:6px 12px; border-radius:7px; font-size:0.74rem; font-weight:600; }
+  .ha-msg-sys.info { background:rgba(37,99,235,.07); border:1px solid rgba(37,99,235,.15); color:#3b82f6; }
+  .ha-msg-sys.warn { background:rgba(217,119,6,.07); border:1px solid rgba(217,119,6,.15); color:#d97706; }
+  .ha-compose { border-top:1px solid var(--sr-border-solid); padding:12px 20px; background:var(--sr-surface); flex-shrink:0; }
+  .ha-presets { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .ha-preset { padding:4px 10px; background:transparent; border:1px solid var(--sr-border-solid); border-radius:100px; font-size:0.72rem; color:var(--sr-muted); cursor:pointer; transition:all .14s; font-family:'DM Sans',sans-serif; }
+  .ha-preset:hover { border-color:rgba(244,96,26,.4); color:var(--sr-orange); }
+  .ha-compose-row { display:flex; gap:7px; align-items:flex-end; }
+  .ha-compose-ta { flex:1; padding:9px 12px; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--sr-text); outline:none; resize:none; min-height:40px; max-height:90px; transition:border-color .14s; }
+  .ha-compose-ta:focus { border-color:rgba(244,96,26,.4); }
+  .ha-compose-ta::placeholder { color:var(--sr-sub); }
+  .ha-compose-send { padding:9px 16px; background:var(--sr-orange); border:none; border-radius:7px; color:#fff; font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .ha-compose-send:hover { background:#d4561f; }
+  .ha-compose-send:disabled { opacity:.5; cursor:not-allowed; }
+
+  /* Rejection modal */
   .ha-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .ha-modal { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:14px; padding:28px; width:100%; max-width:420px; }
-  .ha-modal-icon { font-size:2rem; margin-bottom:14px; }
-  .ha-modal h2 { font-size:1rem; font-weight:700; color:var(--sr-text); margin-bottom:6px; }
-  .ha-modal-sub { font-size:0.84rem; color:var(--sr-muted); line-height:1.65; margin-bottom:18px; }
-  .ha-modal-email { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; padding:12px; margin-bottom:16px; font-size:0.78rem; color:var(--sr-muted); line-height:1.7; }
-  .ha-modal-email .em-subj { font-weight:700; color:var(--sr-text); margin-bottom:4px; font-size:0.82rem; }
-  .ha-modal textarea { width:100%; background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; padding:10px 12px; font-size:0.82rem; font-family:'DM Sans',sans-serif; color:var(--sr-text); resize:vertical; min-height:72px; outline:none; margin-bottom:16px; }
-  .ha-modal textarea:focus { border-color:var(--sr-orange); }
-  .ha-modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+  .ha-modal { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:16px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; }
+  .ha-modal-hd { padding:22px 24px 16px; border-bottom:1px solid var(--sr-border-solid); }
+  .ha-modal-icon { font-size:1.6rem; margin-bottom:10px; }
+  .ha-modal-hd h2 { font-size:1rem; font-weight:700; color:var(--sr-text); margin-bottom:4px; }
+  .ha-modal-sub { font-size:0.82rem; color:var(--sr-muted); line-height:1.6; }
+  .ha-modal-body { padding:16px 24px; }
+  .ha-modal-section-lbl { font-size:0.62rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--sr-sub); margin-bottom:8px; display:block; }
+
+  /* Reason cards */
+  .reason-card { display:flex; align-items:flex-start; gap:10px; padding:10px 13px; border:1.5px solid var(--sr-border-solid); border-radius:9px; cursor:pointer; transition:all .15s; background:var(--sr-bg); margin-bottom:6px; }
+  .reason-card:hover { border-color:rgba(244,96,26,.3); }
+  .reason-card.on { border-color:var(--sr-orange); background:rgba(244,96,26,.05); }
+  .rc-icon { font-size:1.2rem; flex-shrink:0; margin-top:1px; }
+  .rc-body { flex:1; }
+  .rc-title { font-size:0.82rem; font-weight:700; color:var(--sr-text); margin-bottom:2px; }
+  .rc-desc  { font-size:0.7rem; color:var(--sr-muted); line-height:1.4; }
+  .rc-radio { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--sr-border-solid); display:flex; align-items:center; justify-content:center; font-size:0.55rem; flex-shrink:0; margin-top:2px; transition:all .15s; color:transparent; }
+  .reason-card.on .rc-radio { background:var(--sr-orange); border-color:var(--sr-orange); color:#fff; }
+
+  /* Message preview */
+  .msg-preview { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:9px; padding:13px; margin:12px 0; }
+  .mp-to { font-size:0.65rem; color:var(--sr-sub); font-family:'DM Mono',monospace; margin-bottom:5px; }
+  .mp-subj { font-size:0.84rem; font-weight:700; color:var(--sr-text); margin-bottom:7px; }
+  .mp-body { font-size:0.76rem; color:var(--sr-muted); line-height:1.75; white-space:pre-wrap; }
+
+  /* Modal footer */
+  .ha-modal-ft { padding:16px 24px; border-top:1px solid var(--sr-border-solid); display:flex; gap:8px; justify-content:flex-end; }
   .ha-modal-cancel { padding:9px 20px; border-radius:8px; font-size:0.82rem; font-weight:600; border:1px solid var(--sr-border-solid); background:transparent; color:var(--sr-muted); cursor:pointer; font-family:'DM Sans',sans-serif; }
   .ha-modal-cancel:hover { color:var(--sr-text); }
   .ha-modal-ok { padding:9px 20px; border-radius:8px; font-size:0.82rem; font-weight:700; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; }
@@ -158,21 +243,35 @@ const STYLES = `
 
 export default function HostApplicationsClient({ applications: initial, role }) {
   const [applications, setApplications] = useState(initial)
-  const [tab, setTab]       = useState('pending')
-  const [sel, setSel]       = useState(null)
-  const [notes, setNotes]   = useState('')
-  const [modal, setModal]   = useState(null) // { action: 'approve'|'reject', app }
-  const [reason, setReason] = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [notesSaving, setNotesSaving] = useState(false)
-  const [toast, setToast]   = useState(null)
+  const [tab,          setTab]          = useState('pending')
+  const [sel,          setSel]          = useState(null)
+  const [notes,        setNotes]        = useState('')
+  const [detailTab,    setDetailTab]    = useState('docs') // 'docs' | 'msgs'
+  const [modal,        setModal]        = useState(null)   // 'approve' | 'reject' | null
+  const [loading,      setLoading]      = useState(false)
+  const [notesSaving,  setNotesSaving]  = useState(false)
+  const [toast,        setToast]        = useState(null)
+
+  // Messages tab
+  const [appMsgs,    setAppMsgs]    = useState([])
+  const [msgLoading, setMsgLoading] = useState(false)
+  const [adminDraft, setAdminDraft] = useState('')
+  const [sendingMsg, setSendingMsg] = useState(false)
+  const threadEndRef = useRef(null)
+
+  // Rejection modal state
+  const [rejReasonKey, setRejReasonKey] = useState('blurry')
+  const [rejCustom,    setRejCustom]    = useState('')
 
   const canManage = ['admin', 'super_admin'].includes(role)
 
-  const filtered  = applications.filter(a => a.status === tab)
-  const pendingCt = applications.filter(a => a.status === 'pending').length
+  const filtered   = applications.filter(a => a.status === tab)
+  const pendingCt  = applications.filter(a => a.status === 'pending').length
   const approvedCt = applications.filter(a => a.status === 'approved').length
   const rejectedCt = applications.filter(a => a.status === 'rejected').length
+
+  // Track which apps have unread replies (at least one message with reply_body)
+  const [appsWithReplies, setAppsWithReplies] = useState(new Set())
 
   function showToast(msg, ok = true) {
     setToast({ msg, ok })
@@ -182,15 +281,57 @@ export default function HostApplicationsClient({ applications: initial, role }) 
   function selectApp(app) {
     setSel(app)
     setNotes(app.id_admin_notes ?? '')
+    setDetailTab('docs')
+    setAppMsgs([])
+    setAdminDraft('')
+  }
+
+  async function loadMessages() {
+    if (!sel) return
+    setMsgLoading(true)
+    const res  = await fetch(`/api/admin/host-applications/${sel.id}/messages`)
+    const data = await res.json()
+    const msgs = data.messages || []
+    setAppMsgs(msgs)
+    setMsgLoading(false)
+    if (msgs.some(m => m.reply_body)) {
+      setAppsWithReplies(prev => new Set([...prev, sel.id]))
+    }
+    setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 60)
+  }
+
+  function switchDetailTab(t) {
+    setDetailTab(t)
+    if (t === 'msgs' && appMsgs.length === 0) loadMessages()
+  }
+
+  async function sendAdminMessage(e) {
+    e?.preventDefault()
+    if (!adminDraft.trim() || !sel || sendingMsg) return
+    setSendingMsg(true)
+    const res  = await fetch(`/api/admin/host-applications/${sel.id}/messages`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message: adminDraft.trim() }),
+    })
+    const data = await res.json()
+    setSendingMsg(false)
+    if (res.ok) {
+      setAppMsgs(prev => [...prev, data.message])
+      setAdminDraft('')
+      setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    } else {
+      showToast(data.error || 'Failed to send.', false)
+    }
   }
 
   async function saveNotes() {
     if (!sel) return
     setNotesSaving(true)
     await fetch(`/api/admin/host-applications/${sel.id}`, {
-      method: 'PATCH',
+      method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_notes', notes }),
+      body:    JSON.stringify({ action: 'save_notes', notes }),
     })
     setApplications(prev => prev.map(a => a.id === sel.id ? { ...a, id_admin_notes: notes } : a))
     setSel(prev => prev ? { ...prev, id_admin_notes: notes } : prev)
@@ -199,26 +340,46 @@ export default function HostApplicationsClient({ applications: initial, role }) 
   }
 
   async function handleAction() {
-    if (!modal) return
-    if (modal.action === 'reject' && !reason.trim()) {
-      showToast('Rejection reason is required.', false)
+    if (!modal || !sel) return
+    setLoading(true)
+
+    if (modal === 'approve') {
+      const res  = await fetch(`/api/admin/host-applications/${sel.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'approve' }),
+      })
+      const json = await res.json()
+      setLoading(false)
+      if (!res.ok) { showToast(json.error || 'Something went wrong.', false); return }
+      setApplications(prev => prev.map(a => a.id === sel.id ? { ...a, status: 'approved' } : a))
+      setSel(prev => prev ? { ...prev, status: 'approved' } : prev)
+      showToast('Host approved and activated.')
+      setModal(null)
       return
     }
-    setLoading(true)
-    const res = await fetch(`/api/admin/host-applications/${modal.app.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: modal.action, rejection_reason: reason }),
-    })
-    const json = await res.json()
-    setLoading(false)
-    if (!res.ok) { showToast(json.error || 'Something went wrong.', false); return }
-    const newStatus = json.status
-    setApplications(prev => prev.map(a => a.id === modal.app.id ? { ...a, status: newStatus } : a))
-    if (sel?.id === modal.app.id) setSel(prev => prev ? { ...prev, status: newStatus } : prev)
-    showToast(modal.action === 'approve' ? 'Host approved and activated.' : 'Application rejected.')
-    setModal(null)
-    setReason('')
+
+    if (modal === 'reject') {
+      const firstName = sel.users?.full_name?.split(' ')[0] || 'there'
+      const subject   = REASON_SUBJECT[rejReasonKey] || 'Your host application — update from SnapReserve™'
+      const body      = buildRejectionBody(rejReasonKey, firstName, rejCustom)
+      const reason    = REJECTION_REASONS.find(r => r.key === rejReasonKey)?.title || rejReasonKey
+
+      const res  = await fetch(`/api/admin/host-applications/${sel.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'reject', rejection_reason: reason, rejection_subject: subject, rejection_body: body }),
+      })
+      const json = await res.json()
+      setLoading(false)
+      if (!res.ok) { showToast(json.error || 'Something went wrong.', false); return }
+      setApplications(prev => prev.map(a => a.id === sel.id ? { ...a, status: 'rejected' } : a))
+      setSel(prev => prev ? { ...prev, status: 'rejected' } : prev)
+      showToast('Application rejected. Message sent to applicant.')
+      setModal(null)
+      setRejCustom('')
+      setRejReasonKey('blurry')
+    }
   }
 
   const TABS = [
@@ -226,6 +387,13 @@ export default function HostApplicationsClient({ applications: initial, role }) 
     { key: 'approved', label: `✓ Approved (${approvedCt})` },
     { key: 'rejected', label: `✗ Rejected (${rejectedCt})` },
   ]
+
+  // Computed rejection preview
+  const firstName     = sel?.users?.full_name?.split(' ')[0] || 'there'
+  const rejSubject    = REASON_SUBJECT[rejReasonKey] || 'Your host application — update from SnapReserve™'
+  const rejBodyPreview = buildRejectionBody(rejReasonKey, firstName, rejCustom)
+
+  const hasReplies = sel && appsWithReplies.has(sel.id)
 
   return (
     <>
@@ -236,7 +404,7 @@ export default function HostApplicationsClient({ applications: initial, role }) 
         <div className="ha-list">
           <div className="ha-list-head">
             <h1>Host Applications</h1>
-            <div className="ha-list-sub">{pendingCt} awaiting ID review</div>
+            <div className="ha-list-sub">{pendingCt} awaiting review</div>
           </div>
           <div className="ha-tabs">
             {TABS.map(t => (
@@ -249,8 +417,9 @@ export default function HostApplicationsClient({ applications: initial, role }) 
             {filtered.length === 0 ? (
               <div className="ha-empty">No {tab} applications.</div>
             ) : filtered.map(app => {
-              const color = avatarColor(app.users?.full_name || app.user_id)
+              const color    = avatarColor(app.users?.full_name || app.user_id)
               const docBadge = app.id_type === 'passport' ? '📘 Passport' : app.id_type === 'driver_license' ? '🪪 Driver\'s License' : null
+              const hasReply = appsWithReplies.has(app.id)
               return (
                 <div
                   key={app.id}
@@ -266,6 +435,7 @@ export default function HostApplicationsClient({ applications: initial, role }) 
                         {app.status === 'pending' ? '⏳ Pending' : app.status === 'approved' ? '✓ Approved' : '✗ Rejected'}
                       </span>
                       {docBadge && <span className="ha-badge b-doc">{docBadge}</span>}
+                      {hasReply && <span className="ha-badge b-replied">💬 Replied</span>}
                     </div>
                   </div>
                   <div className="ha-itime">{fmt(app.created_at)}</div>
@@ -297,199 +467,301 @@ export default function HostApplicationsClient({ applications: initial, role }) 
                 </div>
                 {canManage && sel.status === 'pending' && (
                   <div className="ha-dh-actions">
-                    <button className="ha-btn ha-btn-info" onClick={() => setModal({ action: 'info', app: sel })}>📧 Request Info</button>
-                    <button className="ha-btn ha-btn-reject" onClick={() => { setModal({ action: 'reject', app: sel }); setReason('') }}>✗ Reject</button>
-                    <button className="ha-btn ha-btn-approve" onClick={() => setModal({ action: 'approve', app: sel })}>✓ Approve Host</button>
+                    <button className="ha-btn ha-btn-msg" onClick={() => switchDetailTab('msgs')}>💬 Message</button>
+                    <button className="ha-btn ha-btn-reject" onClick={() => { setModal('reject'); setRejReasonKey('blurry'); setRejCustom('') }}>✗ Reject</button>
+                    <button className="ha-btn ha-btn-approve" onClick={() => setModal('approve')}>✓ Approve Host</button>
                   </div>
+                )}
+                {sel.status !== 'pending' && (
+                  <button className="ha-btn ha-btn-msg" onClick={() => switchDetailTab('msgs')}>💬 Messages</button>
                 )}
               </div>
 
-              <div className="ha-dbody">
+              {/* Detail tabs */}
+              <div className="ha-dtabs">
+                <button className={`ha-dtab${detailTab === 'docs' ? ' act' : ''}`} onClick={() => switchDetailTab('docs')}>
+                  📄 Documents & Details
+                </button>
+                <button className={`ha-dtab${detailTab === 'msgs' ? ' act' : ''}`} onClick={() => switchDetailTab('msgs')}>
+                  💬 Messages
+                  {hasReplies && detailTab !== 'msgs' && <span className="ha-dtab-badge">Reply</span>}
+                </button>
+              </div>
 
-                {/* ID Documents */}
-                <div className="ha-sec">
-                  <div className="ha-sec-title">Submitted ID Documents</div>
-                  {!sel.id_type ? (
-                    <div className="flag miss">⚠ No ID documents submitted yet.</div>
-                  ) : sel.id_type === 'driver_license' ? (
-                    <div className="id-grid" style={{ marginBottom: 12 }}>
-                      <div className="id-card">
-                        <div className="id-card-lbl">🪪 Driver's License — Front</div>
-                        <div className="id-card-img">
-                          {sel.id_front_signed
-                            ? <img src={sel.id_front_signed} alt="ID front" />
-                            : <div className="id-placeholder">🪪</div>
-                          }
-                        </div>
-                        <div className="id-card-meta">{sel.id_front_url ? '✓ Uploaded' : 'Not submitted'}</div>
-                      </div>
-                      <div className="id-card">
-                        <div className="id-card-lbl">🔄 Driver's License — Back</div>
-                        <div className="id-card-img">
-                          {sel.id_back_signed
-                            ? <img src={sel.id_back_signed} alt="ID back" />
-                            : <div className="id-placeholder">🔄</div>
-                          }
-                        </div>
-                        <div className="id-card-meta">{sel.id_back_url ? '✓ Uploaded' : 'Not submitted'}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="id-grid single" style={{ marginBottom: 12 }}>
-                      <div className="id-card">
-                        <div className="id-card-lbl">📘 Passport — Photo Page</div>
-                        <div className="id-card-img">
-                          {sel.id_passport_signed
-                            ? <img src={sel.id_passport_signed} alt="Passport" />
-                            : <div className="id-placeholder">📘</div>
-                          }
-                        </div>
-                        <div className="id-card-meta">{sel.id_passport_url ? '✓ Uploaded' : 'Not submitted'}</div>
-                      </div>
-                    </div>
-                  )}
+              {/* ── Documents & Details tab ── */}
+              {detailTab === 'docs' && (
+                <div className="ha-dbody">
 
-                  {/* Selfie */}
-                  {sel.id_type && (
-                    <>
-                      <div className="ha-sec-title" style={{ marginTop: 16 }}>Selfie with ID</div>
-                      <div className="selfie-row">
-                        <div className="selfie-img">
-                          {sel.id_selfie_signed
-                            ? <img src={sel.id_selfie_signed} alt="Selfie" />
-                            : <span>🤳</span>
-                          }
-                        </div>
-                        <div className="selfie-text">
-                          <div className="st">{sel.id_selfie_url ? '✓ Selfie uploaded' : '⚠ Selfie not submitted'}</div>
-                          <div className="ss">
-                            {sel.id_selfie_url
-                              ? 'Verify that the person in the selfie matches the ID photo and name on the application.'
-                              : 'Applicant has not submitted a selfie with their ID yet.'
+                  {/* ID Documents */}
+                  <div className="ha-sec">
+                    <div className="ha-sec-title">Submitted ID Documents</div>
+                    {!sel.id_type ? (
+                      <div className="flag miss">⚠ No ID documents submitted yet.</div>
+                    ) : sel.id_type === 'driver_license' ? (
+                      <div className="id-grid" style={{ marginBottom: 12 }}>
+                        <div className="id-card">
+                          <div className="id-card-lbl">🪪 Driver's License — Front</div>
+                          <div className="id-card-img">
+                            {sel.id_front_signed
+                              ? <img src={sel.id_front_signed} alt="ID front" />
+                              : <div className="id-placeholder">🪪</div>
                             }
                           </div>
+                          <div className="id-card-meta">{sel.id_front_url ? '✓ Uploaded' : 'Not submitted'}</div>
+                        </div>
+                        <div className="id-card">
+                          <div className="id-card-lbl">🔄 Driver's License — Back</div>
+                          <div className="id-card-img">
+                            {sel.id_back_signed
+                              ? <img src={sel.id_back_signed} alt="ID back" />
+                              : <div className="id-placeholder">🔄</div>
+                            }
+                          </div>
+                          <div className="id-card-meta">{sel.id_back_url ? '✓ Uploaded' : 'Not submitted'}</div>
                         </div>
                       </div>
-                    </>
-                  )}
-                </div>
+                    ) : (
+                      <div className="id-grid single" style={{ marginBottom: 12 }}>
+                        <div className="id-card">
+                          <div className="id-card-lbl">📘 Passport — Photo Page</div>
+                          <div className="id-card-img">
+                            {sel.id_passport_signed
+                              ? <img src={sel.id_passport_signed} alt="Passport" />
+                              : <div className="id-placeholder">📘</div>
+                            }
+                          </div>
+                          <div className="id-card-meta">{sel.id_passport_url ? '✓ Uploaded' : 'Not submitted'}</div>
+                        </div>
+                      </div>
+                    )}
 
-                {/* Applicant details */}
-                <div className="ha-sec">
-                  <div className="ha-sec-title">Applicant Details</div>
-                  <div className="info-row"><span className="info-lbl">Full name</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.users?.full_name || '—'}</span></div>
-                  <div className="info-row"><span className="info-lbl">Email</span><span className="info-val" style={{ fontFamily: 'inherit', fontSize: '0.72rem' }}>{sel.users?.email || '—'}</span></div>
-                  <div className="info-row"><span className="info-lbl">Phone</span><span className="info-val">{sel.phone || '—'}</span></div>
-                  <div className="info-row"><span className="info-lbl">Host type</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{HOST_TYPE_LABELS[sel.host_type] ?? sel.host_type ?? '—'}</span></div>
-                  <div className="info-row"><span className="info-lbl">Display name</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.display_name || '—'}</span></div>
-                  <div className="info-row"><span className="info-lbl">ID type</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.id_type === 'driver_license' ? "Driver's License" : sel.id_type === 'passport' ? 'Passport' : 'Not submitted'}</span></div>
-                  <div className="info-row"><span className="info-lbl">ID submitted</span><span className="info-val">{fmtFull(sel.id_submitted_at)}</span></div>
-                  {sel.status === 'rejected' && sel.rejection_reason && (
-                    <div className="info-row"><span className="info-lbl">Rejection reason</span><span className="info-val" style={{ fontFamily: 'inherit', color: '#dc2626' }}>{sel.rejection_reason}</span></div>
-                  )}
-                </div>
-
-                {/* Checklist */}
-                <div className="ha-sec">
-                  <div className="ha-sec-title">Verification Checklist</div>
-                  <div className={`flag ${sel.id_type ? 'ok' : 'miss'}`}>{sel.id_type ? '✓' : '○'} ID type selected — {sel.id_type === 'driver_license' ? "Driver's License" : sel.id_type === 'passport' ? 'Passport' : 'None'}</div>
-                  {sel.id_type === 'driver_license' && <>
-                    <div className={`flag ${sel.id_front_url ? 'ok' : 'miss'}`}>{sel.id_front_url ? '✓' : '○'} License front uploaded</div>
-                    <div className={`flag ${sel.id_back_url ? 'ok' : 'miss'}`}>{sel.id_back_url ? '✓' : '○'} License back uploaded</div>
-                  </>}
-                  {sel.id_type === 'passport' && (
-                    <div className={`flag ${sel.id_passport_url ? 'ok' : 'miss'}`}>{sel.id_passport_url ? '✓' : '○'} Passport photo page uploaded</div>
-                  )}
-                  <div className={`flag ${sel.id_selfie_url ? 'ok' : 'miss'}`}>{sel.id_selfie_url ? '✓' : '○'} Selfie with ID uploaded</div>
-                  <div className="flag warn">⚠ Manual review required — verify name, photo, and ID match the application</div>
-                </div>
-
-                {/* Admin notes */}
-                <div className="ha-sec">
-                  <div className="ha-sec-title">Admin Notes</div>
-                  <textarea
-                    className="notes-ta"
-                    placeholder="Add a private note about this application…"
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                  />
-                  <button className="notes-save" onClick={saveNotes} disabled={notesSaving}>
-                    {notesSaving ? 'Saving…' : '💾 Save Note'}
-                  </button>
-                </div>
-
-                {/* Decision */}
-                {canManage && sel.status === 'pending' && (
-                  <div className="ha-sec">
-                    <div className="ha-sec-title">Decision</div>
-                    <div className="decision-grid">
-                      <button className="ha-btn-lg ha-btn-approve" onClick={() => setModal({ action: 'approve', app: sel })}>✓ Approve &amp; Activate Host</button>
-                      <button className="ha-btn-lg ha-btn-reject" style={{ background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.25)', color: '#dc2626' }} onClick={() => { setModal({ action: 'reject', app: sel }); setReason('') }}>✗ Reject Application</button>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <button className="ha-btn ha-btn-info" style={{ fontSize: '0.78rem' }} onClick={() => setModal({ action: 'info', app: sel })}>📧 Request Additional Information</button>
-                    </div>
+                    {/* Selfie */}
+                    {sel.id_type && (
+                      <>
+                        <div className="ha-sec-title" style={{ marginTop: 16 }}>Selfie with ID</div>
+                        <div className="selfie-row">
+                          <div className="selfie-img">
+                            {sel.id_selfie_signed
+                              ? <img src={sel.id_selfie_signed} alt="Selfie" />
+                              : <span>🤳</span>
+                            }
+                          </div>
+                          <div className="selfie-text">
+                            <div className="st">{sel.id_selfie_url ? '✓ Selfie uploaded' : '⚠ Selfie not submitted'}</div>
+                            <div className="ss">
+                              {sel.id_selfie_url
+                                ? 'Verify that the person in the selfie matches the ID photo and name on the application.'
+                                : 'Applicant has not submitted a selfie with their ID yet.'
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
 
-              </div>
+                  {/* Applicant details */}
+                  <div className="ha-sec">
+                    <div className="ha-sec-title">Applicant Details</div>
+                    <div className="info-row"><span className="info-lbl">Full name</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.users?.full_name || '—'}</span></div>
+                    <div className="info-row"><span className="info-lbl">Email</span><span className="info-val" style={{ fontFamily: 'inherit', fontSize: '0.72rem' }}>{sel.users?.email || '—'}</span></div>
+                    <div className="info-row"><span className="info-lbl">Phone</span><span className="info-val">{sel.phone || '—'}</span></div>
+                    <div className="info-row"><span className="info-lbl">Host type</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{HOST_TYPE_LABELS[sel.host_type] ?? sel.host_type ?? '—'}</span></div>
+                    <div className="info-row"><span className="info-lbl">Display name</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.display_name || '—'}</span></div>
+                    <div className="info-row"><span className="info-lbl">ID type</span><span className="info-val" style={{ fontFamily: 'inherit' }}>{sel.id_type === 'driver_license' ? "Driver's License" : sel.id_type === 'passport' ? 'Passport' : 'Not submitted'}</span></div>
+                    <div className="info-row"><span className="info-lbl">ID submitted</span><span className="info-val">{fmtFull(sel.id_submitted_at)}</span></div>
+                    {sel.status === 'rejected' && sel.rejection_reason && (
+                      <div className="info-row"><span className="info-lbl">Rejection reason</span><span className="info-val" style={{ fontFamily: 'inherit', color: '#dc2626' }}>{sel.rejection_reason}</span></div>
+                    )}
+                  </div>
+
+                  {/* Checklist */}
+                  <div className="ha-sec">
+                    <div className="ha-sec-title">Verification Checklist</div>
+                    <div className={`flag ${sel.id_type ? 'ok' : 'miss'}`}>{sel.id_type ? '✓' : '○'} ID type selected — {sel.id_type === 'driver_license' ? "Driver's License" : sel.id_type === 'passport' ? 'Passport' : 'None'}</div>
+                    {sel.id_type === 'driver_license' && <>
+                      <div className={`flag ${sel.id_front_url ? 'ok' : 'miss'}`}>{sel.id_front_url ? '✓' : '○'} License front uploaded</div>
+                      <div className={`flag ${sel.id_back_url ? 'ok' : 'miss'}`}>{sel.id_back_url ? '✓' : '○'} License back uploaded</div>
+                    </>}
+                    {sel.id_type === 'passport' && (
+                      <div className={`flag ${sel.id_passport_url ? 'ok' : 'miss'}`}>{sel.id_passport_url ? '✓' : '○'} Passport photo page uploaded</div>
+                    )}
+                    <div className={`flag ${sel.id_selfie_url ? 'ok' : 'miss'}`}>{sel.id_selfie_url ? '✓' : '○'} Selfie with ID uploaded</div>
+                    <div className="flag warn">⚠ Manual review required — verify name, photo, and ID match the application</div>
+                  </div>
+
+                  {/* Admin notes */}
+                  <div className="ha-sec">
+                    <div className="ha-sec-title">Admin Notes</div>
+                    <textarea
+                      className="notes-ta"
+                      placeholder="Add a private note about this application…"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                    />
+                    <button className="notes-save" onClick={saveNotes} disabled={notesSaving}>
+                      {notesSaving ? 'Saving…' : '💾 Save Note'}
+                    </button>
+                  </div>
+
+                  {/* Decision */}
+                  {canManage && sel.status === 'pending' && (
+                    <div className="ha-sec">
+                      <div className="ha-sec-title">Decision</div>
+                      <div className="decision-grid">
+                        <button className="ha-btn-lg ha-btn-approve" onClick={() => setModal('approve')}>✓ Approve &amp; Activate Host</button>
+                        <button className="ha-btn-lg ha-btn-reject" style={{ background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.25)', color: '#dc2626' }} onClick={() => { setModal('reject'); setRejReasonKey('blurry'); setRejCustom('') }}>✗ Reject &amp; Message Applicant</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Messages tab ── */}
+              {detailTab === 'msgs' && (
+                <div className="ha-msgs-wrap">
+                  <div className="ha-thread">
+                    {msgLoading ? (
+                      <div style={{ textAlign: 'center', color: 'var(--sr-muted)', fontSize: '0.82rem', padding: '40px 0' }}>Loading…</div>
+                    ) : (
+                      <>
+                        <div className="ha-msg-sys info">💬 Thread shared with {sel.users?.full_name || 'applicant'} — they can see all messages sent from here</div>
+                        {appMsgs.length === 0 && (
+                          <div className="ha-msg-sys warn">No messages yet. Reject the application to auto-send a rejection message, or write below to send a message directly.</div>
+                        )}
+                        {appMsgs.map(m => (
+                          <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Admin message */}
+                            <div className="ha-msg-row admin">
+                              <div className="ha-msg-bub">
+                                <div className="ha-msg-sender" style={{ textAlign: 'right' }}>SnapReserve™ Team</div>
+                                {m.subject && <div style={{ fontWeight: 700, fontSize: '0.8rem', marginBottom: '4px' }}>{m.subject}</div>}
+                                {m.body}
+                                <div className="ha-msg-time">{fmtFull(m.created_at)}</div>
+                              </div>
+                              <div className="ha-msg-av" style={{ background: 'var(--sr-orange)' }}>SR</div>
+                            </div>
+                            {/* Applicant reply */}
+                            {m.reply_body && (
+                              <div className="ha-msg-row host">
+                                <div className="ha-msg-av" style={{ background: avatarColor(sel.users?.full_name || sel.user_id) }}>
+                                  {initials(sel.users?.full_name)}
+                                </div>
+                                <div className="ha-msg-bub">
+                                  <div className="ha-msg-sender">{sel.users?.full_name || 'Applicant'}</div>
+                                  {m.reply_body}
+                                  <div className="ha-msg-time">{fmtFull(m.replied_at)}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div ref={threadEndRef} />
+                      </>
+                    )}
+                  </div>
+
+                  {/* Compose */}
+                  <div className="ha-compose">
+                    <div className="ha-presets">
+                      {['📎 Request clearer photos', '⚠ Please clarify address', '✅ Documents now verified', '📞 Please call our team'].map(p => (
+                        <button key={p} className="ha-preset" onClick={() => setAdminDraft(p.replace(/^[^\s]+\s/, ''))}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                    <form className="ha-compose-row" onSubmit={sendAdminMessage}>
+                      <textarea
+                        className="ha-compose-ta"
+                        value={adminDraft}
+                        onChange={e => setAdminDraft(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMessage() } }}
+                        placeholder={`Send a message to ${sel.users?.full_name?.split(' ')[0] || 'the applicant'}…`}
+                        rows={2}
+                      />
+                      <button type="submit" className="ha-compose-send" disabled={sendingMsg || !adminDraft.trim()}>
+                        {sendingMsg ? '…' : 'Send →'}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
-      {/* Modal */}
-      {modal && modal.action !== 'info' && (
+      {/* ── Approve modal ── */}
+      {modal === 'approve' && (
         <div className="ha-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="ha-modal">
-            <div className="ha-modal-icon">{modal.action === 'approve' ? '✅' : '❌'}</div>
-            <h2>{modal.action === 'approve' ? `Approve ${modal.app.users?.full_name ?? 'this host'}?` : 'Reject this application?'}</h2>
-            <div className="ha-modal-sub">
-              {modal.action === 'approve'
-                ? `This will grant full host access to ${modal.app.users?.email}. They can create and publish listings immediately.`
-                : `${modal.app.users?.email}'s application will be rejected and their role reset to user.`
-              }
-            </div>
-            {modal.action === 'approve' && (
-              <div className="ha-modal-email">
-                <div className="em-subj">🎉 You're approved — welcome to SnapReserve!</div>
-                Hi {modal.app.users?.full_name?.split(' ')[0] ?? 'there'}, your identity has been verified and your host account is now active. You can start listing your property immediately.
+            <div className="ha-modal-hd">
+              <div className="ha-modal-icon">✅</div>
+              <h2>Approve {sel?.users?.full_name ?? 'this host'}?</h2>
+              <div className="ha-modal-sub">
+                This will grant full host access to {sel?.users?.email}. They can create and publish listings immediately. An approval notification will be sent to their inbox.
               </div>
-            )}
-            {modal.action === 'reject' && (
-              <textarea
-                placeholder="Reason for rejection (required)…"
-                value={reason}
-                onChange={e => setReason(e.target.value)}
-              />
-            )}
-            <div className="ha-modal-btns">
+            </div>
+            <div className="ha-modal-ft">
               <button className="ha-modal-cancel" onClick={() => setModal(null)}>Cancel</button>
-              <button
-                className={`ha-modal-ok ${modal.action === 'approve' ? 'approve' : 'reject'}`}
-                disabled={loading || (modal.action === 'reject' && !reason.trim())}
-                onClick={handleAction}
-              >
-                {loading ? 'Processing…' : modal.action === 'approve' ? '✓ Approve & Send Email' : '✗ Reject & Send Email'}
+              <button className="ha-modal-ok approve" disabled={loading} onClick={handleAction}>
+                {loading ? 'Processing…' : '✓ Approve & Notify'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Info modal */}
-      {modal?.action === 'info' && (
+      {/* ── Rejection modal ── */}
+      {modal === 'reject' && (
         <div className="ha-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="ha-modal">
-            <div className="ha-modal-icon">📧</div>
-            <h2>Request more information</h2>
-            <div className="ha-modal-sub">Use admin notes to document what additional info is needed, then contact the applicant directly at:</div>
-            <div className="ha-modal-email">
-              <div className="em-subj">{modal.app.users?.email}</div>
-              Common reasons: unclear ID photo, address mismatch, incomplete selfie.
+            <div className="ha-modal-hd">
+              <div className="ha-modal-icon">🚫</div>
+              <h2>Reject {sel?.users?.full_name?.split(' ')[0] ?? 'this'}'s application?</h2>
+              <div className="ha-modal-sub">
+                Choose a reason below — it will be sent directly to their Messages inbox so they know exactly what happened and can reply if needed.
+              </div>
             </div>
-            <div className="ha-modal-btns">
-              <button className="ha-modal-cancel" onClick={() => setModal(null)}>Close</button>
+            <div className="ha-modal-body">
+              <span className="ha-modal-section-lbl">Reason for rejection</span>
+              {REJECTION_REASONS.map(r => (
+                <div
+                  key={r.key}
+                  className={`reason-card${rejReasonKey === r.key ? ' on' : ''}`}
+                  onClick={() => setRejReasonKey(r.key)}
+                >
+                  <span className="rc-icon">{r.icon}</span>
+                  <div className="rc-body">
+                    <div className="rc-title">{r.title}</div>
+                    <div className="rc-desc">{r.desc}</div>
+                  </div>
+                  <div className="rc-radio">{rejReasonKey === r.key ? '✓' : ''}</div>
+                </div>
+              ))}
+
+              <span className="ha-modal-section-lbl" style={{ marginTop: 14, display: 'block' }}>
+                Additional message <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--sr-sub)' }}>(optional)</span>
+              </span>
+              <textarea
+                style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border-solid)', borderRadius: '8px', fontFamily: 'DM Sans,sans-serif', fontSize: '0.82rem', color: 'var(--sr-text)', outline: 'none', resize: 'vertical', minHeight: '72px', marginBottom: '14px' }}
+                placeholder="Add specific resubmission instructions or any extra context…"
+                value={rejCustom}
+                onChange={e => setRejCustom(e.target.value)}
+              />
+
+              <span className="ha-modal-section-lbl">Message preview — sent to {sel?.users?.email}</span>
+              <div className="msg-preview">
+                <div className="mp-to">To: {sel?.users?.email} · SnapReserve™ Messages Inbox</div>
+                <div className="mp-subj">{rejSubject}</div>
+                <div className="mp-body">{rejBodyPreview}</div>
+              </div>
+            </div>
+            <div className="ha-modal-ft">
+              <button className="ha-modal-cancel" onClick={() => setModal(null)}>Cancel</button>
+              <button className="ha-modal-ok reject" disabled={loading} onClick={handleAction}>
+                {loading ? 'Processing…' : '🚫 Reject & Send Message'}
+              </button>
             </div>
           </div>
         </div>

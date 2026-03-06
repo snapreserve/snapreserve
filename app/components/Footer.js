@@ -13,7 +13,7 @@ const SECTIONS = [
   {
     title: 'Hosting',
     links: [
-      { label: 'Host with SnapReserve', href: '/become-a-host' },
+      { label: 'Host with SnapReserve™', href: '/become-a-host' },
       { label: 'Host Resources',        href: '/coming-soon?page=host-resources' },
       { label: 'Host FAQ',              href: '/coming-soon?page=host-faq' },
     ],
@@ -205,9 +205,9 @@ export default function Footer({ darkBg = true }) {
       <div style={{ borderTop: `1px solid ${border}`, maxWidth: 1280, margin: '0 auto', padding: '20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ fontSize: '0.72rem', color: dim }}>
           <span style={{ background: darkBg ? 'rgba(244,96,26,0.1)' : 'rgba(244,96,26,0.08)', border: '1px solid rgba(244,96,26,0.2)', color: logoAcc, borderRadius: 100, padding: '2px 8px', fontSize: '0.62rem', fontWeight: 700, marginRight: 8 }}>BETA</span>
-          SnapReserve™ is currently in beta. Features may change during early access.
+          SnapReserve™™ is currently in beta. Features may change during early access.
         </div>
-        <div style={{ fontSize: '0.72rem', color: dim }}>© 2026 SnapReserve™, Inc. All rights reserved.</div>
+        <div style={{ fontSize: '0.72rem', color: dim }}>© 2026 SnapReserve™™, Inc. All rights reserved.</div>
       </div>
 
       {/* Bottom padding */}

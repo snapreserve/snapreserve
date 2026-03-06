@@ -520,7 +520,7 @@ export default function BecomeAHostPage() {
             {/* Security note */}
             <div className="security-note">
               <span style={{ fontSize: 18, flexShrink: 0 }}>🔒</span>
-              <div>Your documents are encrypted with 256-bit SSL and stored in a secure vault. They are <strong>never</strong> displayed publicly or shared with third parties. Only authorised SnapReserve admins can access them for verification purposes.</div>
+              <div>Your documents are encrypted with 256-bit SSL and stored in a secure vault. They are <strong>never</strong> displayed publicly or shared with third parties. Only authorised SnapReserve™ admins can access them for verification purposes.</div>
             </div>
 
             {error && <div className="err-banner">{error}</div>}

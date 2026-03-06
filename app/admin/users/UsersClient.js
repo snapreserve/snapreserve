@@ -142,7 +142,7 @@ export default function UsersClient({ initialUsers, role }) {
       const res = await fetch('/api/host/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host_user_id: selected.id, subject: msgSubject || 'Message from SnapReserve', body: msgBody }),
+        body: JSON.stringify({ host_user_id: selected.id, subject: msgSubject || 'Message from SnapReserve™', body: msgBody }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send')
@@ -426,7 +426,7 @@ export default function UsersClient({ initialUsers, role }) {
               <input
                 value={msgSubject}
                 onChange={e => setMsgSubj(e.target.value)}
-                placeholder="Message from SnapReserve"
+                placeholder="Message from SnapReserve™"
                 style={{ width: '100%', background: 'var(--sr-darker)', border: '1px solid var(--sr-border-solid)', borderRadius: 8, padding: '9px 12px', color: 'var(--sr-text)', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>

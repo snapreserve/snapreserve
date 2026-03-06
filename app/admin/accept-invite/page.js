@@ -91,7 +91,7 @@ function AcceptInviteContent() {
     <div className="page">
       <div className="card">
         <span className="logo">
-          SnapReserve
+          SnapReserve™
           <small>Admin Console</small>
         </span>
 
@@ -108,7 +108,7 @@ function AcceptInviteContent() {
         {invite && state !== 'invalid' && state !== 'loading' && (
           <>
             <h1>Admin Invite</h1>
-            <p className="subtitle">You have been invited to join SnapReserve as an admin.</p>
+            <p className="subtitle">You have been invited to join SnapReserve™ as an admin.</p>
 
             <div className="invite-info">
               <div className="invite-row">

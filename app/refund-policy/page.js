@@ -48,11 +48,11 @@ export default function RefundPolicyPage() {
         <div className="updated">Last updated: March 1, 2026</div>
 
         <div className="intro">
-          Refunds on SnapReserve™ depend on the cancellation policy chosen by the host for each listing. Always review the cancellation policy on the listing page before booking.
+          Refunds on SnapReserve™™ depend on the cancellation policy chosen by the host for each listing. Always review the cancellation policy on the listing page before booking.
         </div>
 
         <h2>📋 Cancellation Policies</h2>
-        <p>Each listing on SnapReserve™ operates under one of three cancellation policies set by the host:</p>
+        <p>Each listing on SnapReserve™™ operates under one of three cancellation policies set by the host:</p>
 
         <div className="policy-grid">
           <div className="policy-card">
@@ -79,10 +79,10 @@ export default function RefundPolicyPage() {
         </div>
 
         <h2>🔁 Host-Initiated Cancellations</h2>
-        <p>If a host cancels a confirmed booking, the guest is entitled to a full refund of the entire amount paid, including all fees. SnapReserve™ will process this refund automatically within 5–10 business days.</p>
+        <p>If a host cancels a confirmed booking, the guest is entitled to a full refund of the entire amount paid, including all fees. SnapReserve™™ will process this refund automatically within 5–10 business days.</p>
 
         <h2>⚡ Extenuating Circumstances</h2>
-        <p>In exceptional situations — such as natural disasters, government travel restrictions, or serious illness — SnapReserve™ may override the standard cancellation policy and offer a full or partial refund at our discretion. Supporting documentation may be required.</p>
+        <p>In exceptional situations — such as natural disasters, government travel restrictions, or serious illness — SnapReserve™™ may override the standard cancellation policy and offer a full or partial refund at our discretion. Supporting documentation may be required.</p>
         <div className="highlight">
           <ul>
             <li>Death or serious illness of the guest or an immediate family member</li>
@@ -98,12 +98,12 @@ export default function RefundPolicyPage() {
           <li><strong>Credit / debit cards:</strong> 5–10 business days</li>
           <li><strong>Digital wallets:</strong> 2–5 business days</li>
         </ul>
-        <p>SnapReserve™ does not charge a fee to process refunds. However, your bank or card issuer may have their own processing timelines.</p>
+        <p>SnapReserve™™ does not charge a fee to process refunds. However, your bank or card issuer may have their own processing timelines.</p>
 
         <h2>🚫 Non-Refundable Fees</h2>
         <p>The following are non-refundable in all circumstances except host-initiated cancellations:</p>
         <ul>
-          <li>Guest service fees charged by SnapReserve™</li>
+          <li>Guest service fees charged by SnapReserve™™</li>
           <li>Any optional add-ons or upgrades purchased separately</li>
         </ul>
 
@@ -124,7 +124,7 @@ export default function RefundPolicyPage() {
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
         </div>
-        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™ · snapreserve.app</div>
+        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™™ · snapreserve.app</div>
       </footer>
     </>
   )

@@ -43,7 +43,7 @@ export default async function AccountLayout({ children }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Syne:wght@400;500;600;700;800&display=swap');
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); }
         @media(max-width:768px) {

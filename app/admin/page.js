@@ -43,8 +43,6 @@ async function getStats() {
 }
 
 export default async function AdminOverview() {
-  // Defense-in-depth: verify session and role even though middleware also checks.
-  // Catches any middleware bypass and ensures the page never renders for unauthenticated requests.
   const { role, error } = await getAdminSession()
   if (error === 'unauthenticated') redirect('/login?next=/admin')
   if (error === 'mfa_required') redirect('/admin/mfa-verify?next=/admin')
@@ -52,151 +50,220 @@ export default async function AdminOverview() {
 
   const { pendingCount, approvedCount, rejectedCount, totalUsers, activeListings, waitlistCount, hostsCount, bookingsCount, openReportsCount, guestCount, hostUserCount, teamMemberCount, recentApprovals } = await getStats()
 
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        .topbar { background:var(--sr-surface); border-bottom:1px solid var(--sr-border-solid); padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
-        .topbar h1 { font-size:1.05rem; font-weight:700; color:var(--sr-text); }
-        .content { padding:32px; }
-        .stat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px; margin-bottom:32px; }
-        .stat-card { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; padding:20px; }
-        .stat-num { font-size:1.9rem; font-weight:800; color:var(--sr-text); line-height:1; margin-bottom:6px; }
-        .stat-label { font-size:0.74rem; color:var(--sr-muted); font-weight:500; text-transform:uppercase; letter-spacing:0.06em; }
-        .orange { color:var(--sr-orange) !important; }
-        .green  { color:#4ADE80 !important; }
-        .red    { color:#F87171 !important; }
-        .blue   { color:#6EA4F4 !important; }
-        .yellow { color:#FCD34D !important; }
-        .purple { color:#C084FC !important; }
-        .teal   { color:#2DD4BF !important; }
-        .indigo { color:#818CF8 !important; }
-        .section-title { font-size:0.75rem; font-weight:700; color:var(--sr-sub); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:14px; }
-        .table-wrap { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; margin-bottom:24px; }
-        .table-row { display:grid; grid-template-columns:1.5fr 120px 100px 110px 100px; gap:12px; padding:13px 20px; border-bottom:1px solid var(--sr-border-solid); align-items:center; }
-        .table-row:last-child { border-bottom:none; }
-        .table-row.hdr { background:var(--sr-bg); }
-        .table-row.hdr span { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); }
-        .listing-title { font-size:0.86rem; font-weight:600; color:var(--sr-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .listing-host { font-size:0.73rem; color:var(--sr-muted); margin-top:2px; }
-        .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:0.68rem; font-weight:700; }
-        .badge.hotel { background:rgba(26,110,244,0.15); color:#6EA4F4; }
-        .badge.private_stay { background:rgba(244,96,26,0.15); color:var(--sr-orange); }
-        .badge.pending { background:rgba(234,179,8,0.15); color:#FCD34D; }
-        .date-text { font-size:0.76rem; color:var(--sr-muted); }
-        .view-link { font-size:0.76rem; color:var(--sr-orange); text-decoration:none; font-weight:600; }
-        .view-link:hover { text-decoration:underline; }
-        .empty-row { padding:36px; text-align:center; color:var(--sr-sub); font-size:0.84rem; }
-        .shortcut-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-        .shortcut { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; padding:20px; text-decoration:none; display:flex; align-items:center; gap:14px; transition:border-color 0.15s; }
-        .shortcut:hover { border-color:var(--sr-orange); }
-        .sc-icon { width:40px; height:40px; border-radius:10px; background:var(--sr-border-solid); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
-        .sc-label { font-size:0.88rem; font-weight:600; color:var(--sr-text); }
-        .sc-desc { font-size:0.74rem; color:var(--sr-muted); margin-top:2px; }
-        @media(max-width:1400px) { .stat-grid{grid-template-columns:repeat(3,1fr);} }
-        @media(max-width:768px) { .stat-grid{grid-template-columns:repeat(2,1fr);} .content{padding:20px;} .table-row{grid-template-columns:1fr 80px 80px;} .table-row>*:nth-child(4),.table-row>*:nth-child(5){display:none;} .shortcut-grid{grid-template-columns:1fr 1fr;} }
-        @media(max-width:1100px) { .shortcut-grid{grid-template-columns:repeat(2,1fr);} }
+        /* Topbar */
+        .ov-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 68px; border-bottom: 1px solid var(--sr-border); background: var(--sr-surface); position: sticky; top: 0; z-index: 50; }
+        .ov-topbar-left h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 700; color: var(--sr-text); }
+        .ov-topbar-left .ov-date { font-size: 0.72rem; color: var(--sr-sub); margin-top: 2px; }
+
+        /* Content */
+        .ov-content { padding: 36px 32px; }
+
+        /* Section label */
+        .ov-section-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sr-sub); margin-bottom: 14px; }
+
+        /* Stat grid */
+        .ov-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }
+        .ov-stat-card { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 14px; padding: 22px; text-decoration: none; display: block; transition: border-color 0.15s; }
+        .ov-stat-card:hover { border-color: var(--sr-orange); }
+        .ov-stat-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 10px; }
+        .ov-stat-val { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+        .ov-stat-hint { font-size: 0.7rem; color: var(--sr-sub); }
+
+        /* Color utils */
+        .c-orange { color: var(--sr-orange); }
+        .c-green  { color: var(--sr-green); }
+        .c-red    { color: var(--sr-red); }
+        .c-blue   { color: var(--sr-blue); }
+        .c-yellow { color: var(--sr-yellow); }
+        .c-purple { color: #C084FC; }
+        .c-teal   { color: #2DD4BF; }
+        .c-indigo { color: #818CF8; }
+
+        /* Quick actions */
+        .ov-action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 36px; }
+        .ov-action-card { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 14px; padding: 18px; text-decoration: none; display: flex; align-items: center; gap: 14px; transition: all 0.18s; }
+        .ov-action-card:hover { border-color: var(--sr-orange); background: var(--sr-card2, var(--sr-card)); }
+        .ov-action-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--sr-overlay-sm); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        .ov-action-label { font-size: 0.86rem; font-weight: 700; color: var(--sr-text); margin-bottom: 2px; }
+        .ov-action-desc  { font-size: 0.72rem; color: var(--sr-sub); }
+
+        /* Pending approvals table */
+        .ov-table-wrap { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 14px; overflow: hidden; }
+        .ov-table-hdr  { display: grid; grid-template-columns: 1fr 110px 90px 100px 80px; gap: 12px; padding: 12px 20px; background: var(--sr-bg); border-bottom: 1px solid var(--sr-border); }
+        .ov-table-hdr span { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sr-sub); }
+        .ov-table-row { display: grid; grid-template-columns: 1fr 110px 90px 100px 80px; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--sr-border); align-items: center; }
+        .ov-table-row:last-child { border-bottom: none; }
+        .ov-table-row:hover { background: var(--sr-overlay-xs); }
+        .ov-listing-title { font-size: 0.86rem; font-weight: 600; color: var(--sr-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ov-listing-sub   { font-size: 0.72rem; color: var(--sr-sub); margin-top: 2px; }
+        .ov-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 0.66rem; font-weight: 700; }
+        .ov-badge.hotel        { background: var(--sr-bluel);   color: var(--sr-blue); }
+        .ov-badge.private_stay { background: var(--sr-ol);      color: var(--sr-orange); }
+        .ov-badge.pending      { background: var(--sr-yellowl); color: var(--sr-yellow); }
+        .ov-date-text { font-size: 0.75rem; color: var(--sr-sub); }
+        .ov-review-link { font-size: 0.75rem; color: var(--sr-orange); text-decoration: none; font-weight: 700; }
+        .ov-review-link:hover { text-decoration: underline; }
+        .ov-empty-row { padding: 44px; text-align: center; color: var(--sr-sub); font-size: 0.84rem; }
+
+        @media (max-width: 1200px) {
+          .ov-stat-grid   { grid-template-columns: repeat(3, 1fr); }
+          .ov-action-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 900px) {
+          .ov-stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+          .ov-content { padding: 20px; }
+          .ov-stat-grid { grid-template-columns: repeat(2, 1fr); }
+          .ov-action-grid { grid-template-columns: 1fr 1fr; }
+          .ov-table-hdr  { grid-template-columns: 1fr 80px 70px; }
+          .ov-table-row  { grid-template-columns: 1fr 80px 70px; }
+          .ov-table-row > *:nth-child(4),
+          .ov-table-row > *:nth-child(5) { display: none; }
+        }
       `}</style>
 
-      <div className="topbar">
-        <h1>Overview</h1>
+      {/* Topbar */}
+      <div className="ov-topbar">
+        <div className="ov-topbar-left">
+          <h1>Overview</h1>
+          <div className="ov-date">{today}</div>
+        </div>
       </div>
 
-      <div className="content">
-        <div className="stat-grid">
-          <div className="stat-card">
-            <div className="stat-num yellow">{pendingCount}</div>
-            <div className="stat-label">Pending Review</div>
+      <div className="ov-content">
+
+        {/* ── Stats ── */}
+        <div className="ov-section-label">Platform Stats</div>
+        <div className="ov-stat-grid">
+
+          <div className="ov-stat-card">
+            <div className="ov-stat-label">Pending Review</div>
+            <div className="ov-stat-val c-yellow">{pendingCount}</div>
+            <div className="ov-stat-hint">Listings awaiting approval</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-num green">{approvedCount}</div>
-            <div className="stat-label">Approved</div>
+
+          <div className="ov-stat-card">
+            <div className="ov-stat-label">Active Listings</div>
+            <div className="ov-stat-val c-orange">{activeListings}</div>
+            <div className="ov-stat-hint">{approvedCount} approved all-time</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-num red">{rejectedCount}</div>
-            <div className="stat-label">Rejected</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-num orange">{activeListings}</div>
-            <div className="stat-label">Active Listings</div>
-          </div>
-          <Link href="/admin/users" className="stat-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-            <div className="stat-num blue">{totalUsers}</div>
-            <div className="stat-label">Total Users</div>
+
+          <Link href="/admin/users" className="ov-stat-card">
+            <div className="ov-stat-label">Total Users</div>
+            <div className="ov-stat-val c-blue">{totalUsers}</div>
+            <div className="ov-stat-hint">{guestCount} guests · {hostUserCount} hosts</div>
           </Link>
-          <Link href="/admin/guests" className="stat-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-            <div className="stat-num" style={{color:'#818CF8'}}>{guestCount}</div>
-            <div className="stat-label">Guests</div>
+
+          <Link href="/admin/bookings" className="ov-stat-card">
+            <div className="ov-stat-label">Total Bookings</div>
+            <div className="ov-stat-val c-indigo">{bookingsCount}</div>
+            <div className="ov-stat-hint">All-time</div>
           </Link>
-          <Link href="/admin/hosts" className="stat-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-            <div className="stat-num teal">{hostUserCount}</div>
-            <div className="stat-label">Host Accounts</div>
+
+          <Link href="/admin/hosts" className="ov-stat-card">
+            <div className="ov-stat-label">Host Accounts</div>
+            <div className="ov-stat-val c-teal">{hostsCount}</div>
+            <div className="ov-stat-hint">{teamMemberCount} team members</div>
           </Link>
-          <div className="stat-card">
-            <div className="stat-num" style={{color:'#C084FC'}}>{teamMemberCount}</div>
-            <div className="stat-label">Team Members</div>
+
+          <div className="ov-stat-card">
+            <div className="ov-stat-label">Open Reports</div>
+            <div className="ov-stat-val c-red">{openReportsCount}</div>
+            <div className="ov-stat-hint">Needs review</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-num purple">{waitlistCount}</div>
-            <div className="stat-label">Waitlist</div>
+
+          <div className="ov-stat-card">
+            <div className="ov-stat-label">Approved</div>
+            <div className="ov-stat-val c-green">{approvedCount}</div>
+            <div className="ov-stat-hint">Listings approved</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-num teal">{hostsCount}</div>
-            <div className="stat-label">Total Hosts</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-num indigo">{bookingsCount}</div>
-            <div className="stat-label">Bookings</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-num red">{openReportsCount}</div>
-            <div className="stat-label">Open Reports</div>
-          </div>
+
+          <Link href="/admin/waitlist" className="ov-stat-card">
+            <div className="ov-stat-label">Waitlist</div>
+            <div className="ov-stat-val c-purple">{waitlistCount}</div>
+            <div className="ov-stat-hint">Signups so far</div>
+          </Link>
+
         </div>
 
-        <div className="section-title">Quick Actions</div>
-        <div className="shortcut-grid" style={{marginBottom:'32px'}}>
-          <Link href="/admin/listings" className="shortcut">
-            <div className="sc-icon">🏨</div>
-            <div><div className="sc-label">Listing Approvals</div><div className="sc-desc">Review pending submissions</div></div>
+        {/* ── Quick Actions ── */}
+        <div className="ov-section-label">Quick Actions</div>
+        <div className="ov-action-grid">
+          <Link href="/admin/listings" className="ov-action-card">
+            <div className="ov-action-icon">🏨</div>
+            <div>
+              <div className="ov-action-label">Listing Approvals</div>
+              <div className="ov-action-desc">Review pending submissions</div>
+            </div>
           </Link>
-          <Link href="/superadmin/roles" className="shortcut">
-            <div className="sc-icon">🔑</div>
-            <div><div className="sc-label">Manage Roles</div><div className="sc-desc">Grant or revoke admin access</div></div>
+          <Link href="/admin/hosts" className="ov-action-card">
+            <div className="ov-action-icon">👤</div>
+            <div>
+              <div className="ov-action-label">Manage Hosts</div>
+              <div className="ov-action-desc">Verify, suspend or message</div>
+            </div>
           </Link>
-          <Link href="/superadmin/audit" className="shortcut">
-            <div className="sc-icon">📋</div>
-            <div><div className="sc-label">Audit Log</div><div className="sc-desc">View all admin actions</div></div>
+          <Link href="/admin/reports" className="ov-action-card">
+            <div className="ov-action-icon">🚩</div>
+            <div>
+              <div className="ov-action-label">Open Reports</div>
+              <div className="ov-action-desc">{openReportsCount} report{openReportsCount !== 1 ? 's' : ''} pending</div>
+            </div>
           </Link>
-          <Link href="/admin/waitlist" className="shortcut">
-            <div className="sc-icon">📩</div>
-            <div><div className="sc-label">Waitlist</div><div className="sc-desc">{waitlistCount} signup{waitlistCount !== 1 ? 's' : ''} so far</div></div>
+          <Link href="/admin/refunds" className="ov-action-card">
+            <div className="ov-action-icon">💸</div>
+            <div>
+              <div className="ov-action-label">Refunds</div>
+              <div className="ov-action-desc">Process refund requests</div>
+            </div>
           </Link>
-          <Link href="/admin/hosts" className="shortcut">
-            <div className="sc-icon">👤</div>
-            <div><div className="sc-label">Manage Hosts</div><div className="sc-desc">Verify or suspend hosts</div></div>
+          <Link href="/admin/finance" className="ov-action-card">
+            <div className="ov-action-icon">📈</div>
+            <div>
+              <div className="ov-action-label">Finance</div>
+              <div className="ov-action-desc">Revenue, GMV &amp; payouts</div>
+            </div>
           </Link>
-          <Link href="/admin/reports" className="shortcut">
-            <div className="sc-icon">🚩</div>
-            <div><div className="sc-label">Open Reports</div><div className="sc-desc">{openReportsCount} report{openReportsCount !== 1 ? 's' : ''} pending</div></div>
+          <Link href="/superadmin/audit" className="ov-action-card">
+            <div className="ov-action-icon">📋</div>
+            <div>
+              <div className="ov-action-label">Audit Log</div>
+              <div className="ov-action-desc">View all admin actions</div>
+            </div>
           </Link>
-          <Link href="/admin/bookings" className="shortcut">
-            <div className="sc-icon">📅</div>
-            <div><div className="sc-label">Bookings</div><div className="sc-desc">View and cancel bookings</div></div>
+          <Link href="/admin/bookings" className="ov-action-card">
+            <div className="ov-action-icon">📅</div>
+            <div>
+              <div className="ov-action-label">Bookings</div>
+              <div className="ov-action-desc">View and manage bookings</div>
+            </div>
           </Link>
-          <Link href="/admin/refunds" className="shortcut">
-            <div className="sc-icon">💸</div>
-            <div><div className="sc-label">Refunds</div><div className="sc-desc">Process refund requests</div></div>
+          <Link href="/admin/waitlist" className="ov-action-card">
+            <div className="ov-action-icon">📩</div>
+            <div>
+              <div className="ov-action-label">Waitlist</div>
+              <div className="ov-action-desc">{waitlistCount} signup{waitlistCount !== 1 ? 's' : ''} so far</div>
+            </div>
           </Link>
-          <Link href="/admin/finance" className="shortcut">
-            <div className="sc-icon">📈</div>
-            <div><div className="sc-label">Finance</div><div className="sc-desc">Revenue, GMV &amp; payouts</div></div>
+          <Link href="/superadmin/roles" className="ov-action-card">
+            <div className="ov-action-icon">🔑</div>
+            <div>
+              <div className="ov-action-label">Manage Roles</div>
+              <div className="ov-action-desc">Grant or revoke admin access</div>
+            </div>
           </Link>
         </div>
 
-        <div className="section-title">Pending Approvals</div>
-        <div className="table-wrap">
-          <div className="table-row hdr">
+        {/* ── Pending Approvals table ── */}
+        <div className="ov-section-label">Pending Approvals</div>
+        <div className="ov-table-wrap">
+          <div className="ov-table-hdr">
             <span>Listing</span>
             <span>Type</span>
             <span>Status</span>
@@ -204,27 +271,28 @@ export default async function AdminOverview() {
             <span></span>
           </div>
           {recentApprovals.length === 0
-            ? <div className="empty-row">No pending approvals — all caught up!</div>
+            ? <div className="ov-empty-row">✓ All caught up — no pending approvals</div>
             : recentApprovals.map(a => (
-              <div key={a.id} className="table-row">
+              <div key={a.id} className="ov-table-row">
                 <div>
-                  <div className="listing-title">{a.listing_title ?? 'Untitled'}</div>
-                  <div className="listing-host">{a.host_name ?? '—'} · {a.listings?.city ?? ''}</div>
+                  <div className="ov-listing-title">{a.listing_title ?? 'Untitled'}</div>
+                  <div className="ov-listing-sub">{a.host_name ?? '—'}{a.listings?.city ? ` · ${a.listings.city}` : ''}</div>
                 </div>
                 <div>
-                  <span className={`badge ${a.listings?.type ?? ''}`}>
+                  <span className={`ov-badge ${a.listings?.type ?? ''}`}>
                     {a.listings?.type === 'hotel' ? 'Hotel' : 'Private'}
                   </span>
                 </div>
-                <div><span className="badge pending">Pending</span></div>
-                <div className="date-text">
+                <div><span className="ov-badge pending">Pending</span></div>
+                <div className="ov-date-text">
                   {a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                 </div>
-                <div><Link href="/admin/listings" className="view-link">Review →</Link></div>
+                <div><Link href="/admin/listings" className="ov-review-link">Review →</Link></div>
               </div>
             ))
           }
         </div>
+
       </div>
     </>
   )

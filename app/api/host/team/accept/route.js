@@ -40,7 +40,7 @@ export async function GET(request) {
     invite_id: invite.id,
     role: invite.role,
     invite_email: invite.invite_email,
-    org_name: host?.display_name || 'a SnapReserve organisation',
+    org_name: host?.display_name || 'a SnapReserve™ organisation',
     expires_at: expiresAt.toISOString(),
   })
 }

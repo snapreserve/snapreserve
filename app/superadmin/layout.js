@@ -8,28 +8,38 @@ export default function SuperAdminLayout({ children }) {
   return (
     <>
       <style>{`
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); }
-        .sa-shell { display:flex; min-height:100vh; }
-        .sa-sidebar { width:220px; background:var(--sr-surface); border-right:1px solid var(--sr-border-solid); display:flex; flex-direction:column; padding:24px 0; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto; }
-        .sa-logo { padding:0 20px 24px; border-bottom:1px solid var(--sr-border-solid); margin-bottom:16px; }
-        .sa-logo span { font-size:1rem; font-weight:800; color:var(--sr-orange); }
-        .sa-logo small { display:block; font-size:0.62rem; color:var(--sr-orange); font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.1em; opacity:0.7; }
-        .sa-badge { margin:12px 20px 0; background:rgba(244,96,26,0.12); border:1px solid rgba(244,96,26,0.25); border-radius:8px; padding:8px 12px; font-size:0.7rem; font-weight:700; color:var(--sr-orange); text-transform:uppercase; letter-spacing:0.08em; text-align:center; }
-        .sa-footer { margin-top:auto; padding:16px 12px; border-top:1px solid var(--sr-border-solid); }
-        .sa-main { flex:1; overflow:auto; }
-        @media(max-width:768px) { .sa-sidebar{display:none} }
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Syne', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
+        .sa-shell   { display: flex; min-height: 100vh; }
+        .sa-sidebar { width: 240px; background: var(--sr-surface); border-right: 1px solid var(--sr-border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+        .sa-main    { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Logo */
+        .sa-logo-wrap { padding: 24px 20px 20px; border-bottom: 1px solid var(--sr-border); flex-shrink: 0; }
+        .sa-logo-text { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 700; color: var(--sr-text); letter-spacing: -0.01em; }
+        .sa-logo-text span { color: var(--sr-orange); }
+        .sa-logo-text sup { font-size: 0.55em; vertical-align: super; opacity: 0.7; }
+        .sa-logo-sub { font-size: 0.6rem; font-weight: 700; color: var(--sr-orange); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; opacity: 0.8; }
+
+        /* Footer */
+        .sa-footer { margin-top: auto; padding: 14px 12px; border-top: 1px solid var(--sr-border); flex-shrink: 0; }
+
+        @media (max-width: 768px) {
+          .sa-sidebar { display: none; }
+          .sa-main { margin-left: 0; }
+        }
       `}</style>
+
       <div className="sa-shell">
         <aside className="sa-sidebar">
-          <div className="sa-logo">
-            <span>SnapReserve</span>
-            <small>⚡ Super Admin</small>
+          <div className="sa-logo-wrap">
+            <div className="sa-logo-text">Snap<span>Reserve</span><sup>™</sup></div>
+            <div className="sa-logo-sub">⚡ Super Admin</div>
           </div>
           <SuperAdminNav />
-          <div className="sa-badge">super_admin</div>
           <div className="sa-footer">
-            <ThemeToggle style={{width:'100%',marginBottom:'8px',justifyContent:'center'}} />
+            <ThemeToggle style={{ width: '100%', marginBottom: '8px', justifyContent: 'center' }} />
             <SignOutButton />
           </div>
         </aside>

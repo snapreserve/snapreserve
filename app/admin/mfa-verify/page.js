@@ -78,7 +78,7 @@ function MfaVerifyContent() {
       `}</style>
 
       <div className="card">
-        <div className="logo">SnapReserve Admin</div>
+        <div className="logo">SnapReserve™ Admin</div>
         <div className="lock-icon">🔐</div>
         <div className="title">Two-factor verification</div>
         <div className="subtitle">Enter the 6-digit code from your authenticator app to continue.</div>

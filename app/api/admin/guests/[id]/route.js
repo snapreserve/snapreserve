@@ -248,14 +248,14 @@ export async function PATCH(request, { params }) {
       userId:  id,
       type:    'suspension',
       subject: 'Your account has been suspended',
-      body:    `Your SnapReserve account has been suspended.\n\nReason: ${categoryLabels[suspension_category] ?? suspension_category}\n\nIf you believe this is a mistake, you can submit an appeal from your account dashboard.\n\nFor further assistance, contact support@snapreserve.app.`,
+      body:    `Your SnapReserve™ account has been suspended.\n\nReason: ${categoryLabels[suspension_category] ?? suspension_category}\n\nIf you believe this is a mistake, you can submit an appeal from your account dashboard.\n\nFor further assistance, contact support@snapreserve.app.`,
     })
   } else if (action === 'reactivate') {
     await notifyUser({
       userId:  id,
       type:    'reactivation',
       subject: 'Your account has been reinstated',
-      body:    'Your SnapReserve account has been reviewed and reinstated. You can now log in and continue using the platform.',
+      body:    'Your SnapReserve™ account has been reviewed and reinstated. You can now log in and continue using the platform.',
     })
   }
 

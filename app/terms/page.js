@@ -43,23 +43,23 @@ export default function TermsPage() {
         <div className="updated">Last updated: March 1, 2026</div>
 
         <div className="intro">
-          By accessing or using SnapReserve™ at snapreserve.app, you agree to be bound by these Terms of Service. Please read them carefully before using our platform.
+          By accessing or using SnapReserve™™ at snapreserve.app, you agree to be bound by these Terms of Service. Please read them carefully before using our platform.
         </div>
 
         <h2>📌 Acceptance of Terms</h2>
-        <p>These Terms of Service ("Terms") govern your use of the SnapReserve™ platform, including all features, content, and services offered at snapreserve.app. By creating an account or making a booking, you agree to these Terms in full.</p>
+        <p>These Terms of Service ("Terms") govern your use of the SnapReserve™™ platform, including all features, content, and services offered at snapreserve.app. By creating an account or making a booking, you agree to these Terms in full.</p>
         <p>If you do not agree with any part of these Terms, you must not use our platform.</p>
 
         <h2>👤 Eligibility</h2>
-        <p>You must be at least 18 years old to use SnapReserve™. By using our platform, you represent and warrant that you meet this age requirement and have the legal capacity to enter into a binding agreement.</p>
+        <p>You must be at least 18 years old to use SnapReserve™™. By using our platform, you represent and warrant that you meet this age requirement and have the legal capacity to enter into a binding agreement.</p>
 
         <h2>🏠 Platform Role</h2>
-        <p>SnapReserve™ is a marketplace that connects hosts and guests. SnapReserve™ does not own, operate, manage, or control any properties listed on the platform. We are not a party to any rental agreement between guests and hosts, and we make no representations about the quality, safety, or legality of any listed property.</p>
+        <p>SnapReserve™™ is a marketplace that connects hosts and guests. SnapReserve™™ does not own, operate, manage, or control any properties listed on the platform. We are not a party to any rental agreement between guests and hosts, and we make no representations about the quality, safety, or legality of any listed property.</p>
         <div className="highlight">
           <ul>
             <li>Hosts are solely responsible for the accuracy of their listings and the condition of their properties</li>
             <li>Guests are responsible for reviewing listing details, house rules, and cancellation policies before booking</li>
-            <li>SnapReserve™ facilitates the transaction but does not guarantee the quality or safety of any property</li>
+            <li>SnapReserve™™ facilitates the transaction but does not guarantee the quality or safety of any property</li>
             <li>Hosts are responsible for maintaining appropriate insurance coverage for their property and complying with all applicable local laws and regulations</li>
           </ul>
         </div>
@@ -68,7 +68,7 @@ export default function TermsPage() {
         <p>You are responsible for maintaining the security of your account and all activity that occurs under it. You must notify us immediately of any unauthorised use. We reserve the right to suspend or terminate accounts that violate these Terms.</p>
 
         <h2>💳 Payments & Fees</h2>
-        <p>All payments are processed securely through Stripe. By making a booking, you authorise SnapReserve™ to charge the listed amount to your payment method. SnapReserve™ charges a guest service fee on each booking, displayed transparently at checkout.</p>
+        <p>All payments are processed securely through Stripe. By making a booking, you authorise SnapReserve™™ to charge the listed amount to your payment method. SnapReserve™™ charges a guest service fee on each booking, displayed transparently at checkout.</p>
         <div className="highlight">
           <ul>
             <li>Guest service fee: displayed at checkout (varies by booking value)</li>
@@ -81,7 +81,7 @@ export default function TermsPage() {
         <p>Cancellation terms depend on the policy set by the host for each listing (Flexible, Moderate, or Strict). Refunds are calculated in accordance with the applicable cancellation policy and our <a href="/refund-policy" style={{color:'#F4601A',fontWeight:600}}>Refund Policy</a>.</p>
 
         <h2>🚫 Prohibited Conduct</h2>
-        <p>You agree not to use SnapReserve™ for any unlawful or abusive purpose. Prohibited activities include:</p>
+        <p>You agree not to use SnapReserve™™ for any unlawful or abusive purpose. Prohibited activities include:</p>
         <ul>
           <li>Listing properties you do not have the right to rent</li>
           <li>Providing false or misleading information in listings or reviews</li>
@@ -91,13 +91,13 @@ export default function TermsPage() {
         </ul>
 
         <h2>⭐ Reviews</h2>
-        <p>Guests and hosts may leave reviews after a completed stay. Reviews must be honest, accurate, and respectful. SnapReserve™ reserves the right to remove reviews that violate our community guidelines.</p>
+        <p>Guests and hosts may leave reviews after a completed stay. Reviews must be honest, accurate, and respectful. SnapReserve™™ reserves the right to remove reviews that violate our community guidelines.</p>
 
         <h2>📷 Intellectual Property</h2>
-        <p>All content on SnapReserve™ — including logos, design, and software — is the property of SnapReserve™ or its licensors. By uploading listing photos or other content, you grant us a non-exclusive, worldwide licence to display that content on the platform.</p>
+        <p>All content on SnapReserve™™ — including logos, design, and software — is the property of SnapReserve™™ or its licensors. By uploading listing photos or other content, you grant us a non-exclusive, worldwide licence to display that content on the platform.</p>
 
         <h2>⚖️ Limitation of Liability</h2>
-        <p>To the maximum extent permitted by law, SnapReserve™ shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform, including but not limited to property damage, personal injury, or financial loss resulting from a booking.</p>
+        <p>To the maximum extent permitted by law, SnapReserve™™ shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform, including but not limited to property damage, personal injury, or financial loss resulting from a booking.</p>
 
         <h2>🔄 Changes to These Terms</h2>
         <p>We may update these Terms from time to time. Continued use of the platform after changes take effect constitutes your acceptance of the updated Terms. We will provide reasonable notice of material changes.</p>
@@ -119,7 +119,7 @@ export default function TermsPage() {
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
         </div>
-        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™ · snapreserve.app</div>
+        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™™ · snapreserve.app</div>
       </footer>
     </>
   )

@@ -316,7 +316,7 @@ function ListPropertyInner() {
         min_nights:      form.minNights,
         is_instant_book:     form.instantBook,
         is_active:           false,
-        status:              'pending_review',
+        status:              'pending',
         checkin_start_time:  form.checkinStartTime  || null,
         checkin_end_time:    form.checkinEndTime     || null,
         checkout_time:       form.checkoutTime       || null,
@@ -399,8 +399,9 @@ function ListPropertyInner() {
 
       setSubmitted(true)
     } catch (err) {
-      alert(err?.message || 'Something went wrong. Please try again.')
-      console.error(err)
+      const msg = err?.message || err?.details || 'Something went wrong. Please try again.'
+      alert(msg)
+      console.error('[handleSubmit]', msg, err)
     }
     setSubmitting(false)
   }
@@ -673,7 +674,7 @@ function ListPropertyInner() {
             <div className="step-badge">
               {hostType === 'private_stay' ? '🏠 Private Stay Host' : '🏨 Hotel Host'}
             </div>
-            <h1>{editMode ? 'Edit your listing' : 'List your space on SnapReserve™'}</h1>
+            <h1>{editMode ? 'Edit your listing' : 'List your space on SnapReserve™™'}</h1>
             <p className="subtitle">{editMode ? 'Update your listing details, then submit your changes for review.' : hostType === 'hotel' ? 'List your hotel and start receiving bookings.' : 'Earn money from your space. Takes about 10 minutes to go live.'}</p>
 
             {/* Edit mode: change request notes */}
@@ -1068,7 +1069,7 @@ function ListPropertyInner() {
                         Fees are not shown to guests.
                       </div>
                       <div style={{ fontSize: '0.7rem', color: '#a07050', marginTop: 8, lineHeight: 1.6 }}>
-                        Hosts are responsible for complying with local and state tax regulations related to their bookings. SnapReserve does not collect or remit taxes on behalf of hosts at this time.
+                        Hosts are responsible for complying with local and state tax regulations related to their bookings. SnapReserve™ does not collect or remit taxes on behalf of hosts at this time.
                       </div>
                     </div>
                   )
@@ -1098,7 +1099,7 @@ function ListPropertyInner() {
                   <div className="review-row"><span className="review-key">Min nights</span><span className="review-val">{form.minNights} night{form.minNights !== 1 ? 's' : ''}</span></div>
                   <div className="review-row"><span className="review-key">Instant booking</span><span className="review-val">{form.instantBook ? '⚡ On' : 'Off'}</span></div>
                   <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 8, padding: '10px 14px', marginTop: 10, fontSize: '0.76rem', color: '#9a6060', lineHeight: 1.6 }}>
-                    💡 <strong>Platform fee:</strong> SnapReserve deducts 7% of each booking total + $1 fixed from your payout.
+                    💡 <strong>Platform fee:</strong> SnapReserve™ deducts 7% of each booking total + $1 fixed from your payout.
                     Guests are not charged any extra fees.
                   </div>
                 </div>
@@ -1121,7 +1122,7 @@ function ListPropertyInner() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ fontSize: '1rem' }}>⚡</span>
                     <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>
-                      SnapReserve™ Beta Notice
+                      SnapReserve™™ Beta Notice
                     </div>
                   </div>
                   <ul style={{ paddingLeft: '4px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -1129,7 +1130,7 @@ function ListPropertyInner() {
                       'The platform is still under development and may experience occasional bugs or changes.',
                       'Booking, pricing, and availability tools may be updated during the beta period.',
                       'Hosts are responsible for ensuring their property complies with local laws and licensing requirements.',
-                      'SnapReserve is currently operating as a limited beta release.',
+                      'SnapReserve™ is currently operating as a limited beta release.',
                     ].map((item, i) => (
                       <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '0.8rem', color: 'var(--mid)', lineHeight: 1.6 }}>
                         <span style={{ color: '#d97706', flexShrink: 0 }}>•</span>
@@ -1153,7 +1154,7 @@ function ListPropertyInner() {
                     </div>
                   </div>
                   <span style={{ fontSize: '0.82rem', color: betaAcknowledged ? 'var(--brown)' : 'var(--mid)', lineHeight: 1.6, fontWeight: betaAcknowledged ? 600 : 400 }}>
-                    I acknowledge that SnapReserve is currently in beta and agree to the terms above.
+                    I acknowledge that SnapReserve™ is currently in beta and agree to the terms above.
                   </span>
                 </label>
               </div>

@@ -67,7 +67,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, reason, suspension_category, admin_notes, subject, message_body, message_type } = body
 
-  const validActions = ['verify', 'suspend', 'reactivate', 'message', 'grant_snap_verified', 'revoke_snap_verified']
+  const validActions = ['verify', 'suspend', 'reactivate', 'message', 'grant_snap_verified', 'revoke_snap_verified', 'grant_founder_badge', 'revoke_founder_badge']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
@@ -77,10 +77,10 @@ export async function PATCH(request, { params }) {
   const isOverride = !!overrideSession
 
   // Role gates
-  if (action === 'grant_snap_verified' || action === 'revoke_snap_verified') {
+  if (['grant_snap_verified', 'revoke_snap_verified', 'grant_founder_badge', 'revoke_founder_badge'].includes(action)) {
     if (role !== 'super_admin' && !isOverride) {
       return NextResponse.json(
-        { error: 'Only Super Admin can grant or revoke the SnapReserve Verified Host badge.' },
+        { error: 'Only Super Admin can grant or revoke host badges.' },
         { status: 403 }
       )
     }
@@ -170,6 +170,10 @@ export async function PATCH(request, { params }) {
     hostUpdate.is_snap_verified = false
     hostUpdate.snap_verified_at = null
     hostUpdate.snap_verified_by = null
+  } else if (action === 'grant_founder_badge') {
+    hostUpdate.is_founder_host = true
+  } else if (action === 'revoke_founder_badge') {
+    hostUpdate.is_founder_host = false
   } else if (action === 'verify') {
     hostUpdate.verification_status = 'verified'
   } else if (action === 'suspend') {
@@ -211,11 +215,17 @@ export async function PATCH(request, { params }) {
       .eq('id', host.user_id)
   }
 
-  // Sync host_snap_verified flag on all listings for this host
+  // Sync badge flags on all listings for this host
   if (action === 'grant_snap_verified' || action === 'revoke_snap_verified') {
     await adminClient
       .from('listings')
       .update({ host_snap_verified: action === 'grant_snap_verified' })
+      .eq('host_id', id)
+  }
+  if (action === 'grant_founder_badge' || action === 'revoke_founder_badge') {
+    await adminClient
+      .from('listings')
+      .update({ host_founder_badge: action === 'grant_founder_badge' })
       .eq('host_id', id)
   }
 
@@ -237,7 +247,7 @@ export async function PATCH(request, { params }) {
       listingId:  null,
       type:       'suspension',
       subject:    'Your host account has been suspended',
-      body:       `Your SnapReserve host account has been suspended.\n\nReason: ${categoryLabels[suspension_category] ?? suspension_category}\n\nAll your active listings have been temporarily disabled.\n\nIf you believe this is a mistake, you can submit an appeal from your dashboard.\n\nFor assistance, contact support@snapreserve.app.`,
+      body:       `Your SnapReserve™ host account has been suspended.\n\nReason: ${categoryLabels[suspension_category] ?? suspension_category}\n\nAll your active listings have been temporarily disabled.\n\nIf you believe this is a mistake, you can submit an appeal from your dashboard.\n\nFor assistance, contact support@snapreserve.app.`,
     })
   } else if (action === 'reactivate') {
     // Re-enable previously-suspended listings
@@ -252,7 +262,7 @@ export async function PATCH(request, { params }) {
       listingId:  null,
       type:       'reactivation',
       subject:    'Your host account has been reinstated',
-      body:       'Your SnapReserve host account has been reviewed and reinstated. Your listings have been re-enabled and you can resume hosting.',
+      body:       'Your SnapReserve™ host account has been reviewed and reinstated. Your listings have been re-enabled and you can resume hosting.',
     })
   }
 

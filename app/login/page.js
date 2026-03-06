@@ -115,7 +115,7 @@ function LoginInner() {
 
           <div style={{ position:'relative', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:18, padding:'20px 22px' }}>
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.52)', lineHeight:1.75, marginBottom:14, fontStyle:'italic' }}>
-              "SnapReserve gave me the tools to turn my spare room into $3,200/month. The dashboard is incredibly easy to use."
+              "SnapReserve™ gave me the tools to turn my spare room into $3,200/month. The dashboard is incredibly easy to use."
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ width:34, height:34, borderRadius:'50%', background:'linear-gradient(135deg,#F4601A,#c43d0a)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'white' }}>S</div>

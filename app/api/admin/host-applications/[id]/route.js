@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getAdminSession } from '@/lib/get-admin-session'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
+import { notifyHost } from '@/lib/notify-host'
 
 const ALLOWED_ROLES = ['admin', 'super_admin']
 
@@ -12,7 +13,7 @@ export async function PATCH(request, { params }) {
 
   const { id } = await params
   const body = await request.json().catch(() => ({}))
-  const { action, rejection_reason } = body
+  const { action, rejection_reason, rejection_subject, rejection_body } = body
 
   if (!['approve', 'reject', 'save_notes'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action.' }, { status: 400 })
@@ -21,14 +22,14 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Rejection reason is required.' }, { status: 400 })
   }
 
+  const admin = createAdminClient()
+
   // Save admin notes — no role restriction beyond admin+
   if (action === 'save_notes') {
     const { notes } = body
     await admin.from('host_applications').update({ id_admin_notes: notes ?? null }).eq('id', id)
     return NextResponse.json({ success: true })
   }
-
-  const admin = createAdminClient()
 
   // Fetch the application
   const { data: app, error: appErr } = await admin
@@ -91,26 +92,35 @@ export async function PATCH(request, { params }) {
       if (teamErr) console.error('[host-application.approve] host_team_members upsert failed:', teamErr.message)
     }
 
+    // Notify applicant of approval
+    const firstName = app.display_name?.split(' ')[0] || 'there'
+    await notifyHost({
+      hostUserId: app.user_id,
+      type:       'info',
+      subject:    '🎉 You\'re approved — welcome to SnapReserve™!',
+      body:       `Hi ${firstName},\n\nGreat news! Your identity has been verified and your host account is now active. You can start creating and publishing listings immediately.\n\nWelcome to the SnapReserve™ host community!`,
+    }).catch(err => console.error('[host-application.approve] notify failed:', err.message))
+
     await logAction({
-      actorId: user.id,
+      actorId:    user.id,
       actorEmail: user.email,
-      actorRole: role,
-      action: 'host_application.approved',
+      actorRole:  role,
+      action:     'host_application.approved',
       targetType: 'host_application',
-      targetId: id,
-      afterData: { user_id: app.user_id, host_type: app.host_type, display_name: app.display_name, status: 'approved' },
+      targetId:   id,
+      afterData:  { user_id: app.user_id, host_type: app.host_type, display_name: app.display_name, status: 'approved' },
     })
 
     return NextResponse.json({ success: true, status: 'approved' })
   }
 
-  // Reject
+  // ── Reject ──────────────────────────────────────────────────────
   const { error: rejErr } = await admin
     .from('host_applications')
     .update({
-      status: 'rejected',
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
+      status:           'rejected',
+      reviewed_by:      user.id,
+      reviewed_at:      new Date().toISOString(),
       rejection_reason: rejection_reason.trim(),
     })
     .eq('id', id)
@@ -122,14 +132,27 @@ export async function PATCH(request, { params }) {
     .update({ user_role: 'user' })
     .eq('id', app.user_id)
 
+  // Send rejection message to applicant's Messages inbox
+  const firstName = app.display_name?.split(' ')[0] || 'there'
+  const msgSubject = rejection_subject || 'Your host application — update from SnapReserve™'
+  const msgBody = rejection_body ||
+    `Hi ${firstName},\n\nWe've reviewed your host application and unfortunately we're unable to approve it at this time.\n\nReason: ${rejection_reason.trim()}\n\nIf you have questions or would like to provide additional information, please reply to this message — our team will get back to you within 24 hours.`
+
+  await notifyHost({
+    hostUserId: app.user_id,
+    type:       'rejection',
+    subject:    msgSubject,
+    body:       msgBody,
+  }).catch(err => console.error('[host-application.reject] notify failed:', err.message))
+
   await logAction({
-    actorId: user.id,
+    actorId:    user.id,
     actorEmail: user.email,
-    actorRole: role,
-    action: 'host_application.rejected',
+    actorRole:  role,
+    action:     'host_application.rejected',
     targetType: 'host_application',
-    targetId: id,
-    afterData: { user_id: app.user_id, rejection_reason: rejection_reason.trim(), status: 'rejected' },
+    targetId:   id,
+    afterData:  { user_id: app.user_id, rejection_reason: rejection_reason.trim(), status: 'rejected' },
   })
 
   return NextResponse.json({ success: true, status: 'rejected' })

@@ -106,7 +106,7 @@ function JoinInner() {
               display: 'inline-block', padding: '10px 28px', background: '#F4601A',
               color: 'white', borderRadius: 100, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem',
             }}>
-              Go to SnapReserve
+              Go to SnapReserve™
             </a>
           </>
         )}

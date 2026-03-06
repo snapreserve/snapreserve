@@ -97,7 +97,7 @@ function MessagesTab({ userId, onRead }) {
       {!msgs.length ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--sr-muted)', fontSize: '0.86rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🛡️</div>
-          <div style={{ fontWeight: 700, marginBottom: '6px', color: 'var(--sr-text)' }}>No messages from SnapReserve yet.</div>
+          <div style={{ fontWeight: 700, marginBottom: '6px', color: 'var(--sr-text)' }}>No messages from SnapReserve™ yet.</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)', maxWidth: '260px', margin: '0 auto', lineHeight: 1.6 }}>
             If there is an issue with your listing or account, our support team will reach out here.
           </div>
@@ -107,8 +107,8 @@ function MessagesTab({ userId, onRead }) {
           <div style={{ background: 'rgba(244,96,26,0.06)', border: '1px solid rgba(244,96,26,0.18)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '1.1rem' }}>🛡️</span>
             <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--sr-text)' }}>SnapReserve Support</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', marginTop: '1px' }}>Official messages from the SnapReserve team about your listings and account. You can reply directly here.</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--sr-text)' }}>SnapReserve™ Support</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', marginTop: '1px' }}>Official messages from the SnapReserve™ team about your listings and account. You can reply directly here.</div>
             </div>
           </div>
           {msgs.map(m => {
@@ -266,7 +266,7 @@ function HostInbox({ userId, onAdminRead, unreadAdminCount = 0 }) {
           onClick={() => setTab('notifications')}
           style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', fontFamily: 'inherit', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', background: tab === 'notifications' ? 'var(--sr-orange)' : 'var(--sr-card2)', color: tab === 'notifications' ? 'white' : 'var(--sr-sub)' }}
         >
-          🛡️ SnapReserve Support {unreadAdminCount > 0 && <span style={{ marginLeft: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '100px', padding: '1px 6px', fontSize: '0.68rem' }}>{unreadAdminCount}</span>}
+          🛡️ SnapReserve™ Support {unreadAdminCount > 0 && <span style={{ marginLeft: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '100px', padding: '1px 6px', fontSize: '0.68rem' }}>{unreadAdminCount}</span>}
         </button>
       </div>
 
@@ -1801,7 +1801,7 @@ export default function HostDashboard() {
                   <div className="hd-empty">
                     <div className="hd-empty-icon">🏠</div>
                     <div className="hd-empty-title">No properties yet</div>
-                    <div className="hd-empty-sub">List your first space and start earning on SnapReserve.</div>
+                    <div className="hd-empty-sub">List your first space and start earning on SnapReserve™.</div>
                     <a href="/list-property" className="hd-add-btn" style={{ display: 'inline-flex' }}>+ Add your first property</a>
                   </div>
                 ) : (
@@ -1810,7 +1810,7 @@ export default function HostDashboard() {
                     <a href="/list-property" className="hd-add-card">
                       <div className="hd-add-icon">+</div>
                       <div className="hd-add-title">Add new property</div>
-                      <div className="hd-add-sub">List your space on SnapReserve</div>
+                      <div className="hd-add-sub">List your space on SnapReserve™</div>
                     </a>
                   </div>
                 )}
@@ -1841,7 +1841,7 @@ export default function HostDashboard() {
             {activeNav === 'messages' && (
               <div>
                 <div className="hd-page-title">Messages</div>
-                <div className="hd-page-sub">Communicate with guests and the SnapReserve team.</div>
+                <div className="hd-page-sub">Communicate with guests and the SnapReserve™ team.</div>
                 <HostInbox
                   userId={profile?.id}
                   onAdminRead={() => setUnreadMsgCount(0)}
@@ -1860,7 +1860,7 @@ export default function HostDashboard() {
                 <div style={{ background: 'rgba(244,96,26,0.07)', border: '1px solid rgba(244,96,26,0.22)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>ℹ️</span>
                   <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)', lineHeight: 1.6 }}>
-                    <strong style={{ color: 'var(--sr-text)' }}>SnapReserve platform fee:</strong> 7% of each booking total + $1 fixed per booking.
+                    <strong style={{ color: 'var(--sr-text)' }}>SnapReserve™ platform fee:</strong> 7% of each booking total + $1 fixed per booking.
                     Your payout = booking total − platform fee. This fee is not shown to guests.
                   </div>
                 </div>

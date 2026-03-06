@@ -231,7 +231,7 @@ export default function SecurityPage() {
                   <p style={{ marginBottom: '10px' }}><strong>What happens when you delete your account:</strong></p>
                   <ul style={{ paddingLeft: '18px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <li>Your name, phone number, and profile information will be hidden</li>
-                    <li>You will no longer be able to sign in to SnapReserve</li>
+                    <li>You will no longer be able to sign in to SnapReserve™</li>
                     <li>Your saved places and payment methods will be removed</li>
                   </ul>
                   <p style={{ marginBottom: '10px' }}><strong>What we keep for legal compliance:</strong></p>
@@ -252,7 +252,7 @@ export default function SecurityPage() {
                     value={deleteReason}
                     onChange={e => setDeleteReason(e.target.value)}
                     rows={2}
-                    placeholder="Help us improve SnapReserve…"
+                    placeholder="Help us improve SnapReserve™…"
                     style={{ ...fieldStyle, resize: 'vertical' }}
                   />
                 </div>

@@ -269,8 +269,8 @@ function ConfirmationContent() {
                 </a>
 
                 <p className="ins-disclaimer">
-                  Insurance provided by a third party. SnapReserve does not sell, underwrite,
-                  or handle insurance claims. You will leave SnapReserve when clicking the link above.
+                  Insurance provided by a third party. SnapReserve™ does not sell, underwrite,
+                  or handle insurance claims. You will leave SnapReserve™ when clicking the link above.
                 </p>
 
                 <button className="ins-dismiss" onClick={() => setInsuranceDismissed(true)}>

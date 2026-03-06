@@ -313,7 +313,7 @@ export default function HomePage() {
         {isHotel ? (
           <h1 className="hero-headline">
             Discover world-class<br />stays with
-            <span className="blue-accent">SnapReserve.</span>
+            <span className="blue-accent">SnapReserve™.</span>
           </h1>
         ) : (
           <h1 className="hero-headline">
@@ -470,7 +470,7 @@ export default function HomePage() {
                     <div className="card-name">{listing.title}</div>
                     <div className="card-loc">📍 {listing.city}, {listing.state}</div>
                     {listing.host_snap_verified && (
-                      <div className="snap-badge">🛡 SnapReserve Verified Host</div>
+                      <div className="snap-badge">🛡 SnapReserve™ Verified Host</div>
                     )}
                     {amenities.length > 0 && (
                       <div className="amenity-chips">{amenities.map(a => <span key={a} className="a-chip">{a.trim()}</span>)}</div>
@@ -554,7 +554,7 @@ export default function HomePage() {
             <div style={{ position:'relative' }}>
               <div style={{ fontSize:'2rem', marginBottom:20 }}>🏨</div>
               <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1.5rem', fontWeight:700, color:'white', marginBottom:12, lineHeight:1.2 }}>List your hotel or property business</div>
-              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Partner with SnapReserve™ to reach millions of travellers and manage bookings in real time via our hotel dashboard.</div>
+              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Partner with SnapReserve™™ to reach millions of travellers and manage bookings in real time via our hotel dashboard.</div>
             </div>
             <div style={{ display:'flex', gap:12, position:'relative', flexWrap:'wrap' }}>
               <a href="/list-property" style={{ background:'#2B6FEA', color:'white', padding:'12px 26px', borderRadius:100, fontWeight:700, fontSize:'0.88rem', textDecoration:'none' }}>Partner with Us</a>
@@ -567,7 +567,7 @@ export default function HomePage() {
             <div style={{ position:'relative' }}>
               <div style={{ fontSize:'2rem', marginBottom:20 }}>🏠</div>
               <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1.5rem', fontWeight:700, color:'white', marginBottom:12, lineHeight:1.2 }}>Your home could earn while you're away</div>
-              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Join 180,000+ individual hosts on SnapReserve™ and turn your spare room, apartment, or villa into steady income.</div>
+              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Join 180,000+ individual hosts on SnapReserve™™ and turn your spare room, apartment, or villa into steady income.</div>
             </div>
             <div style={{ display:'flex', gap:12, position:'relative', flexWrap:'wrap' }}>
               {userRole === 'host' ? (

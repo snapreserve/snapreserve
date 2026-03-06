@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title:       "SnapReserve",
+  title:       "SnapReserve™",
   description: "Book unique spaces, instantly.",
 }
 

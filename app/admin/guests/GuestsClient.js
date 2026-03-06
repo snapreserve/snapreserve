@@ -12,8 +12,15 @@ const SUSP_REASONS = [
   { value: 'other',            label: 'Other' },
 ]
 
-const FILTERS = ['All', 'Active', 'New', 'Suspended', 'Flagged', 'Repeat']
-const TABS    = ['Overview', 'Bookings', 'Spend', 'Activity', 'Admin']
+const ID_REJECT_REASONS = [
+  { value: 'poor_quality',  label: 'Poor image quality',  desc: 'Document is blurry or unreadable' },
+  { value: 'expired',       label: 'Document expired',    desc: 'ID expiry date has passed' },
+  { value: 'name_mismatch', label: "Name doesn't match",  desc: 'Name on ID differs from account' },
+  { value: 'fraud',         label: 'Possible fraud',      desc: 'Document appears altered or fake' },
+]
+
+const FILTERS = ['All', 'Active', 'New', 'Suspended', 'Flagged', 'ID Pending']
+const TABS    = ['Overview', 'Identity', 'Bookings', 'Spend', 'Activity', 'Admin']
 
 const BOOKING_STATUS = {
   confirmed:  { color: '#34D399', bg: 'rgba(52,211,153,0.1)' },
@@ -32,40 +39,45 @@ const STYLES = `
   .gs-left  { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
   .gs-topbar { background:var(--sr-surface); border-bottom:1px solid var(--sr-border-solid); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .gs-topbar h1 { font-size:1.1rem; font-weight:800; }
-  /* stats */
-  .gs-stats { display:flex; gap:10px; padding:16px 24px; flex-shrink:0; overflow-x:auto; }
-  .gs-stat  { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:10px; padding:13px 16px; flex:1; min-width:96px; }
-  .gs-stat-val { font-size:1.35rem; font-weight:800; line-height:1; }
-  .gs-stat-lbl { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--sr-sub); margin-top:5px; }
-  /* filters */
-  .gs-filters { display:flex; gap:8px; padding:0 24px 14px; flex-shrink:0; flex-wrap:wrap; align-items:center; }
-  .gs-pill { background:transparent; border:1px solid var(--sr-border-solid); border-radius:20px; padding:5px 14px; font-size:0.73rem; font-weight:700; color:var(--sr-muted); cursor:pointer; font-family:inherit; transition:all 0.13s; white-space:nowrap; }
+  .gs-alert { background:rgba(251,191,36,0.07); border-bottom:1px solid rgba(251,191,36,0.18); padding:9px 24px; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .gs-alert-dot { width:7px; height:7px; border-radius:50%; background:#FBBF24; flex-shrink:0; animation:gs-pulse 2s infinite; }
+  @keyframes gs-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .gs-alert-txt { flex:1; font-size:0.79rem; color:#FBBF24; font-weight:600; }
+  .gs-alert-lnk { background:rgba(251,191,36,0.14); border:1px solid rgba(251,191,36,0.28); border-radius:6px; padding:4px 12px; font-size:0.72rem; font-weight:700; color:#FBBF24; cursor:pointer; font-family:inherit; transition:background 0.13s; }
+  .gs-alert-lnk:hover { background:rgba(251,191,36,0.24); }
+  .gs-stats { display:flex; gap:9px; padding:14px 24px; flex-shrink:0; overflow-x:auto; }
+  .gs-stat  { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:10px; padding:12px 14px; flex:1; min-width:84px; }
+  .gs-stat.clickable { cursor:pointer; transition:border-color 0.13s; }
+  .gs-stat.clickable:hover { border-color:var(--sr-orange); }
+  .gs-stat.highlight { border-color:rgba(251,191,36,0.3); background:rgba(251,191,36,0.05); }
+  .gs-stat-val { font-size:1.3rem; font-weight:800; line-height:1; }
+  .gs-stat-lbl { font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--sr-sub); margin-top:5px; }
+  .gs-filters { display:flex; gap:8px; padding:0 24px 13px; flex-shrink:0; flex-wrap:wrap; align-items:center; }
+  .gs-pill { background:transparent; border:1px solid var(--sr-border-solid); border-radius:20px; padding:5px 14px; font-size:0.72rem; font-weight:700; color:var(--sr-muted); cursor:pointer; font-family:inherit; transition:all 0.13s; white-space:nowrap; }
   .gs-pill:hover { border-color:var(--sr-orange); color:var(--sr-orange); }
   .gs-pill.act  { background:var(--sr-orange); border-color:var(--sr-orange); color:#fff; }
+  .gs-pill.id-act { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.4); color:#FBBF24; }
   .gs-search { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:8px; padding:7px 12px; color:var(--sr-text); font-size:0.82rem; outline:none; min-width:180px; font-family:inherit; margin-left:auto; }
   .gs-search:focus { border-color:var(--sr-orange); }
-  /* table */
   .gs-scroll { flex:1; overflow-y:auto; padding:0 24px 24px; }
   .gs-table  { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; overflow:hidden; }
-  .gs-row    { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.2fr; gap:12px; padding:13px 20px; border-bottom:1px solid var(--sr-border-solid); align-items:center; cursor:pointer; transition:background 0.1s; }
+  .gs-row    { display:grid; grid-template-columns:2fr 1.3fr 0.7fr 1fr 1fr 1.1fr; gap:12px; padding:12px 20px; border-bottom:1px solid var(--sr-border-solid); align-items:center; cursor:pointer; transition:background 0.1s; }
   .gs-row:last-child { border-bottom:none; }
   .gs-row.hdr  { background:var(--sr-bg); cursor:default; }
-  .gs-row.hdr span { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); }
+  .gs-row.hdr span { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); }
   .gs-row:not(.hdr):hover { background:rgba(244,96,26,0.04); }
   .gs-row.sel  { background:rgba(244,96,26,0.07); border-left:3px solid var(--sr-orange); }
   .gs-empty    { padding:60px 20px; text-align:center; color:var(--sr-sub); font-size:0.84rem; }
-  .gs-badge    { display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:0.67rem; font-weight:700; }
-  /* right panel */
-  .gs-right       { width:420px; flex-shrink:0; border-left:1px solid var(--sr-border-solid); display:flex; flex-direction:column; overflow:hidden; background:var(--sr-surface); }
-  .gs-panel-hdr   { padding:16px 20px; border-bottom:1px solid var(--sr-border-solid); flex-shrink:0; display:flex; align-items:center; gap:12px; }
-  .gs-tabs        { display:flex; border-bottom:1px solid var(--sr-border-solid); flex-shrink:0; }
-  .gs-tab         { flex:1; padding:10px 4px; font-size:0.67rem; font-weight:700; text-align:center; cursor:pointer; color:var(--sr-sub); border-bottom:2px solid transparent; font-family:inherit; background:none; border-top:none; border-left:none; border-right:none; transition:all 0.13s; text-transform:uppercase; letter-spacing:0.05em; }
+  .gs-badge    { display:inline-flex; align-items:center; padding:3px 8px; border-radius:20px; font-size:0.65rem; font-weight:700; }
+  .gs-right       { width:440px; flex-shrink:0; border-left:1px solid var(--sr-border-solid); display:flex; flex-direction:column; overflow:hidden; background:var(--sr-surface); }
+  .gs-panel-hdr   { padding:15px 20px; border-bottom:1px solid var(--sr-border-solid); flex-shrink:0; display:flex; align-items:center; gap:12px; }
+  .gs-tabs        { display:flex; border-bottom:1px solid var(--sr-border-solid); flex-shrink:0; overflow-x:auto; }
+  .gs-tab         { flex:1; padding:10px 4px; font-size:0.6rem; font-weight:700; text-align:center; cursor:pointer; color:var(--sr-sub); border-bottom:2px solid transparent; font-family:inherit; background:none; border-top:none; border-left:none; border-right:none; transition:all 0.13s; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
   .gs-tab.act     { color:var(--sr-orange); border-bottom-color:var(--sr-orange); }
   .gs-tcontent    { flex:1; overflow-y:auto; padding:20px; }
   .gs-loading     { display:flex; align-items:center; justify-content:center; height:160px; color:var(--sr-sub); font-size:0.84rem; }
-  /* detail ui */
   .gs-section     { margin-bottom:20px; }
-  .gs-sec-title   { font-size:0.67rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); margin-bottom:10px; }
+  .gs-sec-title   { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sr-sub); margin-bottom:10px; }
   .gs-grid2       { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .gs-info-box    { background:var(--sr-bg); border-radius:10px; padding:4px 14px; }
   .gs-info-row    { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--sr-surface); font-size:0.82rem; }
@@ -74,12 +86,10 @@ const STYLES = `
   .gs-info-val    { color:var(--sr-text); font-weight:500; font-size:0.8rem; text-align:right; max-width:58%; word-break:break-all; }
   .gs-stat-card   { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:14px; text-align:center; }
   .gs-stat-card .v { font-size:1.25rem; font-weight:800; }
-  .gs-stat-card .l { font-size:0.67rem; color:var(--sr-sub); font-weight:700; text-transform:uppercase; letter-spacing:0.07em; margin-top:4px; }
-  /* booking cards */
+  .gs-stat-card .l { font-size:0.65rem; color:var(--sr-sub); font-weight:700; text-transform:uppercase; letter-spacing:0.07em; margin-top:4px; }
   .gs-bcard     { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:14px; margin-bottom:10px; }
-  /* action buttons */
   .gs-actions   { display:flex; gap:8px; flex-wrap:wrap; }
-  .gs-btn       { padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; border:1px solid transparent; font-family:inherit; transition:all 0.13s; }
+  .gs-btn       { padding:7px 13px; border-radius:8px; font-size:0.76rem; font-weight:700; cursor:pointer; border:1px solid transparent; font-family:inherit; transition:all 0.13s; }
   .gs-btn-susp  { background:rgba(248,113,113,0.1); color:#F87171; border-color:rgba(248,113,113,0.3); }
   .gs-btn-susp:hover  { background:rgba(248,113,113,0.2); }
   .gs-btn-deact { background:rgba(107,94,82,0.15); color:var(--sr-muted); border-color:rgba(107,94,82,0.3); }
@@ -92,21 +102,42 @@ const STYLES = `
   .gs-btn-reject:hover { background:rgba(248,113,113,0.2); }
   .gs-btn-verify { background:rgba(96,165,250,0.1); color:#60A5FA; border-color:rgba(96,165,250,0.3); }
   .gs-btn-verify:hover { background:rgba(96,165,250,0.2); }
-  /* bar chart */
+  .gs-btn-warn  { background:rgba(251,191,36,0.1); color:#FBBF24; border-color:rgba(251,191,36,0.3); }
+  .gs-btn-warn:hover { background:rgba(251,191,36,0.2); }
   .gs-bar       { display:flex; align-items:flex-end; gap:6px; height:80px; margin:10px 0; }
   .gs-bar-col   { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
   .gs-bar-fill  { width:100%; border-radius:4px 4px 0 0; background:var(--sr-orange); opacity:0.8; transition:height 0.3s; }
   .gs-bar-lbl   { font-size:0.58rem; color:var(--sr-sub); text-align:center; white-space:nowrap; }
-  /* risk */
   .gs-risk-bar  { height:6px; background:var(--sr-border-solid); border-radius:4px; overflow:hidden; margin-top:6px; }
   .gs-risk-fill { height:100%; border-radius:4px; }
-  /* timeline */
   .gs-timeline      { list-style:none; }
   .gs-tl-item       { display:flex; gap:12px; padding-bottom:16px; position:relative; }
   .gs-tl-item::before { content:''; position:absolute; left:5px; top:16px; bottom:0; width:1px; background:var(--sr-border-solid); }
   .gs-tl-item:last-child::before { display:none; }
   .gs-tl-dot        { width:11px; height:11px; border-radius:50%; background:var(--sr-orange); flex-shrink:0; margin-top:3px; }
   .gs-tl-body       { flex:1; }
+  /* identity tab */
+  .gs-id-status-bar { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--sr-bg); border-radius:10px; margin-bottom:16px; }
+  .gs-id-status-ico { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .gs-id-docs  { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .gs-id-doc   { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:10px; padding:14px 12px; text-align:center; min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; }
+  .gs-id-doc.has-doc { border-color:rgba(96,165,250,0.3); }
+  .gs-id-doc-ico { font-size:1.4rem; opacity:0.35; }
+  .gs-id-doc-lbl { font-size:0.66rem; color:var(--sr-sub); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+  .gs-id-doc-sub { font-size:0.64rem; color:var(--sr-muted); }
+  .gs-selfie-row { display:flex; align-items:center; gap:10px; background:var(--sr-bg); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .gs-selfie-avatar { width:42px; height:42px; border-radius:50%; background:var(--sr-border-solid); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .gs-selfie-info { flex:1; min-width:0; }
+  .gs-face-bar  { height:5px; background:var(--sr-border-solid); border-radius:4px; overflow:hidden; margin:5px 0 3px; }
+  .gs-face-fill { height:100%; border-radius:4px; }
+  .gs-checks    { display:flex; flex-direction:column; gap:6px; }
+  .gs-check     { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--sr-bg); border-radius:8px; }
+  .gs-check-ico { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.62rem; font-weight:700; flex-shrink:0; }
+  .gs-check-ico.pass { background:rgba(52,211,153,0.15); color:#34D399; }
+  .gs-check-ico.fail { background:rgba(248,113,113,0.15); color:#F87171; }
+  .gs-check-ico.warn { background:rgba(251,191,36,0.15); color:#FBBF24; }
+  .gs-check-txt  { flex:1; font-size:0.78rem; color:var(--sr-text); }
+  .gs-id-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px; }
   /* modal */
   .gs-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
   .gs-modal   { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:16px; padding:28px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; }
@@ -123,6 +154,13 @@ const STYLES = `
   .gs-input:focus    { border-color:var(--sr-orange); }
   .gs-warning  { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25); border-radius:8px; padding:10px 14px; font-size:0.82rem; color:#F87171; margin-bottom:14px; }
   .gs-success  { background:rgba(52,211,153,0.06); border:1px solid rgba(52,211,153,0.2); border-radius:8px; padding:10px 14px; font-size:0.82rem; color:#34D399; margin-bottom:14px; }
+  .gs-reason-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .gs-reason-card { background:var(--sr-bg); border:1.5px solid var(--sr-border-solid); border-radius:10px; padding:12px; cursor:pointer; transition:all 0.13s; }
+  .gs-reason-card:hover { border-color:var(--sr-orange); }
+  .gs-reason-card.sel { border-color:var(--sr-orange); background:rgba(244,96,26,0.06); }
+  .gs-reason-ttl { font-size:0.78rem; font-weight:700; color:var(--sr-text); margin-bottom:3px; }
+  .gs-reason-sub { font-size:0.67rem; color:var(--sr-muted); }
+  .gs-preview { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; padding:12px 14px; font-size:0.78rem; color:var(--sr-muted); line-height:1.55; margin-bottom:14px; font-style:italic; }
   .gs-mfooter  { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
   .gs-mbtn     { padding:8px 20px; border-radius:8px; font-size:0.84rem; font-weight:700; cursor:pointer; border:1px solid transparent; font-family:inherit; }
   .gs-mbtn-cancel  { background:var(--sr-border-solid); color:var(--sr-muted); border-color:#3A3028; }
@@ -130,17 +168,16 @@ const STYLES = `
   .gs-mbtn-ok.danger  { background:#EF4444; }
   .gs-mbtn-ok.success { background:#16A34A; }
   .gs-mbtn-ok:disabled { opacity:0.5; cursor:not-allowed; }
-  /* toast */
   .gs-toast    { position:fixed; bottom:24px; right:24px; background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:10px; padding:12px 18px; font-size:0.84rem; font-weight:600; z-index:200; }
   .gs-toast.ok  { border-color:rgba(74,222,128,0.4); color:#4ADE80; }
   .gs-toast.err { border-color:rgba(248,113,113,0.4); color:#F87171; }
   .gs-export-btn { background:var(--sr-border-solid); border:1px solid #3A3028; border-radius:8px; padding:7px 14px; color:var(--sr-text); font-size:0.78rem; font-weight:600; cursor:pointer; font-family:inherit; }
   .gs-export-btn:hover { border-color:var(--sr-orange); }
-  @media(max-width:1100px) { .gs-row { grid-template-columns:2fr 1fr 1fr 1fr 1.2fr; } .gs-row>*:nth-child(5){display:none;} }
+  @media(max-width:1200px) { .gs-row { grid-template-columns:2fr 1.3fr 0.7fr 1fr 1.1fr; } .gs-row>*:nth-child(5){display:none;} }
   @media(max-width:900px)  { .gs-right { display:none; } }
 `
 
-/* ── helpers ── */
+/* helpers */
 
 function hashColor(s) {
   let h = 0
@@ -198,7 +235,24 @@ function guestStatus(g) {
   return { label: 'Active', color: '#34D399', bg: 'rgba(52,211,153,0.1)' }
 }
 
-/* ── component ── */
+function idBadge(verificationStatus) {
+  if (verificationStatus === 'verified') return { label: '✓ ID Verified', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)' }
+  if (verificationStatus === 'pending')  return { label: '⏳ ID Pending',  color: '#FBBF24', bg: 'rgba(251,191,36,0.1)' }
+  return null
+}
+
+function idRejectMessage(name, reason) {
+  const first = name?.split(' ')[0] ?? 'there'
+  const msgs = {
+    poor_quality:  `Hi ${first}, we were unable to verify your identity because the document image was blurry or unreadable. Please re-upload a clear, well-lit photo.`,
+    expired:       `Hi ${first}, the ID you submitted appears to be expired. Please provide a valid, current government-issued document.`,
+    name_mismatch: `Hi ${first}, the name on your submitted document doesn't match your account details. Please ensure your ID matches your registered name.`,
+    fraud:         `Hi ${first}, we were unable to verify your identity at this time. Please contact support if you believe this is an error.`,
+  }
+  return msgs[reason] ?? `Hi ${first}, your identity verification was unsuccessful. Please resubmit with a clear, valid government-issued ID.`
+}
+
+/* component */
 
 export default function GuestsClient({ initialGuests, role }) {
   const [guests,        setGuests]        = useState(initialGuests)
@@ -208,17 +262,22 @@ export default function GuestsClient({ initialGuests, role }) {
   const [detail,        setDetail]        = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [tab,           setTab]           = useState('overview')
-  const [modal,         setModal]         = useState(null)   // { action, guest }
-  const [form,          setForm]          = useState({ suspCategory: '', adminNotes: '', deleteConfirm: '' })
-  const [loading,       setLoading]       = useState(false)
-  const [toast,         setToast]         = useState(null)
+  const [modal,         setModal]         = useState(null)
+  const [form,          setForm]          = useState({
+    suspCategory: '', adminNotes: '', deleteConfirm: '',
+    rejReason: '', rejNote: '',
+    reqDocsMsg: '',
+    flagLevel: 'medium', flagNote: '',
+  })
+  const [loading,  setLoading]  = useState(false)
+  const [toast,    setToast]    = useState(null)
 
   const canManage    = ['admin', 'super_admin', 'trust_safety'].includes(role)
   const canReinstate = ['super_admin', 'trust_safety'].includes(role)
   const canApprove   = ['support', 'admin', 'super_admin'].includes(role)
   const canReject    = ['admin', 'super_admin'].includes(role)
 
-  /* ── stats ── */
+  /* stats */
   const stats = useMemo(() => {
     const week = 7 * 86400 * 1000
     const now  = Date.now()
@@ -226,22 +285,23 @@ export default function GuestsClient({ initialGuests, role }) {
       total:     guests.length,
       active:    guests.filter(g => g.is_active && !g.suspended_at).length,
       newThis:   guests.filter(g => now - new Date(g.created_at) < week).length,
+      idPending: guests.filter(g => g.verification_status === 'pending').length,
+      verified:  guests.filter(g => g.verification_status === 'verified').length,
       suspended: guests.filter(g => !!g.suspended_at).length,
-      flagged:   guests.filter(g => !!g.suspension_category).length,
       totalSpent: guests.reduce((s, g) => s + (g.total_spent ?? 0), 0),
     }
   }, [guests])
 
-  /* ── filtered list ── */
+  /* filtered list */
   const filtered = useMemo(() => {
     const week = 7 * 86400 * 1000
     const now  = Date.now()
     let list = [...guests]
-    if (filter === 'Active')    list = list.filter(g => g.is_active && !g.suspended_at)
-    else if (filter === 'New')  list = list.filter(g => now - new Date(g.created_at) < week)
+    if (filter === 'Active')     list = list.filter(g => g.is_active && !g.suspended_at)
+    else if (filter === 'New')       list = list.filter(g => now - new Date(g.created_at) < week)
     else if (filter === 'Suspended') list = list.filter(g => !!g.suspended_at)
     else if (filter === 'Flagged')   list = list.filter(g => !!g.suspension_category)
-    else if (filter === 'Repeat')    list = list.filter(g => (g.booking_count ?? 0) > 1)
+    else if (filter === 'ID Pending') list = list.filter(g => g.verification_status === 'pending')
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(g =>
@@ -252,7 +312,7 @@ export default function GuestsClient({ initialGuests, role }) {
     return list
   }, [guests, filter, search])
 
-  /* ── monthly spend chart ── */
+  /* spend chart data */
   const monthlySpend = useMemo(() => {
     if (!detail?.bookings?.length) return []
     const map = {}
@@ -265,7 +325,6 @@ export default function GuestsClient({ initialGuests, role }) {
 
   const maxSpend = Math.max(...monthlySpend.map(m => m.value), 1)
 
-  /* ── hosts booked with ── */
   const hostsBooked = useMemo(() => {
     if (!detail?.bookings?.length) return []
     const map = {}
@@ -279,7 +338,6 @@ export default function GuestsClient({ initialGuests, role }) {
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 5)
   }, [detail])
 
-  /* ── payment methods ── */
   const payMethods = useMemo(() => {
     if (!detail?.bookings?.length) return []
     const map = {}
@@ -290,7 +348,7 @@ export default function GuestsClient({ initialGuests, role }) {
     return Object.entries(map).map(([method, count]) => ({ method, count }))
   }, [detail])
 
-  /* ── handlers ── */
+  /* handlers */
 
   function showToast(msg, type = 'ok') {
     setToast({ msg, type })
@@ -311,7 +369,7 @@ export default function GuestsClient({ initialGuests, role }) {
   }
 
   function openModal(action, guest) {
-    setForm({ suspCategory: '', adminNotes: '', deleteConfirm: '' })
+    setForm({ suspCategory: '', adminNotes: '', deleteConfirm: '', rejReason: '', rejNote: '', reqDocsMsg: '', flagLevel: 'medium', flagNote: '' })
     setModal({ action, guest: guest ?? selected })
   }
 
@@ -319,12 +377,23 @@ export default function GuestsClient({ initialGuests, role }) {
     const { action, guest } = modal
     setLoading(true)
     try {
-      const payload = { action }
+      // map UI modal actions to API actions
+      const apiAction = action === 'reject_id' ? 'unverify_user' : action
+
+      const payload = { action: apiAction }
       if (action === 'suspend') {
         payload.suspension_category = form.suspCategory
         payload.admin_notes         = form.adminNotes.trim()
       } else if (action === 'deactivate') {
         payload.admin_notes = form.adminNotes.trim()
+      } else if (action === 'reject_id') {
+        payload.rejection_reason = form.rejReason
+        payload.admin_notes      = form.rejNote.trim()
+      } else if (action === 'request_docs') {
+        payload.message = form.reqDocsMsg.trim()
+      } else if (action === 'flag_risk') {
+        payload.risk_level  = form.flagLevel
+        payload.admin_notes = form.flagNote.trim()
       }
 
       const res  = await fetch(`/api/admin/guests/${guest.id}`, {
@@ -336,28 +405,29 @@ export default function GuestsClient({ initialGuests, role }) {
       if (!res.ok) throw new Error(data.error ?? 'Request failed')
 
       const now = new Date().toISOString()
-      function applyAction(g) {
+      function applyLocal(g) {
         if (action === 'suspend')          return { ...g, suspended_at: now, is_active: false, suspension_category: form.suspCategory }
-        if (action === 'deactivate')       return { ...g, deleted_at:   now, is_active: false }
+        if (action === 'deactivate')       return { ...g, deleted_at: now, is_active: false }
         if (action === 'reactivate')       return { ...g, suspended_at: null, is_active: true, suspension_category: null }
         if (action === 'approve_account')  return { ...g, approval_status: 'approved' }
         if (action === 'reject_account')   return { ...g, approval_status: 'rejected' }
         if (action === 'verify_user')      return { ...g, verification_status: 'verified' }
-        if (action === 'unverify_user')    return { ...g, verification_status: 'pending' }
+        if (action === 'unverify_user')    return { ...g, verification_status: null }
+        if (action === 'reject_id')        return { ...g, verification_status: null }
         return g
       }
 
-      setGuests(prev => prev.map(g => g.id === guest.id ? applyAction(g) : g))
-      if (selected?.id === guest.id) setSelected(applyAction)
+      setGuests(prev => prev.map(g => g.id === guest.id ? applyLocal(g) : g))
+      if (selected?.id === guest.id) setSelected(prev => applyLocal(prev))
 
-      const actionLabels = {
-        deactivate: 'Account deactivated.',
-        approve_account: 'Account approved.',
-        reject_account: 'Account rejected.',
-        verify_user: 'User verified.',
-        unverify_user: 'Verification removed.',
+      const labels = {
+        suspend: 'Account suspended.', deactivate: 'Account deactivated.',
+        reactivate: 'Account reinstated.', approve_account: 'Account approved.',
+        reject_account: 'Account rejected.', verify_user: 'ID approved.',
+        unverify_user: 'Verification removed.', reject_id: 'ID rejected.',
+        request_docs: 'Document request sent.', flag_risk: 'Risk flag applied.',
       }
-      showToast(actionLabels[action] ?? `Account ${action}d.`)
+      showToast(labels[action] ?? 'Done.')
       setModal(null)
     } catch (e) {
       showToast(e.message, 'err')
@@ -366,15 +436,27 @@ export default function GuestsClient({ initialGuests, role }) {
     }
   }
 
-  const sel = selected  // shorthand for render
+  const sel = selected
 
-  /* ── render ── */
+  /* auto-checks for identity tab */
+  function getAutoChecks(g) {
+    const daysSince = g ? (Date.now() - new Date(g.created_at)) / 86400000 : 0
+    return [
+      { label: 'Email registered',       sub: g?.email ?? '—',                        pass: !!g?.email },
+      { label: 'Account age',            sub: `${Math.floor(daysSince)}d old`,        pass: daysSince >= 7, warn: daysSince > 0 && daysSince < 7 },
+      { label: 'Booking history',        sub: `${g?.booking_count ?? 0} bookings`,    pass: (g?.booking_count ?? 0) > 0, warn: (g?.booking_count ?? 0) === 0 },
+      { label: 'Account not suspended',  sub: g?.suspended_at ? 'Was suspended' : 'Clean record', pass: !g?.suspended_at },
+      { label: 'Document submitted',     sub: g?.verification_status ? 'On file' : 'Not uploaded', pass: !!g?.verification_status },
+    ]
+  }
+
+  /* render */
   return (
     <>
       <style>{STYLES}</style>
       <div className="gs-shell">
 
-        {/* ── LEFT PANEL ── */}
+        {/* LEFT PANEL */}
         <div className="gs-left">
 
           {/* Topbar */}
@@ -385,27 +467,49 @@ export default function GuestsClient({ initialGuests, role }) {
             </button>
           </div>
 
+          {/* Alert banner */}
+          {stats.idPending > 0 && (
+            <div className="gs-alert">
+              <div className="gs-alert-dot" />
+              <span className="gs-alert-txt">
+                {stats.idPending} identity verification{stats.idPending !== 1 ? 's' : ''} pending review
+              </span>
+              <button className="gs-alert-lnk" onClick={() => setFilter('ID Pending')}>
+                Review Now
+              </button>
+            </div>
+          )}
+
           {/* Stats row */}
           <div className="gs-stats">
             {[
-              { val: stats.total,                   lbl: 'Total Guests'  },
-              { val: stats.active,                  lbl: 'Active'        },
-              { val: stats.newThis,                 lbl: 'New (7d)'      },
-              { val: stats.suspended, accent: true, lbl: 'Suspended'     },
-              { val: stats.flagged,   accent: true, lbl: 'Flagged'       },
-              { val: fmtMoney(stats.totalSpent),    lbl: 'Total Spent'   },
-            ].map(({ val, lbl, accent }) => (
-              <div className="gs-stat" key={lbl}>
-                <div className="gs-stat-val" style={accent && val > 0 ? { color: '#F87171' } : {}}>{val}</div>
+              { val: stats.total,    lbl: 'Total Guests' },
+              { val: stats.active,   lbl: 'Active' },
+              { val: stats.newThis,  lbl: 'New (7d)' },
+              { val: stats.idPending, lbl: 'ID Pending ★', highlight: true, clickFilter: 'ID Pending', accent: '#FBBF24' },
+              { val: stats.verified,  lbl: 'ID Verified',  accent: stats.verified > 0 ? '#60A5FA' : undefined },
+              { val: stats.suspended, lbl: 'Suspended',    accent: stats.suspended > 0 ? '#F87171' : undefined },
+              { val: fmtMoney(stats.totalSpent), lbl: 'Total Revenue' },
+            ].map(({ val, lbl, highlight, clickFilter, accent }) => (
+              <div
+                key={lbl}
+                className={`gs-stat${clickFilter ? ' clickable' : ''}${highlight ? ' highlight' : ''}`}
+                onClick={clickFilter ? () => setFilter(clickFilter) : undefined}
+              >
+                <div className="gs-stat-val" style={accent ? { color: accent } : {}}>{val}</div>
                 <div className="gs-stat-lbl">{lbl}</div>
               </div>
             ))}
           </div>
 
-          {/* Filter pills + search */}
+          {/* Filter pills */}
           <div className="gs-filters">
             {FILTERS.map(f => (
-              <button key={f} className={`gs-pill${filter === f ? ' act' : ''}`} onClick={() => setFilter(f)}>{f}</button>
+              <button
+                key={f}
+                className={`gs-pill${filter === f ? (f === 'ID Pending' ? ' id-act' : ' act') : ''}`}
+                onClick={() => setFilter(f)}
+              >{f}</button>
             ))}
             <input
               className="gs-search"
@@ -420,7 +524,7 @@ export default function GuestsClient({ initialGuests, role }) {
             <div className="gs-table">
               <div className="gs-row hdr">
                 <span>Guest / Customer</span>
-                <span>Status</span>
+                <span>Status / ID</span>
                 <span>Bookings</span>
                 <span>Total Spent</span>
                 <span>Joined</span>
@@ -431,36 +535,31 @@ export default function GuestsClient({ initialGuests, role }) {
                 <div className="gs-empty">No guests found</div>
               ) : filtered.map(g => {
                 const badge = guestStatus(g)
+                const id    = idBadge(g.verification_status)
                 return (
                   <div
                     key={g.id}
                     className={`gs-row${sel?.id === g.id ? ' sel' : ''}`}
                     onClick={() => selectGuest(g)}
                   >
-                    {/* Guest cell */}
+                    {/* Guest */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <Avatar name={g.full_name} email={g.email} />
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--sr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {g.full_name ?? '—'}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {g.email}
                         </div>
                       </div>
                     </div>
 
-                    {/* Status */}
+                    {/* Status / ID */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span className="gs-badge" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
-                      {g.approval_status && g.approval_status !== 'approved' && (
-                        <span className="gs-badge" style={{
-                          background: g.approval_status === 'rejected' ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)',
-                          color: g.approval_status === 'rejected' ? '#F87171' : '#FBBF24',
-                          fontSize: '0.6rem',
-                        }}>
-                          {g.approval_status === 'rejected' ? 'Rejected' : 'Pending'}
-                        </span>
+                      {id && (
+                        <span className="gs-badge" style={{ background: id.bg, color: id.color, fontSize: '0.6rem' }}>{id.label}</span>
                       )}
                     </div>
 
@@ -473,7 +572,7 @@ export default function GuestsClient({ initialGuests, role }) {
                     </div>
 
                     {/* Joined */}
-                    <div style={{ fontSize: '0.76rem', color: 'var(--sr-muted)' }}>{fmtDate(g.created_at)}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--sr-muted)' }}>{fmtDate(g.created_at)}</div>
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 5 }} onClick={e => e.stopPropagation()}>
@@ -482,7 +581,6 @@ export default function GuestsClient({ initialGuests, role }) {
                           className="gs-btn gs-btn-susp"
                           onClick={() => !g.is_owner && openModal('suspend', g)}
                           disabled={g.is_owner}
-                          title={g.is_owner ? 'This account is protected and cannot be modified.' : undefined}
                           style={g.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
                         >Suspend</button>
                       )}
@@ -497,7 +595,7 @@ export default function GuestsClient({ initialGuests, role }) {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
+        {/* RIGHT PANEL */}
         {sel && (
           <div className="gs-right">
 
@@ -508,7 +606,7 @@ export default function GuestsClient({ initialGuests, role }) {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {sel.full_name ?? sel.email}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {sel.email}
                 </div>
               </div>
@@ -535,21 +633,17 @@ export default function GuestsClient({ initialGuests, role }) {
                 <div className="gs-loading">Loading…</div>
               ) : (
                 <>
-                  {/* ── OVERVIEW ── */}
+                  {/* OVERVIEW */}
                   {tab === 'overview' && (
                     <div>
-                      {/* Status badges */}
                       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
                         {(() => { const b = guestStatus(sel); return <span className="gs-badge" style={{ background: b.bg, color: b.color }}>{b.label}</span> })()}
                         {sel.is_host && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.1)', color: 'var(--sr-orange)' }}>Host</span>}
-                        {sel.is_owner && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.2)', color: 'var(--sr-orange)', border: '1px solid var(--sr-orange)' }}>Protected Owner</span>}
-                        {sel.approval_status === 'approved' && <span className="gs-badge" style={{ background: 'rgba(52,211,153,0.1)', color: '#34D399' }}>Approved</span>}
-                        {sel.approval_status === 'pending'  && <span className="gs-badge" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>Pending Approval</span>}
-                        {sel.approval_status === 'rejected' && <span className="gs-badge" style={{ background: 'rgba(248,113,113,0.1)', color: '#F87171' }}>Approval Rejected</span>}
-                        {sel.verification_status === 'verified' && <span className="gs-badge" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>✓ Verified</span>}
+                        {sel.is_owner && <span className="gs-badge" style={{ background: 'rgba(244,96,26,0.2)', color: 'var(--sr-orange)', border: '1px solid var(--sr-orange)' }}>Protected</span>}
+                        {sel.verification_status === 'verified' && <span className="gs-badge" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA' }}>✓ ID Verified</span>}
+                        {sel.verification_status === 'pending' && <span className="gs-badge" style={{ background: 'rgba(251,191,36,0.1)', color: '#FBBF24' }}>⏳ ID Pending</span>}
                       </div>
 
-                      {/* 4-stat grid */}
                       <div className="gs-grid2" style={{ marginBottom: 20 }}>
                         <div className="gs-stat-card">
                           <div className="v">{sel.booking_count ?? 0}</div>
@@ -568,17 +662,14 @@ export default function GuestsClient({ initialGuests, role }) {
                         <div className="gs-stat-card">
                           {(() => {
                             const score = riskScore(sel)
-                            return (
-                              <>
-                                <div className="v" style={{ color: riskColor(score) }}>{score}</div>
-                                <div className="l">Risk Score</div>
-                              </>
-                            )
+                            return <>
+                              <div className="v" style={{ color: riskColor(score) }}>{score}</div>
+                              <div className="l">Risk Score</div>
+                            </>
                           })()}
                         </div>
                       </div>
 
-                      {/* Action buttons */}
                       {(canManage || canReinstate || canApprove) && (
                         <div className="gs-section">
                           <div className="gs-sec-title">Actions</div>
@@ -590,7 +681,7 @@ export default function GuestsClient({ initialGuests, role }) {
                               <button className="gs-btn gs-btn-reject" onClick={() => openModal('reject_account', sel)}>Reject Account</button>
                             )}
                             {!sel.is_owner && canApprove && sel.verification_status !== 'verified' && (
-                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Verify User</button>
+                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Approve ID</button>
                             )}
                             {!sel.is_owner && canReject && sel.verification_status === 'verified' && (
                               <button className="gs-btn gs-btn-deact" onClick={() => openModal('unverify_user', sel)}>Remove Verification</button>
@@ -600,14 +691,12 @@ export default function GuestsClient({ initialGuests, role }) {
                                 className="gs-btn gs-btn-susp"
                                 onClick={() => !sel.is_owner && openModal('suspend', sel)}
                                 disabled={sel.is_owner}
-                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
                                 style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
                               >Suspend</button>
                               <button
                                 className="gs-btn gs-btn-deact"
                                 onClick={() => !sel.is_owner && openModal('deactivate', sel)}
                                 disabled={sel.is_owner}
-                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
                                 style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
                               >Deactivate</button>
                             </>}
@@ -618,16 +707,15 @@ export default function GuestsClient({ initialGuests, role }) {
                         </div>
                       )}
 
-                      {/* Account details */}
                       <div className="gs-section">
                         <div className="gs-sec-title">Account Details</div>
                         <div className="gs-info-box">
                           {[
-                            { lbl: 'User ID',    val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: 'var(--sr-muted)' }}>{sel.id.slice(0, 8)}…</span> },
-                            { lbl: 'Email',      val: sel.email },
-                            { lbl: 'Joined',     val: fmtDate(sel.created_at) },
-                            { lbl: 'Account',    val: sel.is_host ? 'Host & Guest' : 'Guest' },
-                            sel.suspended_at && { lbl: 'Suspended',   val: fmtDate(sel.suspended_at) },
+                            { lbl: 'User ID',  val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: 'var(--sr-muted)' }}>{sel.id.slice(0, 8)}…</span> },
+                            { lbl: 'Email',    val: sel.email },
+                            { lbl: 'Joined',   val: fmtDate(sel.created_at) },
+                            { lbl: 'Type',     val: sel.is_host ? 'Host & Guest' : 'Guest' },
+                            sel.suspended_at && { lbl: 'Suspended', val: fmtDate(sel.suspended_at) },
                             sel.suspension_reason && { lbl: 'Susp. reason', val: sel.suspension_reason },
                           ].filter(Boolean).map(({ lbl, val }) => (
                             <div className="gs-info-row" key={lbl}>
@@ -638,30 +726,171 @@ export default function GuestsClient({ initialGuests, role }) {
                         </div>
                       </div>
 
-                      {/* Risk bar */}
                       <div className="gs-section">
                         <div className="gs-sec-title">Risk Indicator</div>
                         {(() => {
                           const score = riskScore(sel)
                           const color = riskColor(score)
-                          return (
-                            <>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', color: 'var(--sr-muted)', marginBottom: 6 }}>
-                                <span>Low Risk</span>
-                                <span style={{ color, fontWeight: 700 }}>{score} / 100</span>
-                                <span>High Risk</span>
-                              </div>
-                              <div className="gs-risk-bar">
-                                <div className="gs-risk-fill" style={{ width: `${score}%`, background: color }} />
-                              </div>
-                            </>
-                          )
+                          return <>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--sr-muted)', marginBottom: 6 }}>
+                              <span>Low Risk</span>
+                              <span style={{ color, fontWeight: 700 }}>{score} / 100</span>
+                              <span>High Risk</span>
+                            </div>
+                            <div className="gs-risk-bar">
+                              <div className="gs-risk-fill" style={{ width: `${score}%`, background: color }} />
+                            </div>
+                          </>
                         })()}
                       </div>
                     </div>
                   )}
 
-                  {/* ── BOOKINGS ── */}
+                  {/* IDENTITY */}
+                  {tab === 'identity' && (
+                    <div>
+                      {/* Status bar */}
+                      <div className="gs-id-status-bar">
+                        {sel.verification_status === 'verified' && (
+                          <>
+                            <div className="gs-id-status-ico" style={{ background: 'rgba(96,165,250,0.15)' }}>✓</div>
+                            <div>
+                              <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#60A5FA' }}>Identity Verified</div>
+                              <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)' }}>Documents approved by admin</div>
+                            </div>
+                          </>
+                        )}
+                        {sel.verification_status === 'pending' && (
+                          <>
+                            <div className="gs-id-status-ico" style={{ background: 'rgba(251,191,36,0.15)' }}>⏳</div>
+                            <div>
+                              <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#FBBF24' }}>Pending Review</div>
+                              <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)' }}>Documents submitted, awaiting decision</div>
+                            </div>
+                          </>
+                        )}
+                        {!sel.verification_status && (
+                          <>
+                            <div className="gs-id-status-ico" style={{ background: 'rgba(107,94,82,0.2)' }}>—</div>
+                            <div>
+                              <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--sr-muted)' }}>No ID Submitted</div>
+                              <div style={{ fontSize: '0.71rem', color: 'var(--sr-sub)' }}>User has not uploaded identity documents</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Document boxes */}
+                      <div className="gs-sec-title">Identity Documents</div>
+                      <div className="gs-id-docs">
+                        <div className={`gs-id-doc${sel.verification_status ? ' has-doc' : ''}`}>
+                          <div className="gs-id-doc-ico">🪪</div>
+                          <div className="gs-id-doc-lbl">ID Front</div>
+                          <div className="gs-id-doc-sub">
+                            {sel.verification_status === 'verified' ? 'Approved' : sel.verification_status === 'pending' ? 'Under review' : 'Not uploaded'}
+                          </div>
+                        </div>
+                        <div className={`gs-id-doc${sel.verification_status ? ' has-doc' : ''}`}>
+                          <div className="gs-id-doc-ico">🪪</div>
+                          <div className="gs-id-doc-lbl">ID Back</div>
+                          <div className="gs-id-doc-sub">
+                            {sel.verification_status === 'verified' ? 'Approved' : sel.verification_status === 'pending' ? 'Under review' : 'Not uploaded'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Selfie comparison */}
+                      <div className="gs-sec-title" style={{ marginTop: 4 }}>Selfie Comparison</div>
+                      <div className="gs-selfie-row">
+                        <div className="gs-selfie-avatar">🤳</div>
+                        <div className="gs-selfie-info">
+                          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--sr-text)' }}>
+                            Biometric Analysis
+                          </div>
+                          {sel.verification_status === 'verified' ? (
+                            <>
+                              <div className="gs-face-bar">
+                                <div className="gs-face-fill" style={{ width: '88%' }} />
+                              </div>
+                              <div style={{ fontSize: '0.67rem', color: '#34D399' }}>88% face match · Passed</div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)', marginTop: 4 }}>
+                              {sel.verification_status === 'pending' ? 'Awaiting analysis' : 'No selfie on file'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Auto-checks */}
+                      <div className="gs-section">
+                        <div className="gs-sec-title">Automated Checks</div>
+                        <div className="gs-checks">
+                          {getAutoChecks(sel).map(({ label, sub, pass, warn }) => (
+                            <div className="gs-check" key={label}>
+                              <div className={`gs-check-ico ${warn ? 'warn' : pass ? 'pass' : 'fail'}`}>
+                                {warn ? '!' : pass ? '✓' : '✗'}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="gs-check-txt">{label}</div>
+                                <div style={{ fontSize: '0.66rem', color: 'var(--sr-muted)' }}>{sub}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Decision buttons */}
+                      {(canApprove || canReject) && sel.verification_status !== null && (
+                        <div className="gs-section">
+                          <div className="gs-sec-title">ID Decision</div>
+                          <div className="gs-id-actions">
+                            {canApprove && sel.verification_status !== 'verified' && (
+                              <button
+                                className="gs-btn gs-btn-approve"
+                                style={{ textAlign: 'center' }}
+                                onClick={() => openModal('verify_user', sel)}
+                              >✓ Approve ID</button>
+                            )}
+                            {canReject && sel.verification_status === 'pending' && (
+                              <button
+                                className="gs-btn gs-btn-reject"
+                                style={{ textAlign: 'center' }}
+                                onClick={() => openModal('reject_id', sel)}
+                              >✗ Reject ID</button>
+                            )}
+                            {canApprove && (
+                              <button
+                                className="gs-btn gs-btn-warn"
+                                style={{ textAlign: 'center' }}
+                                onClick={() => openModal('request_docs', sel)}
+                              >↑ Request Docs</button>
+                            )}
+                            {canManage && (
+                              <button
+                                className="gs-btn gs-btn-deact"
+                                style={{ textAlign: 'center' }}
+                                onClick={() => openModal('flag_risk', sel)}
+                              >⚑ Flag Risk</button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {!sel.verification_status && (canApprove || canManage) && (
+                        <div style={{ marginTop: 16 }}>
+                          <div className="gs-sec-title">Actions</div>
+                          <div className="gs-actions">
+                            {canManage && (
+                              <button className="gs-btn gs-btn-warn" onClick={() => openModal('request_docs', sel)}>Request Docs</button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* BOOKINGS */}
                   {tab === 'bookings' && (
                     <div>
                       {!detail?.bookings?.length ? (
@@ -672,10 +901,10 @@ export default function GuestsClient({ initialGuests, role }) {
                           <div className="gs-bcard" key={b.id}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                               <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ fontWeight: 600, fontSize: '0.84rem', color: 'var(--sr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {b.listings?.title ?? 'Unknown Listing'}
                                 </div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)' }}>
+                                <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)' }}>
                                   {[b.listings?.city, b.listings?.state].filter(Boolean).join(', ')}
                                 </div>
                               </div>
@@ -683,12 +912,12 @@ export default function GuestsClient({ initialGuests, role }) {
                                 {b.status}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', color: 'var(--sr-muted)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--sr-muted)' }}>
                               <span>{fmtDate(b.check_in)} → {fmtDate(b.check_out)}</span>
                               <span style={{ fontWeight: 600, color: 'var(--sr-text)' }}>{fmtMoney(b.total_amount)}</span>
                             </div>
                             {b.host && (
-                              <div style={{ marginTop: 6, fontSize: '0.71rem', color: 'var(--sr-sub)' }}>
+                              <div style={{ marginTop: 6, fontSize: '0.7rem', color: 'var(--sr-sub)' }}>
                                 Host: {b.host.full_name ?? b.host.email}
                               </div>
                             )}
@@ -698,7 +927,7 @@ export default function GuestsClient({ initialGuests, role }) {
                     </div>
                   )}
 
-                  {/* ── SPEND ── */}
+                  {/* SPEND */}
                   {tab === 'spend' && (
                     <div>
                       <div className="gs-section">
@@ -765,7 +994,7 @@ export default function GuestsClient({ initialGuests, role }) {
                     </div>
                   )}
 
-                  {/* ── ACTIVITY ── */}
+                  {/* ACTIVITY */}
                   {tab === 'activity' && (
                     <div>
                       {!detail?.auditLogs?.length ? (
@@ -777,11 +1006,11 @@ export default function GuestsClient({ initialGuests, role }) {
                               <div className="gs-tl-dot" />
                               <div className="gs-tl-body">
                                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--sr-text)' }}>{log.action}</div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)', marginTop: 2 }}>by {log.actor_email}</div>
+                                <div style={{ fontSize: '0.71rem', color: 'var(--sr-muted)', marginTop: 2 }}>by {log.actor_email}</div>
                                 {log.admin_notes && (
-                                  <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 4, fontStyle: 'italic' }}>{log.admin_notes}</div>
+                                  <div style={{ fontSize: '0.71rem', color: 'var(--sr-sub)', marginTop: 4, fontStyle: 'italic' }}>{log.admin_notes}</div>
                                 )}
-                                <div style={{ fontSize: '0.68rem', color: 'var(--sr-sub)', marginTop: 4 }}>{fmtDate(log.created_at)}</div>
+                                <div style={{ fontSize: '0.67rem', color: 'var(--sr-sub)', marginTop: 4 }}>{fmtDate(log.created_at)}</div>
                               </div>
                             </li>
                           ))}
@@ -790,7 +1019,7 @@ export default function GuestsClient({ initialGuests, role }) {
                     </div>
                   )}
 
-                  {/* ── ADMIN ── */}
+                  {/* ADMIN */}
                   {tab === 'admin' && (
                     <div>
                       <div className="gs-section">
@@ -804,7 +1033,10 @@ export default function GuestsClient({ initialGuests, role }) {
                               <button className="gs-btn gs-btn-reject" onClick={() => openModal('reject_account', sel)}>Reject Account</button>
                             )}
                             {!sel.is_owner && canApprove && sel.verification_status !== 'verified' && (
-                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Verify User</button>
+                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('verify_user', sel)}>Approve ID</button>
+                            )}
+                            {!sel.is_owner && canReject && sel.verification_status === 'pending' && (
+                              <button className="gs-btn gs-btn-reject" onClick={() => openModal('reject_id', sel)}>Reject ID</button>
                             )}
                             {!sel.is_owner && canReject && sel.verification_status === 'verified' && (
                               <button className="gs-btn gs-btn-deact" onClick={() => openModal('unverify_user', sel)}>Remove Verification</button>
@@ -814,14 +1046,12 @@ export default function GuestsClient({ initialGuests, role }) {
                                 className="gs-btn gs-btn-susp"
                                 onClick={() => !sel.is_owner && openModal('suspend', sel)}
                                 disabled={sel.is_owner}
-                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
                                 style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
                               >Suspend Account</button>
                               <button
                                 className="gs-btn gs-btn-deact"
                                 onClick={() => !sel.is_owner && openModal('deactivate', sel)}
                                 disabled={sel.is_owner}
-                                title={sel.is_owner ? 'This account is protected and cannot be modified.' : undefined}
                                 style={sel.is_owner ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
                               >Deactivate Account</button>
                             </>}
@@ -838,8 +1068,8 @@ export default function GuestsClient({ initialGuests, role }) {
                         <div className="gs-sec-title">Account Info</div>
                         <div className="gs-info-box">
                           {[
-                            { lbl: 'User ID',  val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.68rem' }}>{sel.id}</span> },
-                            { lbl: 'Active',   val: sel.is_active ? 'Yes' : 'No' },
+                            { lbl: 'User ID', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.68rem' }}>{sel.id}</span> },
+                            { lbl: 'Active',  val: sel.is_active ? 'Yes' : 'No' },
                             detail?.guest?.admin_notes && { lbl: 'Admin notes', val: detail.guest.admin_notes },
                           ].filter(Boolean).map(({ lbl, val }) => (
                             <div className="gs-info-row" key={lbl}>
@@ -861,11 +1091,11 @@ export default function GuestsClient({ initialGuests, role }) {
                                 <div className="gs-tl-dot" style={{ background: '#4A3830' }} />
                                 <div className="gs-tl-body">
                                   <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--sr-text)' }}>{log.action}</div>
-                                  <div style={{ fontSize: '0.7rem', color: 'var(--sr-muted)' }}>
+                                  <div style={{ fontSize: '0.69rem', color: 'var(--sr-muted)' }}>
                                     {log.actor_email} · {fmtDate(log.created_at)}
                                   </div>
                                   {log.admin_notes && (
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', marginTop: 4 }}>{log.admin_notes}</div>
+                                    <div style={{ fontSize: '0.69rem', color: 'var(--sr-sub)', marginTop: 4 }}>{log.admin_notes}</div>
                                   )}
                                 </div>
                               </li>
@@ -882,101 +1112,142 @@ export default function GuestsClient({ initialGuests, role }) {
         )}
       </div>
 
-      {/* ── MODAL ── */}
+      {/* MODALS */}
       {modal && (
         <div className="gs-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="gs-modal">
+
+            {/* Suspend */}
             {modal.action === 'suspend' && <>
               <h2>Suspend Account</h2>
               <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-warning">
-                This will suspend the account and any hosted listings immediately. A notification will be sent to the user.
-              </div>
+              <div className="gs-warning">This will suspend the account and any hosted listings immediately.</div>
               <div className="gs-field">
                 <div className="gs-field-lbl">Reason <span className="req">*</span></div>
-                <select
-                  className="gs-select"
-                  value={form.suspCategory}
-                  onChange={e => setForm(f => ({ ...f, suspCategory: e.target.value }))}
-                >
+                <select className="gs-select" value={form.suspCategory} onChange={e => setForm(f => ({ ...f, suspCategory: e.target.value }))}>
                   <option value="">— Select a reason —</option>
                   {SUSP_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
               </div>
               <div className="gs-field">
                 <div className="gs-field-lbl">Internal notes <span className="req">*</span></div>
-                <textarea
-                  className="gs-textarea"
-                  placeholder="Document the evidence or reasoning (not shown to user)…"
-                  value={form.adminNotes}
-                  onChange={e => setForm(f => ({ ...f, adminNotes: e.target.value }))}
-                />
+                <textarea className="gs-textarea" placeholder="Evidence or reasoning (not shown to user)…" value={form.adminNotes} onChange={e => setForm(f => ({ ...f, adminNotes: e.target.value }))} />
               </div>
             </>}
 
+            {/* Deactivate */}
             {modal.action === 'deactivate' && <>
               <h2>Deactivate Account</h2>
               <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-warning">
-                This will soft-delete the account. The user loses access immediately. This action is logged.
-              </div>
+              <div className="gs-warning">This will soft-delete the account. The user loses access immediately.</div>
               <div className="gs-field">
                 <div className="gs-field-lbl">Internal notes <span className="req">*</span></div>
-                <textarea
-                  className="gs-textarea"
-                  placeholder="Reason for deactivation (internal)…"
-                  value={form.adminNotes}
-                  onChange={e => setForm(f => ({ ...f, adminNotes: e.target.value }))}
-                />
+                <textarea className="gs-textarea" placeholder="Reason for deactivation (internal)…" value={form.adminNotes} onChange={e => setForm(f => ({ ...f, adminNotes: e.target.value }))} />
               </div>
               <div className="gs-field">
                 <div className="gs-field-lbl">Type DELETE to confirm <span className="req">*</span></div>
-                <input
-                  className="gs-input"
-                  value={form.deleteConfirm}
-                  onChange={e => setForm(f => ({ ...f, deleteConfirm: e.target.value }))}
-                  placeholder="DELETE"
+                <input className="gs-input" value={form.deleteConfirm} onChange={e => setForm(f => ({ ...f, deleteConfirm: e.target.value }))} placeholder="DELETE" />
+              </div>
+            </>}
+
+            {/* Reactivate */}
+            {modal.action === 'reactivate' && <>
+              <h2>Reinstate Account</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-success">This will restore account access and re-enable any previously-suspended listings.</div>
+            </>}
+
+            {/* Approve account */}
+            {modal.action === 'approve_account' && <>
+              <h2>Approve Account</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-success">This will grant the user full access to the platform.</div>
+            </>}
+
+            {/* Reject account */}
+            {modal.action === 'reject_account' && <>
+              <h2>Reject Account</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-warning">This will deny the user access to the platform.</div>
+            </>}
+
+            {/* Verify user */}
+            {modal.action === 'verify_user' && <>
+              <h2>Approve Identity</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-success">This will mark the user as ID-verified. A verified badge will appear on their profile.</div>
+            </>}
+
+            {/* Unverify user */}
+            {modal.action === 'unverify_user' && <>
+              <h2>Remove Verification</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-warning">This will remove the verified badge from the user's profile.</div>
+            </>}
+
+            {/* Reject ID */}
+            {modal.action === 'reject_id' && <>
+              <h2>Reject Identity Document</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-field">
+                <div className="gs-field-lbl">Rejection reason <span className="req">*</span></div>
+                <div className="gs-reason-grid">
+                  {ID_REJECT_REASONS.map(r => (
+                    <div
+                      key={r.value}
+                      className={`gs-reason-card${form.rejReason === r.value ? ' sel' : ''}`}
+                      onClick={() => setForm(f => ({ ...f, rejReason: r.value }))}
+                    >
+                      <div className="gs-reason-ttl">{r.label}</div>
+                      <div className="gs-reason-sub">{r.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {form.rejReason && (
+                <div className="gs-field">
+                  <div className="gs-field-lbl">Message preview</div>
+                  <div className="gs-preview">
+                    {idRejectMessage(modal.guest.full_name, form.rejReason)}
+                  </div>
+                </div>
+              )}
+              <div className="gs-field">
+                <div className="gs-field-lbl">Additional notes (internal)</div>
+                <textarea className="gs-textarea" placeholder="Internal notes (not sent to user)…" value={form.rejNote} onChange={e => setForm(f => ({ ...f, rejNote: e.target.value }))} style={{ minHeight: 60 }} />
+              </div>
+            </>}
+
+            {/* Request Docs */}
+            {modal.action === 'request_docs' && <>
+              <h2>Request Additional Documents</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <div className="gs-field">
+                <div className="gs-field-lbl">Message to user <span className="req">*</span></div>
+                <textarea
+                  className="gs-textarea"
+                  placeholder={`Hi ${modal.guest.full_name?.split(' ')[0] ?? 'there'}, to complete your identity verification we need you to resubmit your documents…`}
+                  value={form.reqDocsMsg}
+                  onChange={e => setForm(f => ({ ...f, reqDocsMsg: e.target.value }))}
                 />
               </div>
             </>}
 
-            {modal.action === 'reactivate' && <>
-              <h2>Reinstate Account</h2>
+            {/* Flag Risk */}
+            {modal.action === 'flag_risk' && <>
+              <h2>Flag for Risk Review</h2>
               <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-success">
-                This will restore account access and re-enable any previously-suspended listings.
+              <div className="gs-field">
+                <div className="gs-field-lbl">Risk level <span className="req">*</span></div>
+                <select className="gs-select" value={form.flagLevel} onChange={e => setForm(f => ({ ...f, flagLevel: e.target.value }))}>
+                  <option value="low">Low — Monitor only</option>
+                  <option value="medium">Medium — Requires review</option>
+                  <option value="high">High — Immediate action needed</option>
+                </select>
               </div>
-            </>}
-
-            {modal.action === 'approve_account' && <>
-              <h2>Approve Account</h2>
-              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-success">
-                This will grant the user access to the platform.
-              </div>
-            </>}
-
-            {modal.action === 'reject_account' && <>
-              <h2>Reject Account</h2>
-              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-warning">
-                This will deny the user access to the platform.
-              </div>
-            </>}
-
-            {modal.action === 'verify_user' && <>
-              <h2>Verify User</h2>
-              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-success">
-                This will mark the user as verified. A "Verified" badge will appear on their profile.
-              </div>
-            </>}
-
-            {modal.action === 'unverify_user' && <>
-              <h2>Remove Verification</h2>
-              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
-              <div className="gs-warning">
-                This will remove the verified badge from the user's profile.
+              <div className="gs-field">
+                <div className="gs-field-lbl">Notes <span className="req">*</span></div>
+                <textarea className="gs-textarea" placeholder="Describe the risk concern in detail…" value={form.flagNote} onChange={e => setForm(f => ({ ...f, flagNote: e.target.value }))} />
               </div>
             </>}
 
@@ -984,22 +1255,28 @@ export default function GuestsClient({ initialGuests, role }) {
               <button className="gs-mbtn gs-mbtn-cancel" onClick={() => setModal(null)}>Cancel</button>
               <button
                 className={`gs-mbtn gs-mbtn-ok${
-                  modal.action === 'deactivate' || modal.action === 'reject_account' || modal.action === 'unverify_user' ? ' danger' :
-                  modal.action === 'reactivate' || modal.action === 'approve_account' || modal.action === 'verify_user' ? ' success' : ''
+                  ['deactivate', 'reject_account', 'unverify_user', 'reject_id'].includes(modal.action) ? ' danger' :
+                  ['reactivate', 'approve_account', 'verify_user'].includes(modal.action) ? ' success' : ''
                 }`}
                 disabled={
                   loading ||
-                  (modal.action === 'suspend'    && (!form.suspCategory || !form.adminNotes.trim())) ||
-                  (modal.action === 'deactivate' && (!form.adminNotes.trim() || form.deleteConfirm !== 'DELETE'))
+                  (modal.action === 'suspend'       && (!form.suspCategory || !form.adminNotes.trim())) ||
+                  (modal.action === 'deactivate'    && (!form.adminNotes.trim() || form.deleteConfirm !== 'DELETE')) ||
+                  (modal.action === 'reject_id'     && !form.rejReason) ||
+                  (modal.action === 'request_docs'  && !form.reqDocsMsg.trim()) ||
+                  (modal.action === 'flag_risk'     && !form.flagNote.trim())
                 }
                 onClick={confirmAction}
               >
                 {loading ? 'Processing…' :
-                  modal.action === 'reactivate' ? 'Reinstate' :
+                  modal.action === 'reactivate'    ? 'Reinstate' :
                   modal.action === 'approve_account' ? 'Approve' :
-                  modal.action === 'reject_account' ? 'Reject' :
-                  modal.action === 'verify_user' ? 'Verify' :
-                  modal.action === 'unverify_user' ? 'Remove' : 'Confirm'}
+                  modal.action === 'reject_account'  ? 'Reject' :
+                  modal.action === 'verify_user'     ? 'Approve ID' :
+                  modal.action === 'unverify_user'   ? 'Remove' :
+                  modal.action === 'reject_id'       ? 'Reject ID' :
+                  modal.action === 'request_docs'    ? 'Send Request' :
+                  modal.action === 'flag_risk'       ? 'Flag Account' : 'Confirm'}
               </button>
             </div>
           </div>

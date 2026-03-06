@@ -1,6 +1,6 @@
 import SharedHeader from '@/app/components/SharedHeader'
 
-export const metadata = { title: 'About — SnapReserve', description: 'Learn about SnapReserve — the modern booking platform connecting travelers with hotels and private stays.' }
+export const metadata = { title: 'About — SnapReserve™', description: 'Learn about SnapReserve™ — the modern booking platform connecting travelers with hotels and private stays.' }
 
 export default function AboutPage() {
   return (
@@ -114,7 +114,7 @@ export default function AboutPage() {
         <div className="ab-hero-inner">
           <div>
             <div className="ab-eyebrow">Our Story</div>
-            <h1 className="ab-title">About<br /><em>SnapReserve</em></h1>
+            <h1 className="ab-title">About<br /><em>SnapReserve™</em></h1>
             <p className="ab-body">A modern booking platform that connects travelers with <strong style={{color:'var(--sr-bg)'}}>hotels and private stays</strong> in one place — while giving hosts the tools they actually deserve.</p>
             <div className="ab-btns">
               <a href="/signup" className="btn-primary">Sign Up Now →</a>
@@ -147,8 +147,8 @@ export default function AboutPage() {
           <div>
             <div className="eyebrow">Our Mission</div>
             <h2 className="section-title">Simplify how people<br /><em>discover</em> &amp; book</h2>
-            <p className="section-body">SnapReserve was built around one belief — finding and booking a place to stay should feel effortless for travelers, and managing listings should feel powerful for hosts.</p>
-            <p className="section-body">Whether you're a hotel owner with multiple room categories or a homeowner with a villa to share, SnapReserve is built specifically for your needs.</p>
+            <p className="section-body">SnapReserve™ was built around one belief — finding and booking a place to stay should feel effortless for travelers, and managing listings should feel powerful for hosts.</p>
+            <p className="section-body">Whether you're a hotel owner with multiple room categories or a homeowner with a villa to share, SnapReserve™ is built specifically for your needs.</p>
           </div>
           <div>
             <div className="miss-card">
@@ -184,18 +184,18 @@ export default function AboutPage() {
               <div className="f-initials">DN</div>
               <div className="f-nameplate">
                 <div className="fn-name">Danish Noorani</div>
-                <div className="fn-role">Founder &amp; CEO, SnapReserve™</div>
+                <div className="fn-role">Founder &amp; CEO, SnapReserve™™</div>
               </div>
             </div>
           </div>
           <div>
             <div className="f-eyebrow">The Founder</div>
             <h2 className="f-title">Built by<br /><em>Danish</em> Noorani</h2>
-            <blockquote className="f-quote">"Travelers deserve better discovery. Hosts deserve better tools. SnapReserve is the platform that respects both."</blockquote>
-            <p className="f-body">Danish Noorani founded SnapReserve with a clear vision: to build a booking platform that treats hotels like the businesses they are — not like oversized vacation homes — while making private stays just as easy to discover and book.</p>
+            <blockquote className="f-quote">"Travelers deserve better discovery. Hosts deserve better tools. SnapReserve™ is the platform that respects both."</blockquote>
+            <p className="f-body">Danish Noorani founded SnapReserve™ with a clear vision: to build a booking platform that treats hotels like the businesses they are — not like oversized vacation homes — while making private stays just as easy to discover and book.</p>
             <p className="f-body">From the host dashboard to the guest listing flow, every feature was designed with intentionality. The goal is simple: fewer friction points, more unforgettable stays.</p>
             <div className="f-sig">Danish Noorani</div>
-            <div className="f-sig-role">Founder &amp; CEO · SnapReserve™</div>
+            <div className="f-sig-role">Founder &amp; CEO · SnapReserve™™</div>
           </div>
         </div>
       </section>
@@ -211,7 +211,7 @@ export default function AboutPage() {
             { n:'01', title:'Simplicity Over Complexity',    body:'Booking or listing should take minutes. We strip away the unnecessary and keep only what matters.' },
             { n:'02', title:'Hosts Are Partners',            body:'We build for hosts, not just around them. Their tools get the same care as the guest experience.' },
             { n:'03', title:'Honesty in Every Detail',       body:'No hidden fees. No misleading photos. No price surprises at checkout. Transparency for everyone.' },
-            { n:'04', title:'Built for Real Property Types', body:'A hotel with 48 rooms is not the same as a spare bedroom. SnapReserve respects the difference.' },
+            { n:'04', title:'Built for Real Property Types', body:'A hotel with 48 rooms is not the same as a spare bedroom. SnapReserve™ respects the difference.' },
             { n:'05', title:'Travelers Come First',          body:'Every guest interaction should feel smooth and delightful. We obsess over the experience.' },
             { n:'06', title:'Growth Through Trust',          body:'Verified reviews, secure payments, transparent profiles. Trust is earned — and we design for it.' },
           ].map(({ n, title, body }) => (
@@ -226,7 +226,7 @@ export default function AboutPage() {
 
       {/* PROMISE STRIP */}
       <section className="promise-strip">
-        <div className="ps-eyebrow">Join SnapReserve</div>
+        <div className="ps-eyebrow">Join SnapReserve™</div>
         <h2 className="ps-title">Ready to <em>experience</em><br />the difference?</h2>
         <p className="ps-body">Launching soon. Early access spots are limited — sign up now and be first through the door.</p>
         <div className="ps-btns">
@@ -247,7 +247,7 @@ export default function AboutPage() {
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         </div>
-        <span className="footer-copy">© 2026 SnapReserve. All rights reserved.</span>
+        <span className="footer-copy">© 2026 SnapReserve™. All rights reserved.</span>
       </footer>
     </>
   )

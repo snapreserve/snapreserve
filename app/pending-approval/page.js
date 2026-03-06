@@ -111,7 +111,7 @@ export default function PendingApprovalPage() {
       `}</style>
       <div className="pa-shell">
         <div className="pa-card">
-          <a href="/home" className="pa-logo">SnapReserve</a>
+          <a href="/home" className="pa-logo">SnapReserve™</a>
           <div className="pa-icon">⏳</div>
           <div className="pa-heading">Account Pending Approval</div>
           <div className="pa-badge">Under Review</div>

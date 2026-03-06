@@ -58,8 +58,9 @@ export default async function PropertyPage({ params, searchParams }) {
 
   // Fetch host info via hosts table join
   const { data: hostRow } = listing?.host_id
-    ? await admin.from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
+    ? await admin.from('hosts').select('user_id, is_founder_host').eq('id', listing.host_id).maybeSingle()
     : { data: null }
+  const isFounderHost = !!hostRow?.is_founder_host
   const { data: host } = hostRow?.user_id
     ? await admin.from('users').select('*').eq('id', hostRow.user_id).single()
     : { data: null }
@@ -417,7 +418,10 @@ export default async function PropertyPage({ params, searchParams }) {
                 <span className="type-badge instant-badge">⚡ Instant Book</span>
               )}
               {listing.host_snap_verified && (
-                <span className="snap-verified">🛡 SnapReserve Verified Host</span>
+                <span className="snap-verified">🛡 SnapReserve™ Verified Host</span>
+              )}
+              {isFounderHost && (
+                <span className="snap-verified" style={{ color: '#F59E0B', background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.3)' }}>🏅 Founder Host</span>
               )}
             </div>
 
@@ -428,11 +432,14 @@ export default async function PropertyPage({ params, searchParams }) {
                   {host?.avatar_url ? <img src={host.avatar_url} alt={host.full_name} /> : '👤'}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div className="host-name">Hosted by {host?.full_name || 'SnapReserve Host'}</div>
+                  <div className="host-name">Hosted by {host?.full_name || 'SnapReserve™ Host'}</div>
                   <div className="host-meta">Member since 2026</div>
                   {host?.is_verified && <div className="host-verified">✓ Verified host</div>}
                   {listing.host_snap_verified && (
-                    <div className="snap-verified">🛡 Verified by SnapReserve</div>
+                    <div className="snap-verified">🛡 Verified by SnapReserve™</div>
+                  )}
+                  {isFounderHost && (
+                    <div className="snap-verified" style={{ color: '#F59E0B', background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.3)', marginTop: 4 }}>🏅 Founder Host</div>
                   )}
                 </div>
                 <MessageHostButton listingId={listing.id} />

@@ -141,7 +141,7 @@ export async function PATCH(request, { params }) {
       listingId:  id,
       type:       'rejection',
       subject:    `Your listing has been permanently removed`,
-      body:       `Your listing "${listing.title}" has been permanently removed from SnapReserve following a policy review.\n\nPlease contact support if you have questions.`,
+      body:       `Your listing "${listing.title}" has been permanently removed from SnapReserve™ following a policy review.\n\nPlease contact support if you have questions.`,
     })
   }
 

@@ -20,7 +20,7 @@ export async function POST(request) {
     hostUserId: host_user_id,
     listingId:  listing_id,
     type,
-    subject:    subject?.trim() || 'Message from SnapReserve',
+    subject:    subject?.trim() || 'Message from SnapReserve™',
     body:       msgBody.trim(),
   })
 

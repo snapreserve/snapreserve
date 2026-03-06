@@ -17,10 +17,10 @@ export async function GET(request) {
       hostUserId:      null, // account already exists, no need to pass hostUserId
       stripeAccountId: accountId,
     })
-    console.log(`[SnapReserve] Connect link refreshed for account ${accountId} (${APP_ENV})`)
+    console.log(`[SnapReserve™] Connect link refreshed for account ${accountId} (${APP_ENV})`)
     redirect(url)
   } catch (err) {
-    console.error(`[SnapReserve] Connect refresh error (${APP_ENV}):`, err.message)
+    console.error(`[SnapReserve™] Connect refresh error (${APP_ENV}):`, err.message)
     redirect('/host/dashboard?connect=error')
   }
 }

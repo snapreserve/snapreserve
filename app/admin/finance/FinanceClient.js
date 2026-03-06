@@ -110,8 +110,8 @@ export default function FinanceClient() {
 
   const METRIC_CARDS = [
     { key: 'gmv',              label: 'Gross Booking Volume',  color: '#60a5fa', hint: 'Total value of all confirmed & completed bookings' },
-    { key: 'platform_revenue', label: 'SnapReserve Revenue',   color: '#4ade80', hint: 'Sum of all service fees collected' },
-    { key: 'host_payouts',     label: 'Host Payouts',          color: '#c084fc', hint: 'GMV minus SnapReserve service fees' },
+    { key: 'platform_revenue', label: 'SnapReserve™ Revenue',   color: '#4ade80', hint: 'Sum of all service fees collected' },
+    { key: 'host_payouts',     label: 'Host Payouts',          color: '#c084fc', hint: 'GMV minus SnapReserve™ service fees' },
     { key: 'total_refunds',    label: 'Refunds Issued',        color: '#f87171', hint: 'Total refund amounts on cancelled bookings' },
     { key: 'processing_fees',  label: 'Est. Processing Fees',  color: '#fcd34d', hint: 'Estimated Stripe fees (2.9% + $0.30/txn)' },
     { key: 'net_revenue',      label: 'Net Revenue',           color: '#34d399', hint: 'Platform revenue minus refunds and processing fees' },

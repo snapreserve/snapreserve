@@ -217,7 +217,7 @@ export default function BookingDetailClient({ booking, guest, pastStaysHere, hos
       <div className="bd-wrap">
         {/* ── Sidebar ── */}
         <aside className="bd-sidebar">
-          <div className="bd-sb-brand">SnapReserve™</div>
+          <div className="bd-sb-brand">SnapReserve™™</div>
           <nav className="bd-sb-nav">
             <div className="bd-sb-section">Main</div>
             <Link href="/host/dashboard" className="bd-sbi"><span className="bd-sbi-icon">📊</span>Overview</Link>
@@ -462,9 +462,14 @@ export default function BookingDetailClient({ booking, guest, pastStaysHere, hos
 
                   {/* Platform fee deduction */}
                   <div style={{ height: 1, background: '#2a2825', margin: '10px 0' }} />
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b6560', marginBottom: 8 }}>SnapReserve Platform Fee</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6b6560', marginBottom: 8 }}>SnapReserve™ Platform Fee</div>
                   <div className="pay-row">
-                    <span className="pay-lbl" style={{ color: '#ef4444' }}>Platform fee (7%)</span>
+                    <span className="pay-lbl" style={{ color: '#ef4444' }}>
+                      Platform fee ({booking.total_amount > 0 ? ((Number(booking.platform_fee || 0) / Number(booking.total_amount)) * 100).toFixed(1) : '7.0'}%)
+                      {Number(booking.platform_fee) / Number(booking.total_amount) < 0.07 && (
+                        <span style={{ marginLeft: 4, fontSize: 9, background: 'rgba(250,179,20,0.15)', color: '#f5b014', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>Founder Rate</span>
+                      )}
+                    </span>
                     <span className="pay-val" style={{ color: '#ef4444' }}>−${Number(booking.platform_fee || 0).toFixed(2)}</span>
                   </div>
                   <div className="pay-row">

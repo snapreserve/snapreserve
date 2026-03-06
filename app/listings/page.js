@@ -152,6 +152,7 @@ function ListingsInner() {
         .card-price span { font-size:0.76rem; font-weight:400; color:#A89880; }
         .card-rooms { font-size:0.7rem; color:#A89880; text-align:right; margin-top:2px; }
         .snap-verified { display:inline-flex; align-items:center; gap:4px; font-size:0.67rem; font-weight:700; color:#A78BFA; background:linear-gradient(90deg,rgba(139,92,246,0.12),rgba(59,130,246,0.12)); border:1px solid rgba(139,92,246,0.25); border-radius:100px; padding:2px 9px; margin-top:6px; }
+        .founder-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.67rem; font-weight:700; color:#F59E0B; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); border-radius:100px; padding:2px 9px; margin-top:6px; margin-left:4px; }
 
         .empty { grid-column:1/-1; text-align:center; padding:80px 20px; }
         .empty-icon { font-size:2.8rem; margin-bottom:14px; }
@@ -292,9 +293,14 @@ function ListingsInner() {
                 <div className="card-body">
                   <div className="card-title">{listing.title}</div>
                   <div className="card-loc">📍 {listing.city}, {listing.state}</div>
-                  {listing.host_snap_verified && (
-                    <div className="snap-verified">🛡 SnapReserve Verified Host</div>
-                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
+                    {listing.host_snap_verified && (
+                      <div className="snap-verified">🛡 SnapReserve™ Verified Host</div>
+                    )}
+                    {listing.host_founder_badge && (
+                      <div className="founder-badge">🏅 Founder Host</div>
+                    )}
+                  </div>
                   <div className="card-meta">
                     <div>
                       <div className="card-rating">★ {listing.rating} · {listing.review_count} reviews</div>
@@ -321,7 +327,7 @@ function ListingsInner() {
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         </div>
-        <span className="footer-copy">© 2026 SnapReserve. All rights reserved.</span>
+        <span className="footer-copy">© 2026 SnapReserve™. All rights reserved.</span>
       </footer>
     </>
   )

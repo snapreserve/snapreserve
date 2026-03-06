@@ -92,7 +92,7 @@ export default function HostAgreementPage() {
           <h1>Host Agreement</h1>
           <div className="hero-meta">
             <strong>Effective Date: March 1, 2026</strong> &nbsp;·&nbsp; Last Updated: March 1, 2026<br />
-            Applies to all individuals and entities listing properties on the SnapReserve™ platform.
+            Applies to all individuals and entities listing properties on the SnapReserve™™ platform.
           </div>
         </div>
       </div>
@@ -125,15 +125,15 @@ export default function HostAgreementPage() {
         <div className="content">
 
           <div className="intro-box">
-            This Host Agreement ("Agreement") is a legally binding contract between you ("Host") and SnapReserve, Inc. ("SnapReserve," "we," "our," or "us") governing your use of the SnapReserve platform to list, manage, and receive payment for accommodations. This Agreement supplements and incorporates by reference our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>. By listing a property on SnapReserve, you confirm that you have read, understood, and agree to be bound by this Agreement in its entirety.
+            This Host Agreement ("Agreement") is a legally binding contract between you ("Host") and SnapReserve™, Inc. ("SnapReserve™," "we," "our," or "us") governing your use of the SnapReserve™ platform to list, manage, and receive payment for accommodations. This Agreement supplements and incorporates by reference our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>. By listing a property on SnapReserve™, you confirm that you have read, understood, and agree to be bound by this Agreement in its entirety.
           </div>
 
           {/* 1 */}
           <div className="section" id="section-1">
             <div className="section-num">Section 1</div>
             <h2>Agreement Overview</h2>
-            <p>SnapReserve operates an online marketplace that connects hosts who wish to list accommodations with guests seeking to book short-term stays. SnapReserve acts solely as an intermediary technology platform and is not a party to the accommodation transaction between Host and Guest. SnapReserve does not own, operate, manage, or control any listed property.</p>
-            <p>By accessing the Host features of the platform, you enter into a direct contractual relationship with SnapReserve and acknowledge that SnapReserve is providing a platform service only. All obligations related to the provision of accommodation, compliance with applicable laws, and the guest experience rest solely with the Host.</p>
+            <p>SnapReserve™ operates an online marketplace that connects hosts who wish to list accommodations with guests seeking to book short-term stays. SnapReserve™ acts solely as an intermediary technology platform and is not a party to the accommodation transaction between Host and Guest. SnapReserve™ does not own, operate, manage, or control any listed property.</p>
+            <p>By accessing the Host features of the platform, you enter into a direct contractual relationship with SnapReserve™ and acknowledge that SnapReserve™ is providing a platform service only. All obligations related to the provision of accommodation, compliance with applicable laws, and the guest experience rest solely with the Host.</p>
           </div>
 
           {/* 2 */}
@@ -143,16 +143,16 @@ export default function HostAgreementPage() {
             <p>As used in this Agreement, the following terms have the meanings set forth below:</p>
             <table className="def-table">
               <tbody>
-                <tr><td>"Platform"</td><td>The SnapReserve website, mobile applications, APIs, and all related services operated by SnapReserve, Inc.</td></tr>
+                <tr><td>"Platform"</td><td>The SnapReserve™ website, mobile applications, APIs, and all related services operated by SnapReserve™, Inc.</td></tr>
                 <tr><td>"Host"</td><td>Any individual or legal entity that creates a listing on the Platform for the purpose of renting accommodation to Guests.</td></tr>
                 <tr><td>"Guest"</td><td>Any individual who books accommodation through the Platform.</td></tr>
                 <tr><td>"Listing"</td><td>A property, room, or accommodation offered for rent by a Host through the Platform, including all associated descriptions, photographs, pricing, and availability.</td></tr>
                 <tr><td>"Booking"</td><td>A confirmed reservation made by a Guest for a Listing, resulting in a binding agreement between the Host and Guest.</td></tr>
                 <tr><td>"Booking Subtotal"</td><td>The nightly rate multiplied by the number of nights, plus any Host-set additional fees such as cleaning fees, before the addition of Guest service fees, taxes, or third-party charges.</td></tr>
-                <tr><td>"Host Fee"</td><td>The platform service fee charged by SnapReserve to the Host, calculated as a percentage of the Booking Subtotal.</td></tr>
-                <tr><td>"Guest Service Fee"</td><td>A separate fee charged by SnapReserve directly to the Guest at the time of booking, which does not form part of the Host's payout calculation.</td></tr>
+                <tr><td>"Host Fee"</td><td>The platform service fee charged by SnapReserve™ to the Host, calculated as a percentage of the Booking Subtotal.</td></tr>
+                <tr><td>"Guest Service Fee"</td><td>A separate fee charged by SnapReserve™ directly to the Guest at the time of booking, which does not form part of the Host's payout calculation.</td></tr>
                 <tr><td>"Payout"</td><td>The net amount transferred to the Host following a completed stay, equal to the Booking Subtotal minus the Host Fee and any applicable deductions.</td></tr>
-                <tr><td>"Stripe"</td><td>Stripe, Inc., the third-party payment processor engaged by SnapReserve to facilitate payment collection and payout disbursement.</td></tr>
+                <tr><td>"Stripe"</td><td>Stripe, Inc., the third-party payment processor engaged by SnapReserve™ to facilitate payment collection and payout disbursement.</td></tr>
                 <tr><td>"Chargeback"</td><td>A reversal of a payment transaction initiated by a Guest's payment card issuer or financial institution.</td></tr>
                 <tr><td>"Dispute"</td><td>A formal challenge raised by a Guest or Host regarding the terms, quality, or fulfilment of a Booking.</td></tr>
               </tbody>
@@ -174,7 +174,7 @@ export default function HostAgreementPage() {
               <li>You have not previously been suspended or permanently removed from the Platform.</li>
             </ul>
             <p>If you are registering on behalf of a company, partnership, or other legal entity, you represent and warrant that you have the authority to bind that entity to this Agreement, and references to "Host" shall include that entity.</p>
-            <p>SnapReserve reserves the right to verify your eligibility at any time and to suspend or terminate your account if you fail to meet or cease to meet any of the above requirements.</p>
+            <p>SnapReserve™ reserves the right to verify your eligibility at any time and to suspend or terminate your account if you fail to meet or cease to meet any of the above requirements.</p>
           </div>
 
           {/* 4 */}
@@ -192,7 +192,7 @@ export default function HostAgreementPage() {
               <li>An up-to-date availability calendar maintained to prevent double-bookings.</li>
             </ul>
             <h3>4.2 Listing Approval</h3>
-            <p>All new Listings are subject to review and approval by SnapReserve prior to becoming publicly visible on the Platform. SnapReserve may, at its sole discretion, request additional information, documentation, or photographs during the review process. Approval does not constitute an endorsement of the property or a warranty of its condition.</p>
+            <p>All new Listings are subject to review and approval by SnapReserve™ prior to becoming publicly visible on the Platform. SnapReserve™ may, at its sole discretion, request additional information, documentation, or photographs during the review process. Approval does not constitute an endorsement of the property or a warranty of its condition.</p>
             <h3>4.3 Ongoing Maintenance</h3>
             <p>You must keep your Listing information current at all times. Material changes to the property — including changes to amenities, structural features, or guest capacity — must be reflected in the Listing within 72 hours of the change occurring.</p>
           </div>
@@ -202,7 +202,7 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 5</div>
             <h2>Platform Fees</h2>
             <h3>5.1 Host Service Fee</h3>
-            <p>SnapReserve charges a Host service fee on each completed Booking. This fee is automatically deducted from the Booking Subtotal before Payout is disbursed to the Host.</p>
+            <p>SnapReserve™ charges a Host service fee on each completed Booking. This fee is automatically deducted from the Booking Subtotal before Payout is disbursed to the Host.</p>
 
             <div className="fee-box">
               <div className="fee-box-title">Fee Schedule — Effective March 1, 2026</div>
@@ -225,7 +225,7 @@ export default function HostAgreementPage() {
             </div>
 
             <h3>5.2 Guest Service Fee</h3>
-            <p>In addition to the Host Fee, SnapReserve charges a separate Guest service fee to Guests at the time of booking. This fee is collected independently and does not reduce the Host's Payout or form part of the Booking Subtotal upon which the Host Fee is calculated.</p>
+            <p>In addition to the Host Fee, SnapReserve™ charges a separate Guest service fee to Guests at the time of booking. This fee is collected independently and does not reduce the Host's Payout or form part of the Booking Subtotal upon which the Host Fee is calculated.</p>
 
             <h3>5.3 Fee Calculation Example</h3>
             <div className="callout callout-gray">
@@ -239,7 +239,7 @@ export default function HostAgreementPage() {
             </div>
 
             <h3>5.4 Taxes</h3>
-            <p>SnapReserve may be required by law to collect and remit certain taxes on bookings in applicable jurisdictions. Any taxes collected by SnapReserve on behalf of tax authorities are separate from and in addition to the Host Fee and do not form part of the Host's Payout. Hosts are independently responsible for all income taxes, occupancy taxes, VAT, GST, and any other taxes owed on their rental income. See Section 9 (Host Obligations) for further detail.</p>
+            <p>SnapReserve™ may be required by law to collect and remit certain taxes on bookings in applicable jurisdictions. Any taxes collected by SnapReserve™ on behalf of tax authorities are separate from and in addition to the Host Fee and do not form part of the Host's Payout. Hosts are independently responsible for all income taxes, occupancy taxes, VAT, GST, and any other taxes owed on their rental income. See Section 9 (Host Obligations) for further detail.</p>
           </div>
 
           {/* 6 */}
@@ -247,13 +247,13 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 6</div>
             <h2>Payment Processing</h2>
             <h3>6.1 Stripe as Payment Processor</h3>
-            <p>All payment collection and Payout disbursement on the Platform is facilitated through Stripe, Inc. By listing on SnapReserve, you agree to be bound by <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer" style={{color:'#F4601A',fontWeight:600}}>Stripe's Connected Account Agreement</a> and Stripe's applicable terms of service, which may be updated by Stripe from time to time. SnapReserve is not responsible for errors, delays, or failures caused by Stripe's systems.</p>
+            <p>All payment collection and Payout disbursement on the Platform is facilitated through Stripe, Inc. By listing on SnapReserve™, you agree to be bound by <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer" style={{color:'#F4601A',fontWeight:600}}>Stripe's Connected Account Agreement</a> and Stripe's applicable terms of service, which may be updated by Stripe from time to time. SnapReserve™ is not responsible for errors, delays, or failures caused by Stripe's systems.</p>
             <h3>6.2 Processing Fee Sharing</h3>
-            <p>Stripe charges a payment processing fee on each transaction. This fee is shared equally between the Host and SnapReserve, with each party bearing 50% of the applicable Stripe processing cost. The Host's share is deducted from the Payout prior to disbursement. SnapReserve will reflect the deducted processing amount in the Payout breakdown accessible via your host dashboard.</p>
+            <p>Stripe charges a payment processing fee on each transaction. This fee is shared equally between the Host and SnapReserve™, with each party bearing 50% of the applicable Stripe processing cost. The Host's share is deducted from the Payout prior to disbursement. SnapReserve™ will reflect the deducted processing amount in the Payout breakdown accessible via your host dashboard.</p>
             <h3>6.3 Currency</h3>
             <p>All transactions on the Platform are processed in United States Dollars (USD) unless otherwise specified. If a Guest pays in a foreign currency, any currency conversion is handled by Stripe at their applicable exchange rate, and any resulting conversion fees are the responsibility of the Host's share of processing costs or passed through as noted in your Stripe Connected Account agreement.</p>
             <h3>6.4 Failed Payments</h3>
-            <p>If a Guest's payment fails after a Booking is confirmed, SnapReserve will notify both parties. SnapReserve is not obligated to remit a Payout to the Host for any Booking where payment was not successfully collected and settled. SnapReserve will make reasonable efforts to collect outstanding payments but does not guarantee collection.</p>
+            <p>If a Guest's payment fails after a Booking is confirmed, SnapReserve™ will notify both parties. SnapReserve™ is not obligated to remit a Payout to the Host for any Booking where payment was not successfully collected and settled. SnapReserve™ will make reasonable efforts to collect outstanding payments but does not guarantee collection.</p>
           </div>
 
           {/* 7 */}
@@ -261,25 +261,25 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 7</div>
             <h2>Payout Terms</h2>
             <h3>7.1 Standard Payout Schedule</h3>
-            <p>Subject to the conditions set forth in this Agreement, SnapReserve will initiate the disbursement of your Payout within 24 hours following the Guest's confirmed check-in. Actual receipt of funds is subject to Stripe processing timelines and your financial institution's settlement periods, which typically range from 1 to 5 business days.</p>
+            <p>Subject to the conditions set forth in this Agreement, SnapReserve™ will initiate the disbursement of your Payout within 24 hours following the Guest's confirmed check-in. Actual receipt of funds is subject to Stripe processing timelines and your financial institution's settlement periods, which typically range from 1 to 5 business days.</p>
             <h3>7.2 Payout Holds and Delays</h3>
-            <p>SnapReserve reserves the right to delay, withhold, or suspend a Payout in any of the following circumstances:</p>
+            <p>SnapReserve™ reserves the right to delay, withhold, or suspend a Payout in any of the following circumstances:</p>
             <ul>
               <li><strong>Active Dispute:</strong> A Guest has raised a dispute, complaint, or claim related to the Booking, pending resolution;</li>
               <li><strong>Chargeback Initiated:</strong> A chargeback or payment reversal has been filed by the Guest's card issuer or financial institution;</li>
-              <li><strong>Fraud Review:</strong> The Booking or associated payment has been flagged for fraud review by SnapReserve's systems or by Stripe;</li>
-              <li><strong>Regulatory Hold:</strong> A government authority, legal process, or regulatory requirement compels SnapReserve to withhold the Payout;</li>
-              <li><strong>Account Breach:</strong> SnapReserve has reasonable grounds to believe the Host has violated this Agreement or the Terms of Service;</li>
+              <li><strong>Fraud Review:</strong> The Booking or associated payment has been flagged for fraud review by SnapReserve™'s systems or by Stripe;</li>
+              <li><strong>Regulatory Hold:</strong> A government authority, legal process, or regulatory requirement compels SnapReserve™ to withhold the Payout;</li>
+              <li><strong>Account Breach:</strong> SnapReserve™ has reasonable grounds to believe the Host has violated this Agreement or the Terms of Service;</li>
               <li><strong>Identity Verification:</strong> Required identity or payout verification has not been completed by the Host; or</li>
               <li><strong>Outstanding Deductions:</strong> The Host has an outstanding negative balance on their account due to prior refunds, chargebacks, or penalties.</li>
             </ul>
             <div className="callout callout-orange">
-              <strong>Important:</strong> Payouts subject to an active fraud review or chargeback investigation may be held for up to 90 days or until the matter is resolved, whichever occurs first. SnapReserve will notify you of the hold and the estimated resolution timeline where permitted by applicable law.
+              <strong>Important:</strong> Payouts subject to an active fraud review or chargeback investigation may be held for up to 90 days or until the matter is resolved, whichever occurs first. SnapReserve™ will notify you of the hold and the estimated resolution timeline where permitted by applicable law.
             </div>
             <h3>7.3 Payout Account Requirements</h3>
-            <p>You must maintain a valid, verified payout account (bank account or debit card) connected through your Stripe Connected Account. SnapReserve is not responsible for misdirected funds resulting from incorrect payout account details provided by the Host. You agree to update your payout details promptly upon any change to your banking information.</p>
+            <p>You must maintain a valid, verified payout account (bank account or debit card) connected through your Stripe Connected Account. SnapReserve™ is not responsible for misdirected funds resulting from incorrect payout account details provided by the Host. You agree to update your payout details promptly upon any change to your banking information.</p>
             <h3>7.4 Minimum Payout Threshold</h3>
-            <p>SnapReserve may establish a minimum Payout threshold, below which funds are held and accumulated until the threshold is met. Current threshold information is available in your host dashboard settings.</p>
+            <p>SnapReserve™ may establish a minimum Payout threshold, below which funds are held and accumulated until the threshold is met. Current threshold information is available in your host dashboard settings.</p>
           </div>
 
           {/* 8 */}
@@ -292,25 +292,25 @@ export default function HostAgreementPage() {
             <p>If a Host cancels a confirmed Booking:</p>
             <ul>
               <li>The Guest will receive a full refund of all amounts paid, including any Guest service fees;</li>
-              <li>SnapReserve may apply a cancellation penalty to the Host's account, including deduction from future Payouts;</li>
+              <li>SnapReserve™ may apply a cancellation penalty to the Host's account, including deduction from future Payouts;</li>
               <li>The Host's listing ranking and visibility may be negatively impacted; and</li>
               <li>Repeated Host-initiated cancellations may result in listing suspension or permanent account termination.</li>
             </ul>
             <h3>8.3 Guest Disputes</h3>
-            <p>If a Guest raises a dispute alleging material inaccuracies in the Listing, property damage, or a failure to provide the listed accommodation, SnapReserve's Trust &amp; Safety team will investigate the claim. During the investigation, the relevant Payout may be held. SnapReserve's determination following a good-faith investigation shall be final and binding on both parties, subject to applicable consumer protection laws.</p>
+            <p>If a Guest raises a dispute alleging material inaccuracies in the Listing, property damage, or a failure to provide the listed accommodation, SnapReserve™'s Trust &amp; Safety team will investigate the claim. During the investigation, the relevant Payout may be held. SnapReserve™'s determination following a good-faith investigation shall be final and binding on both parties, subject to applicable consumer protection laws.</p>
             <h3>8.4 Chargebacks</h3>
-            <p>In the event of a chargeback filed by a Guest against a SnapReserve payment:</p>
+            <p>In the event of a chargeback filed by a Guest against a SnapReserve™ payment:</p>
             <ul>
-              <li>SnapReserve will immediately hold the disputed Payout amount pending resolution;</li>
-              <li>SnapReserve will notify the Host and may request supporting documentation (communications, check-in records, photographs) to contest the chargeback;</li>
+              <li>SnapReserve™ will immediately hold the disputed Payout amount pending resolution;</li>
+              <li>SnapReserve™ will notify the Host and may request supporting documentation (communications, check-in records, photographs) to contest the chargeback;</li>
               <li>If the chargeback is upheld by the card issuer, the disputed amount will be deducted from the Host's Payout or from any future Payouts owed to the Host; and</li>
-              <li>If the Host's account balance is insufficient to cover the deduction, the Host authorises SnapReserve to recover the shortfall from future Payouts or to invoice the Host directly.</li>
+              <li>If the Host's account balance is insufficient to cover the deduction, the Host authorises SnapReserve™ to recover the shortfall from future Payouts or to invoice the Host directly.</li>
             </ul>
             <div className="callout callout-orange">
-              <strong>Note on Deductions:</strong> By listing on the Platform, you expressly authorise SnapReserve to deduct from your Payouts any amounts owed to SnapReserve or to Guests arising from refunds, chargebacks, penalties, or damages attributable to your Listings or conduct.
+              <strong>Note on Deductions:</strong> By listing on the Platform, you expressly authorise SnapReserve™ to deduct from your Payouts any amounts owed to SnapReserve™ or to Guests arising from refunds, chargebacks, penalties, or damages attributable to your Listings or conduct.
             </div>
-            <h3>8.5 SnapReserve's Liability in Disputes</h3>
-            <p>SnapReserve is not liable for losses arising from Guest disputes, chargebacks, or fraudulent bookings except where directly caused by SnapReserve's gross negligence or wilful misconduct. SnapReserve acts as a neutral facilitator and does not guarantee the outcome of any dispute resolution process.</p>
+            <h3>8.5 SnapReserve™'s Liability in Disputes</h3>
+            <p>SnapReserve™ is not liable for losses arising from Guest disputes, chargebacks, or fraudulent bookings except where directly caused by SnapReserve™'s gross negligence or wilful misconduct. SnapReserve™ acts as a neutral facilitator and does not guarantee the outcome of any dispute resolution process.</p>
           </div>
 
           {/* 9 */}
@@ -327,11 +327,11 @@ export default function HostAgreementPage() {
               <li>Short-term rental permits, business licences, and registration requirements; and</li>
               <li>Anti-discrimination laws, including the Fair Housing Act and applicable state and local equivalents.</li>
             </ul>
-            <p>SnapReserve does not provide legal advice and makes no representation that use of the Platform is permissible in your jurisdiction. You are strongly encouraged to seek independent legal counsel regarding local short-term rental regulations before listing.</p>
+            <p>SnapReserve™ does not provide legal advice and makes no representation that use of the Platform is permissible in your jurisdiction. You are strongly encouraged to seek independent legal counsel regarding local short-term rental regulations before listing.</p>
             <h3>9.2 Tax Obligations</h3>
-            <p>You are solely responsible for determining, collecting, remitting, and reporting all taxes applicable to your rental income, including income tax, occupancy tax, transient lodging tax, sales tax, and any other applicable levies. Where SnapReserve is legally required to collect and remit occupancy taxes on your behalf, the amounts collected will be reflected in your Payout statement and will not form part of your gross Payout. SnapReserve expressly disclaims any responsibility for your individual tax obligations arising from use of the Platform.</p>
+            <p>You are solely responsible for determining, collecting, remitting, and reporting all taxes applicable to your rental income, including income tax, occupancy tax, transient lodging tax, sales tax, and any other applicable levies. Where SnapReserve™ is legally required to collect and remit occupancy taxes on your behalf, the amounts collected will be reflected in your Payout statement and will not form part of your gross Payout. SnapReserve™ expressly disclaims any responsibility for your individual tax obligations arising from use of the Platform.</p>
             <h3>9.3 Insurance</h3>
-            <p>You must maintain adequate insurance coverage for your property at all times, including public liability insurance appropriate for short-term rental use. SnapReserve's SnapGuarantee™ programme (where applicable) is supplemental in nature and does not replace homeowner's insurance, renter's insurance, or commercial property insurance. SnapGuarantee is subject to its own terms, conditions, and coverage limits.</p>
+            <p>You must maintain adequate insurance coverage for your property at all times, including public liability insurance appropriate for short-term rental use. SnapReserve™'s SnapGuarantee™ programme (where applicable) is supplemental in nature and does not replace homeowner's insurance, renter's insurance, or commercial property insurance. SnapGuarantee is subject to its own terms, conditions, and coverage limits.</p>
             <h3>9.4 Property Standards</h3>
             <p>You must ensure that your property meets all applicable safety and habitability standards, including working smoke detectors, carbon monoxide detectors, fire extinguishers (where required), and secure locks on all entry points. Properties must be clean, safe, and in a condition materially consistent with the Listing at the time of each Guest's check-in.</p>
             <h3>9.5 Guest Communications</h3>
@@ -348,7 +348,7 @@ export default function HostAgreementPage() {
               <li>Providing false or misleading information in a Listing, including fraudulent photographs or fabricated amenities;</li>
               <li>Facilitating, enabling, or knowingly permitting illegal activities at listed properties;</li>
               <li>Discriminating against Guests on the basis of race, colour, religion, national origin, sex, disability, sexual orientation, gender identity, familial status, or any other characteristic protected under applicable law;</li>
-              <li>Attempting to circumvent the Platform by soliciting direct off-platform payments from Guests for bookings that originated through SnapReserve;</li>
+              <li>Attempting to circumvent the Platform by soliciting direct off-platform payments from Guests for bookings that originated through SnapReserve™;</li>
               <li>Manipulating reviews, ratings, or the Platform's ranking algorithms;</li>
               <li>Creating multiple accounts to evade suspension, bans, or other enforcement actions;</li>
               <li>Collecting Guest personal data obtained through the Platform for purposes other than fulfilling the Booking; and</li>
@@ -362,19 +362,19 @@ export default function HostAgreementPage() {
             <h2>Suspension &amp; Termination</h2>
             <h3>11.1 Termination by Host</h3>
             <p>You may deactivate your Listing or close your Host account at any time through your account settings. Termination by the Host does not affect any obligations arising from confirmed Bookings that have not yet been completed, including obligations to accommodate Guests and honour refund policies.</p>
-            <h3>11.2 Suspension or Termination by SnapReserve</h3>
-            <p>SnapReserve may, at its sole discretion and with or without prior notice (depending on the nature and severity of the violation), suspend or permanently terminate your Listing or Host account in any of the following circumstances:</p>
+            <h3>11.2 Suspension or Termination by SnapReserve™</h3>
+            <p>SnapReserve™ may, at its sole discretion and with or without prior notice (depending on the nature and severity of the violation), suspend or permanently terminate your Listing or Host account in any of the following circumstances:</p>
             <ul>
-              <li>Violation of this Agreement or the SnapReserve Terms of Service;</li>
+              <li>Violation of this Agreement or the SnapReserve™ Terms of Service;</li>
               <li>Repeated or severe Guest complaints or consistently low review ratings;</li>
               <li>Confirmed fraudulent activity or misrepresentation;</li>
               <li>Failure to comply with applicable laws or regulatory requirements;</li>
               <li>Posing a risk to the safety, health, or wellbeing of Guests or third parties;</li>
               <li>Repeated Host-initiated cancellations of confirmed Bookings; or</li>
-              <li>Any other conduct that SnapReserve reasonably determines to be harmful to the Platform, its users, or its reputation.</li>
+              <li>Any other conduct that SnapReserve™ reasonably determines to be harmful to the Platform, its users, or its reputation.</li>
             </ul>
             <h3>11.3 Effect of Termination</h3>
-            <p>Upon termination: (a) all active Listings will be removed from public view; (b) pending Payouts will be processed in accordance with this Agreement less any amounts owed to SnapReserve or Guests; and (c) outstanding Bookings not yet completed at the time of termination will be handled in accordance with SnapReserve's Guest protection policies, which may include cancellation of those Bookings with full refunds to Guests.</p>
+            <p>Upon termination: (a) all active Listings will be removed from public view; (b) pending Payouts will be processed in accordance with this Agreement less any amounts owed to SnapReserve™ or Guests; and (c) outstanding Bookings not yet completed at the time of termination will be handled in accordance with SnapReserve™'s Guest protection policies, which may include cancellation of those Bookings with full refunds to Guests.</p>
             <div className="callout callout-blue">
               <strong>Survival:</strong> Sections 5 (Platform Fees), 8 (Refunds &amp; Disputes), 9.2 (Tax Obligations), 14 (Indemnification), 15 (Limitation of Liability), 16 (Dispute Resolution), and 17 (Governing Law) survive any expiration or termination of this Agreement.
             </div>
@@ -385,17 +385,17 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 12</div>
             <h2>Modifications to Fees &amp; Terms</h2>
             <h3>12.1 Fee Changes</h3>
-            <p>SnapReserve reserves the right to modify the Host Fee, Guest service fee, or any other fee charged through the Platform. SnapReserve will provide Hosts with not less than <strong>30 days' written notice</strong> prior to any fee modification taking effect. Notice will be delivered via the email address associated with your Host account and/or via a prominent notice within the host dashboard.</p>
+            <p>SnapReserve™ reserves the right to modify the Host Fee, Guest service fee, or any other fee charged through the Platform. SnapReserve™ will provide Hosts with not less than <strong>30 days' written notice</strong> prior to any fee modification taking effect. Notice will be delivered via the email address associated with your Host account and/or via a prominent notice within the host dashboard.</p>
             <p>Your continued use of the Platform to accept new Bookings after the effective date of a fee change constitutes your acceptance of the revised fee schedule. If you do not accept the revised fees, you must deactivate your Listing and cease accepting new Bookings prior to the effective date of the change. Fee changes do not apply retroactively to Bookings confirmed prior to the effective date.</p>
             <h3>12.2 Agreement Modifications</h3>
-            <p>SnapReserve may update or modify this Agreement from time to time. We will notify you of material changes through the Platform or via email. The updated Agreement will specify the revised effective date. Continued use of the Platform following the effective date of any modification constitutes acceptance of the modified Agreement.</p>
+            <p>SnapReserve™ may update or modify this Agreement from time to time. We will notify you of material changes through the Platform or via email. The updated Agreement will specify the revised effective date. Continued use of the Platform following the effective date of any modification constitutes acceptance of the modified Agreement.</p>
           </div>
 
           {/* 13 */}
           <div className="section" id="section-13">
             <div className="section-num">Section 13</div>
             <h2>Intellectual Property</h2>
-            <p>By submitting content to the Platform (including Listing descriptions, photographs, and other materials), you grant SnapReserve a non-exclusive, worldwide, royalty-free, sublicensable, and transferable licence to use, reproduce, display, distribute, modify, and create derivative works of such content for the purposes of operating, promoting, and improving the Platform. This licence continues for as long as the content remains on the Platform and for a reasonable period following removal to allow for technical and archival purposes.</p>
+            <p>By submitting content to the Platform (including Listing descriptions, photographs, and other materials), you grant SnapReserve™ a non-exclusive, worldwide, royalty-free, sublicensable, and transferable licence to use, reproduce, display, distribute, modify, and create derivative works of such content for the purposes of operating, promoting, and improving the Platform. This licence continues for as long as the content remains on the Platform and for a reasonable period following removal to allow for technical and archival purposes.</p>
             <p>You represent and warrant that you own or have all necessary rights to the content you submit, that the content does not infringe the intellectual property rights of any third party, and that you have obtained all necessary consents for any individuals depicted in photographs.</p>
           </div>
 
@@ -403,7 +403,7 @@ export default function HostAgreementPage() {
           <div className="section" id="section-14">
             <div className="section-num">Section 14</div>
             <h2>Indemnification</h2>
-            <p>To the maximum extent permitted by applicable law, you agree to indemnify, defend, and hold harmless SnapReserve, Inc. and its officers, directors, employees, agents, licensors, and service providers from and against any and all claims, liabilities, damages, judgments, awards, losses, costs, expenses, and fees (including reasonable attorneys' fees) arising out of or relating to:</p>
+            <p>To the maximum extent permitted by applicable law, you agree to indemnify, defend, and hold harmless SnapReserve™, Inc. and its officers, directors, employees, agents, licensors, and service providers from and against any and all claims, liabilities, damages, judgments, awards, losses, costs, expenses, and fees (including reasonable attorneys' fees) arising out of or relating to:</p>
             <ul>
               <li>Your use of the Platform or any breach of this Agreement;</li>
               <li>Your Listing, including any inaccuracies or omissions;</li>
@@ -428,7 +428,7 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 16</div>
             <h2>Dispute Resolution</h2>
             <h3>16.1 Informal Resolution</h3>
-            <p>In the event of a dispute between you and SnapReserve arising out of or relating to this Agreement, both parties agree to first attempt to resolve the dispute informally by contacting SnapReserve at <strong>legal@snapreserve.app</strong>. SnapReserve will use reasonable efforts to resolve the dispute within 30 days of receiving written notice.</p>
+            <p>In the event of a dispute between you and SnapReserve™ arising out of or relating to this Agreement, both parties agree to first attempt to resolve the dispute informally by contacting SnapReserve™ at <strong>legal@snapreserve.app</strong>. SnapReserve™ will use reasonable efforts to resolve the dispute within 30 days of receiving written notice.</p>
             <h3>16.2 Binding Arbitration</h3>
             <p>If informal resolution is unsuccessful, any dispute, claim, or controversy arising out of or relating to this Agreement or the breach, termination, enforcement, interpretation, or validity thereof, shall be resolved by binding arbitration administered by the American Arbitration Association (AAA) in accordance with its Consumer Arbitration Rules. The arbitration shall be conducted in English. The arbitrator's award shall be final and binding and may be entered as a judgment in any court of competent jurisdiction.</p>
             <h3>16.3 Class Action Waiver</h3>
@@ -450,15 +450,15 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 18</div>
             <h2>Miscellaneous</h2>
             <h3>18.1 Entire Agreement</h3>
-            <p>This Agreement, together with the SnapReserve Terms of Service, Privacy Policy, and any other policies incorporated by reference, constitutes the entire agreement between you and SnapReserve with respect to the subject matter hereof and supersedes all prior and contemporaneous agreements, representations, and understandings.</p>
+            <p>This Agreement, together with the SnapReserve™ Terms of Service, Privacy Policy, and any other policies incorporated by reference, constitutes the entire agreement between you and SnapReserve™ with respect to the subject matter hereof and supersedes all prior and contemporaneous agreements, representations, and understandings.</p>
             <h3>18.2 Severability</h3>
             <p>If any provision of this Agreement is found to be invalid, illegal, or unenforceable under applicable law, that provision shall be modified to the minimum extent necessary to make it enforceable, or severed if modification is not possible, without affecting the validity and enforceability of the remaining provisions.</p>
             <h3>18.3 Waiver</h3>
-            <p>No failure or delay by SnapReserve in exercising any right, power, or privilege under this Agreement shall operate as a waiver thereof. No single or partial exercise of any right, power, or privilege shall preclude any other or further exercise thereof.</p>
+            <p>No failure or delay by SnapReserve™ in exercising any right, power, or privilege under this Agreement shall operate as a waiver thereof. No single or partial exercise of any right, power, or privilege shall preclude any other or further exercise thereof.</p>
             <h3>18.4 Assignment</h3>
-            <p>You may not assign, transfer, or delegate your rights or obligations under this Agreement without the prior written consent of SnapReserve. SnapReserve may assign this Agreement, in whole or in part, to any affiliate or in connection with a merger, acquisition, or sale of all or substantially all of its assets, without your consent.</p>
+            <p>You may not assign, transfer, or delegate your rights or obligations under this Agreement without the prior written consent of SnapReserve™. SnapReserve™ may assign this Agreement, in whole or in part, to any affiliate or in connection with a merger, acquisition, or sale of all or substantially all of its assets, without your consent.</p>
             <h3>18.5 Notices</h3>
-            <p>All notices from SnapReserve to you under this Agreement will be sent to the email address associated with your Host account or posted to the Platform. You are responsible for keeping your contact information current. Notices to SnapReserve should be sent to <strong>legal@snapreserve.app</strong>.</p>
+            <p>All notices from SnapReserve™ to you under this Agreement will be sent to the email address associated with your Host account or posted to the Platform. You are responsible for keeping your contact information current. Notices to SnapReserve™ should be sent to <strong>legal@snapreserve.app</strong>.</p>
             <h3>18.6 Language</h3>
             <p>This Agreement is made in the English language. If it is translated into any other language, the English version shall prevail in the event of any conflict.</p>
           </div>
@@ -483,7 +483,7 @@ export default function HostAgreementPage() {
           <a href="/refund-policy">Refund Policy</a>
           <a href="/coming-soon?page=support">Support</a>
         </div>
-        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve, Inc. · All rights reserved</div>
+        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™, Inc. · All rights reserved</div>
       </footer>
     </>
   )

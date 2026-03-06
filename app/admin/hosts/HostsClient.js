@@ -57,6 +57,7 @@ const CSS = `
   --yellow:#f59e0b;--yellowlt:rgba(245,158,11,.12);--yellowborder:rgba(245,158,11,.25);
   --red:#ef4444;--redlt:rgba(239,68,68,.12);--redborder:rgba(239,68,68,.25);
   --purple:#a855f7;--purplelt:rgba(168,85,247,.12);--purpleborder:rgba(168,85,247,.25);
+  --gold:#f59e0b;--goldlt:rgba(245,158,11,.12);--goldborder:rgba(245,158,11,.25);
 }
 .h-shell{display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px}
 /* Topbar */
@@ -129,6 +130,7 @@ const CSS = `
 .b-review{background:var(--yellowlt);color:var(--yellow);border:1px solid var(--yellowborder)}
 .b-inactive{background:var(--bg3);color:var(--sub);border:1px solid var(--border)}
 .b-snap{background:var(--orangelt);color:var(--orange);border:1px solid var(--orangeborder)}
+.b-founder{background:var(--goldlt);color:var(--gold);border:1px solid var(--goldborder)}
 .b-new{background:var(--bluelt);color:var(--blue);border:1px solid var(--blueborder)}
 /* Action buttons */
 .h-actions{display:flex;gap:5px;flex-wrap:wrap}
@@ -240,6 +242,41 @@ select.h-modal-input{cursor:pointer}
 .h-toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px;font-weight:500;z-index:300;color:var(--text)}
 .h-toast.success{border-color:rgba(34,197,94,.4);color:var(--green)}
 .h-toast.error{border-color:rgba(239,68,68,.4);color:var(--red)}
+/* Chat drawer */
+.chat-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;justify-content:flex-end}
+.chat-drawer{width:420px;height:100%;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;animation:slideIn .2s ease}
+.chat-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg3)}
+.chat-hdr-info{flex:1;min-width:0}
+.chat-hdr-name{font-size:13px;font-weight:700;color:var(--text)}
+.chat-hdr-email{font-size:10px;color:var(--muted);margin-top:1px}
+.chat-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .13s}
+.chat-close:hover{border-color:var(--border2);color:var(--text)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-empty{text-align:center;color:var(--sub);font-size:11px;padding:40px 0}
+.chat-loading{text-align:center;color:var(--sub);font-size:11px;padding:40px 0}
+.chat-bubble{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.chat-bubble-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.chat-sender{font-size:10px;font-weight:700;color:var(--blue)}
+.chat-time{font-size:9px;color:var(--sub)}
+.chat-subject{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.chat-body{font-size:11px;color:var(--muted);line-height:1.55;white-space:pre-wrap}
+.chat-type-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:100px;font-size:9px;font-weight:700;margin-top:8px}
+.chat-type-info{background:var(--bluelt);color:var(--blue);border:1px solid var(--blueborder)}
+.chat-type-warning{background:var(--yellowlt);color:var(--yellow);border:1px solid var(--yellowborder)}
+.chat-type-suspension{background:var(--redlt);color:var(--red);border:1px solid var(--redborder)}
+.chat-type-reactivation{background:var(--greenlt);color:var(--green);border:1px solid var(--greenborder)}
+.chat-compose{border-top:1px solid var(--border);padding:12px;flex-shrink:0;background:var(--bg3);display:flex;flex-direction:column;gap:8px}
+.chat-compose-row{display:flex;gap:7px}
+.chat-select{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:11px;outline:none;font-family:'DM Sans',sans-serif;cursor:pointer;flex-shrink:0}
+.chat-select:focus{border-color:var(--border2)}
+.chat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:11px;outline:none;font-family:'DM Sans',sans-serif}
+.chat-input:focus{border-color:var(--border2)}
+.chat-textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:11px;outline:none;font-family:'DM Sans',sans-serif;resize:none;height:72px}
+.chat-textarea:focus{border-color:var(--border2)}
+.chat-send-row{display:flex;justify-content:flex-end}
+.chat-send-btn{padding:7px 18px;background:var(--blue);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .13s}
+.chat-send-btn:disabled{opacity:.4;cursor:not-allowed}
+.chat-send-btn:hover:not(:disabled){opacity:.88}
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -265,10 +302,17 @@ function StatusBadge({ host }) {
 }
 
 function SnapBadge({ host }) {
-  if (host.is_snap_verified) return <span className="badge b-snap">🛡 Verified</span>
-  const active = (host.listings ?? []).filter(l => l.is_active).length
-  if (active === 0) return <span style={{ fontSize: '10px', color: 'var(--sub)' }}>—</span>
-  return <span className="badge b-new">🆕 New</span>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {host.is_snap_verified && <span className="badge b-snap">🛡 Verified</span>}
+      {host.is_founder_host  && <span className="badge b-founder">🏅 Founder</span>}
+      {!host.is_snap_verified && !host.is_founder_host && (() => {
+        const active = (host.listings ?? []).filter(l => l.is_active).length
+        if (active === 0) return <span style={{ fontSize: '10px', color: 'var(--sub)' }}>—</span>
+        return <span className="badge b-new">🆕 New</span>
+      })()}
+    </div>
+  )
 }
 
 function HostTypeBadge({ listings = [] }) {
@@ -281,7 +325,7 @@ function HostTypeBadge({ listings = [] }) {
 }
 
 // ─── Detail Panel ───────────────────────────────────────────────────
-function DetailPanel({ host, listings, stats, recentBookings, canManage, canReinstate, canGrantBadge, onAction }) {
+function DetailPanel({ host, listings, stats, recentBookings, canManage, canReinstate, canGrantBadge, onAction, onChat }) {
   const name      = host.users?.full_name ?? '—'
   const email     = host.users?.email ?? '—'
   const isSusp    = !!host.suspended_at
@@ -319,6 +363,7 @@ function DetailPanel({ host, listings, stats, recentBookings, canManage, canRein
             ? <span className="badge b-suspended">⊘ Suspended</span>
             : <span className="badge b-active">● Active</span>}
           {host.is_snap_verified && <span className="badge b-snap">🛡 Verified</span>}
+          {host.is_founder_host && <span className="badge b-founder">🏅 Founder Host</span>}
         </div>
         <div className="dp-acts">
           {isSusp && canReinstate && (
@@ -327,7 +372,7 @@ function DetailPanel({ host, listings, stats, recentBookings, canManage, canRein
           {!isSusp && canManage && (
             <button className="dp-act-btn red" onClick={() => onAction('suspend', host)}>⊘ Suspend</button>
           )}
-          <button className="dp-act-btn blue" onClick={() => onAction('message', host)}>💬 Message</button>
+          <button className="dp-act-btn blue" onClick={() => onChat(host)}>💬 Chat</button>
           {!isVerified && canManage && (
             <button className="dp-act-btn green" onClick={() => onAction('verify', host)}>✓ Verify</button>
           )}
@@ -336,6 +381,12 @@ function DetailPanel({ host, listings, stats, recentBookings, canManage, canRein
           )}
           {canGrantBadge && host.is_snap_verified && (
             <button className="dp-act-btn" onClick={() => onAction('revoke_snap_verified', host)}>Revoke</button>
+          )}
+          {canGrantBadge && !host.is_founder_host && (
+            <button className="dp-act-btn" style={{ background: 'var(--goldlt)', borderColor: 'var(--goldborder)', color: 'var(--gold)' }} onClick={() => onAction('grant_founder_badge', host)}>🏅 Founder</button>
+          )}
+          {canGrantBadge && host.is_founder_host && (
+            <button className="dp-act-btn" onClick={() => onAction('revoke_founder_badge', host)}>Revoke Founder</button>
           )}
         </div>
       </div>
@@ -525,6 +576,14 @@ export default function HostsClient({ initialHosts, role }) {
   const [msgType, setMsgType]       = useState('info')
   const [loading, setLoading]       = useState(false)
   const [toast, setToast]           = useState(null)
+  // chat
+  const [chatHost,    setChatHost]    = useState(null)
+  const [chatMsgs,    setChatMsgs]    = useState([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatSending, setChatSending] = useState(false)
+  const [chatSubject, setChatSubject] = useState('')
+  const [chatBody,    setChatBody]    = useState('')
+  const [chatType,    setChatType]    = useState('info')
 
   const canManage    = ['admin', 'super_admin', 'trust_safety'].includes(role)
   const canReinstate = ['super_admin', 'trust_safety'].includes(role)
@@ -580,6 +639,47 @@ export default function HostsClient({ initialHosts, role }) {
     setModal({ action, host })
   }
 
+  async function openChat(host) {
+    setChatHost(host)
+    setChatMsgs([])
+    setChatSubject('')
+    setChatBody('')
+    setChatType('info')
+    setChatLoading(true)
+    try {
+      const res = await fetch(`/api/admin/hosts/${host.id}/messages`)
+      if (res.ok) setChatMsgs(await res.json())
+    } catch {}
+    setChatLoading(false)
+  }
+
+  async function sendChatMessage() {
+    if (!chatSubject.trim() || !chatBody.trim()) return
+    setChatSending(true)
+    try {
+      const res = await fetch(`/api/admin/hosts/${chatHost.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'message', subject: chatSubject.trim(), message_body: chatBody.trim(), message_type: chatType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to send')
+      setChatMsgs(prev => [...prev, {
+        id: Date.now(),
+        type: chatType,
+        subject: chatSubject.trim(),
+        body: chatBody.trim(),
+        created_at: new Date().toISOString(),
+      }])
+      setChatSubject('')
+      setChatBody('')
+      showToast('Message sent.')
+    } catch (e) {
+      showToast(e.message, 'error')
+    }
+    setChatSending(false)
+  }
+
   async function confirmAction() {
     if (!modal) return
     if (modal.action === 'suspend' && (!suspCategory || !adminNotes.trim())) return
@@ -610,6 +710,8 @@ export default function HostsClient({ initialHosts, role }) {
           if (modal.action === 'reactivate')           return { ...h, suspended_at: null }
           if (modal.action === 'grant_snap_verified')  return { ...h, is_snap_verified: true,  snap_verified_at: new Date().toISOString() }
           if (modal.action === 'revoke_snap_verified') return { ...h, is_snap_verified: false, snap_verified_at: null }
+          if (modal.action === 'grant_founder_badge')  return { ...h, is_founder_host: true }
+          if (modal.action === 'revoke_founder_badge') return { ...h, is_founder_host: false }
           return h
         }))
         if (selectedId === modal.host.id) {
@@ -617,7 +719,7 @@ export default function HostsClient({ initialHosts, role }) {
           if (r2.ok) setDetail(await r2.json())
         }
       }
-      const msgs = { message: 'Message sent.', suspend: 'Host suspended.', reactivate: 'Host reinstated.', verify: 'Host verified.', grant_snap_verified: '🛡 Badge granted.', revoke_snap_verified: 'Badge revoked.' }
+      const msgs = { message: 'Message sent.', suspend: 'Host suspended.', reactivate: 'Host reinstated.', verify: 'Host verified.', grant_snap_verified: '🛡 Badge granted.', revoke_snap_verified: 'Badge revoked.', grant_founder_badge: '🏅 Founder badge granted.', revoke_founder_badge: 'Founder badge revoked.' }
       showToast(msgs[modal.action] ?? 'Done.')
       setModal(null)
     } catch (e) {
@@ -828,6 +930,7 @@ export default function HostsClient({ initialHosts, role }) {
                     canReinstate={canReinstate}
                     canGrantBadge={canGrantBadge}
                     onAction={openModal}
+                    onChat={openChat}
                   />
                 ) : selectedHost ? (
                   <DetailPanel
@@ -839,6 +942,7 @@ export default function HostsClient({ initialHosts, role }) {
                     canReinstate={canReinstate}
                     canGrantBadge={canGrantBadge}
                     onAction={openModal}
+                    onChat={openChat}
                   />
                 ) : null}
               </div>
@@ -893,7 +997,9 @@ export default function HostsClient({ initialHosts, role }) {
                    : modal.action === 'suspend'            ? 'Suspend Host'
                    : modal.action === 'reactivate'         ? 'Reinstate Host'
                    : modal.action === 'grant_snap_verified'  ? '🛡 Grant Verified Host Badge'
-                   : 'Revoke Verified Host Badge'}
+                   : modal.action === 'revoke_snap_verified' ? 'Revoke Verified Host Badge'
+                   : modal.action === 'grant_founder_badge'  ? '🏅 Grant Founder Host Badge'
+                   : 'Revoke Founder Host Badge'}
                 </h2>
                 <p className="h-modal-sub">
                   {modal.host.users?.full_name ?? modal.host.full_name ?? '—'} · {modal.host.users?.email ?? modal.host.email}
@@ -920,12 +1026,20 @@ export default function HostsClient({ initialHosts, role }) {
                 )}
                 {modal.action === 'grant_snap_verified' && (
                   <div className="h-alert purple">
-                    This displays <strong>🛡 SnapReserve Verified Host</strong> on all listings by this host.<br /><br />
+                    This displays <strong>🛡 SnapReserve™ Verified Host</strong> on all listings by this host.<br /><br />
                     <strong>Requirements:</strong> active listings for ≥6 months and no major violations or unresolved complaints.
                   </div>
                 )}
                 {modal.action === 'revoke_snap_verified' && (
                   <div className="h-alert red">This removes the Verified Host badge from all of this host's listings immediately.</div>
+                )}
+                {modal.action === 'grant_founder_badge' && (
+                  <div className="h-alert" style={{ background: 'var(--goldlt)', border: '1px solid var(--goldborder)', color: 'var(--gold)' }}>
+                    This grants the <strong>🏅 Founder Host</strong> badge to this host. It will be displayed permanently on all of their listings and on their host profile.
+                  </div>
+                )}
+                {modal.action === 'revoke_founder_badge' && (
+                  <div className="h-alert red">This removes the Founder Host badge from this host's profile and all their listings immediately.</div>
                 )}
 
                 <div className="h-modal-footer">
@@ -933,9 +1047,11 @@ export default function HostsClient({ initialHosts, role }) {
                   <button
                     className="h-modal-confirm"
                     style={
-                      modal.action === 'reactivate'          ? { background: 'var(--green)' } :
-                      modal.action === 'grant_snap_verified' ? { background: 'var(--purple)' } :
+                      modal.action === 'reactivate'           ? { background: 'var(--green)' } :
+                      modal.action === 'grant_snap_verified'  ? { background: 'var(--purple)' } :
                       modal.action === 'revoke_snap_verified' ? { background: 'var(--bg3)', color: 'var(--muted)', border: '1px solid var(--border)' } :
+                      modal.action === 'grant_founder_badge'  ? { background: 'var(--gold)' } :
+                      modal.action === 'revoke_founder_badge' ? { background: 'var(--bg3)', color: 'var(--muted)', border: '1px solid var(--border)' } :
                       {}
                     }
                     disabled={loading || (modal.action === 'suspend' && (!suspCategory || !adminNotes.trim()))}
@@ -943,13 +1059,80 @@ export default function HostsClient({ initialHosts, role }) {
                   >
                     {loading ? 'Processing…'
                       : modal.action === 'reactivate'          ? 'Reinstate Host'
-                      : modal.action === 'grant_snap_verified' ? '🛡 Grant Badge'
+                      : modal.action === 'grant_snap_verified'  ? '🛡 Grant Badge'
                       : modal.action === 'revoke_snap_verified' ? 'Revoke Badge'
+                      : modal.action === 'grant_founder_badge'  ? '🏅 Grant Founder Badge'
+                      : modal.action === 'revoke_founder_badge' ? 'Revoke Founder Badge'
                       : 'Confirm'}
                   </button>
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Chat drawer */}
+      {chatHost && (
+        <div className="chat-overlay" onClick={e => e.target === e.currentTarget && setChatHost(null)}>
+          <div className="chat-drawer">
+            <div className="chat-hdr">
+              <div className="chat-hdr-info">
+                <div className="chat-hdr-name">
+                  💬 Chat with {chatHost.users?.full_name ?? 'Host'}
+                </div>
+                <div className="chat-hdr-email">{chatHost.users?.email}</div>
+              </div>
+              <button className="chat-close" onClick={() => setChatHost(null)}>✕</button>
+            </div>
+
+            <div className="chat-msgs">
+              {chatLoading ? (
+                <div className="chat-loading">Loading messages…</div>
+              ) : chatMsgs.length === 0 ? (
+                <div className="chat-empty">No messages yet. Send the first one below.</div>
+              ) : chatMsgs.map(m => (
+                <div key={m.id} className="chat-bubble">
+                  <div className="chat-bubble-meta">
+                    <span className="chat-sender">Support Team</span>
+                    <span className="chat-time">{new Date(m.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="chat-subject">{m.subject}</div>
+                  <div className="chat-body">{m.body}</div>
+                  <span className={`chat-type-tag chat-type-${m.type ?? 'info'}`}>{m.type ?? 'info'}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="chat-compose">
+              <div className="chat-compose-row">
+                <select className="chat-select" value={chatType} onChange={e => setChatType(e.target.value)}>
+                  <option value="info">ℹ️ Info</option>
+                  <option value="warning">⚠️ Warning</option>
+                </select>
+                <input
+                  className="chat-input"
+                  placeholder="Subject…"
+                  value={chatSubject}
+                  onChange={e => setChatSubject(e.target.value)}
+                />
+              </div>
+              <textarea
+                className="chat-textarea"
+                placeholder="Write your message to the host…"
+                value={chatBody}
+                onChange={e => setChatBody(e.target.value)}
+              />
+              <div className="chat-send-row">
+                <button
+                  className="chat-send-btn"
+                  disabled={chatSending || !chatSubject.trim() || !chatBody.trim()}
+                  onClick={sendChatMessage}
+                >
+                  {chatSending ? 'Sending…' : '↑ Send Message'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

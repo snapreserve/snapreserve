@@ -18,23 +18,23 @@ export default function SignOutButton() {
     <button onClick={handleSignOut} style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
+      gap: '8px',
       width: '100%',
-      padding: '9px 8px',
-      borderRadius: '8px',
+      padding: '8px 10px',
+      borderRadius: '9px',
       background: 'transparent',
       border: 'none',
-      color: '#6B5E52',
-      fontSize: '0.85rem',
-      fontWeight: '500',
+      color: 'var(--sr-sub)',
+      fontSize: '0.78rem',
+      fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.15s',
       fontFamily: 'inherit',
     }}
-    onMouseEnter={e => { e.currentTarget.style.background = '#2A2420'; e.currentTarget.style.color = '#F87171' }}
-    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B5E52' }}
+    onMouseEnter={e => { e.currentTarget.style.background = 'var(--sr-redl)'; e.currentTarget.style.color = 'var(--sr-red)' }}
+    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--sr-sub)' }}
     >
-      <span style={{fontSize:'1rem', width:'20px', textAlign:'center'}}>↪</span>
+      <span style={{ fontSize: '1rem', width: '20px', textAlign: 'center', lineHeight: 1 }}>↪</span>
       Sign Out
     </button>
   )

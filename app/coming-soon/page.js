@@ -8,13 +8,13 @@ const pageConfig = {
   cars: {
     icon: '🚗',
     title: 'Cars',
-    description: 'Rent premium cars from verified hosts — coming to SnapReserve™ soon.',
+    description: 'Rent premium cars from verified hosts — coming to SnapReserve™™ soon.',
     color: '#1A6EF4',
   },
   experiences: {
     icon: '✨',
     title: 'Experiences',
-    description: 'Book unique local experiences with expert hosts — coming to SnapReserve™ soon.',
+    description: 'Book unique local experiences with expert hosts — coming to SnapReserve™™ soon.',
     color: '#F4601A',
   },
   support: {
@@ -117,13 +117,13 @@ function ComingSoonContent() {
           )}
 
 
-          <a href="/" className="back-link">← Back to SnapReserve™</a>
+          <a href="/" className="back-link">← Back to SnapReserve™™</a>
         </div>
       </div>
 
       <footer className="footer">
         <div className="footer-logo">Snap<span>Reserve™</span></div>
-        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™ · snapreserve.app</div>
+        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™™ · snapreserve.app</div>
       </footer>
     </>
   )

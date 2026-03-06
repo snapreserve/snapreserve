@@ -34,10 +34,10 @@ export async function POST() {
         .eq('id', host.id)
     }
 
-    console.log(`[SnapReserve] Stripe Connect initiated for host ${user.id} (${APP_ENV})`)
+    console.log(`[SnapReserve™] Stripe Connect initiated for host ${user.id} (${APP_ENV})`)
     return NextResponse.json({ url })
   } catch (err) {
-    console.error(`[SnapReserve] Stripe Connect error (${APP_ENV}):`, err.message)
+    console.error(`[SnapReserve™] Stripe Connect error (${APP_ENV}):`, err.message)
     return NextResponse.json({ error: 'Could not start Connect onboarding.' }, { status: 500 })
   }
 }

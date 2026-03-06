@@ -110,7 +110,7 @@ export async function POST(request, { params }) {
 
   // ── Email notification stub ──────────────────────────────────────────────
   // const recipientId = isGuest ? conv.host_user_id : conv.guest_user_id
-  // await sendEmail({ userId: recipientId, subject: 'New message on SnapReserve', body: msgBody })
+  // await sendEmail({ userId: recipientId, subject: 'New message on SnapReserve™', body: msgBody })
   // ────────────────────────────────────────────────────────────────────────
 
   return NextResponse.json(msg)

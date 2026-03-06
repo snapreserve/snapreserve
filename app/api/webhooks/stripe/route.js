@@ -15,7 +15,7 @@ export async function POST(request) {
   const requiresVerification = IS_PRODUCTION || IS_STAGING
 
   if (requiresVerification && !webhookSecret) {
-    console.error(`[SnapReserve] CRITICAL: STRIPE_WEBHOOK_SECRET not set in ${APP_ENV}`)
+    console.error(`[SnapReserve™] CRITICAL: STRIPE_WEBHOOK_SECRET not set in ${APP_ENV}`)
     return Response.json({ error: 'Webhook not configured' }, { status: 500 })
   }
 
@@ -26,13 +26,13 @@ export async function POST(request) {
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     } else if (!requiresVerification) {
       // Development only — allow unsigned payloads for local testing with Stripe CLI
-      console.warn('[SnapReserve] Webhook: no signature verification (development only)')
+      console.warn('[SnapReserve™] Webhook: no signature verification (development only)')
       event = JSON.parse(body)
     } else {
       return Response.json({ error: 'Missing webhook signature' }, { status: 400 })
     }
   } catch (err) {
-    console.error(`[SnapReserve] Webhook signature error (${APP_ENV}):`, err.message)
+    console.error(`[SnapReserve™] Webhook signature error (${APP_ENV}):`, err.message)
     return Response.json({ error: 'Webhook signature verification failed' }, { status: 400 })
   }
 
@@ -47,10 +47,10 @@ export async function POST(request) {
       .eq('status', 'pending')
 
     if (error) {
-      console.error(`[SnapReserve] Webhook: failed to confirm booking (${APP_ENV})`, error)
+      console.error(`[SnapReserve™] Webhook: failed to confirm booking (${APP_ENV})`, error)
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
-    console.log(`[SnapReserve] Webhook: booking confirmed for PI ${pi.id} (${APP_ENV})`)
+    console.log(`[SnapReserve™] Webhook: booking confirmed for PI ${pi.id} (${APP_ENV})`)
   }
 
   if (event.type === 'payment_intent.payment_failed') {
@@ -62,10 +62,10 @@ export async function POST(request) {
       .eq('status', 'pending')
 
     if (error) {
-      console.error(`[SnapReserve] Webhook: failed to cancel booking (${APP_ENV})`, error)
+      console.error(`[SnapReserve™] Webhook: failed to cancel booking (${APP_ENV})`, error)
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
-    console.log(`[SnapReserve] Webhook: booking cancelled for PI ${pi.id} (${APP_ENV})`)
+    console.log(`[SnapReserve™] Webhook: booking cancelled for PI ${pi.id} (${APP_ENV})`)
   }
 
   return Response.json({ received: true })

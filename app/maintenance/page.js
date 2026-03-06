@@ -70,7 +70,7 @@ export default function MaintenancePage() {
           lineHeight: 1.8,
           marginBottom: '40px',
         }}>
-          SnapReserve™ is currently undergoing scheduled maintenance to improve your experience.
+          SnapReserve™™ is currently undergoing scheduled maintenance to improve your experience.
           We'll be back online shortly — thank you for your patience.
         </p>
 

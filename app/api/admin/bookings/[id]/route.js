@@ -97,8 +97,8 @@ export async function PATCH(request, { params }) {
         hostUserId: hostRow.user_id,
         listingId:  booking.listing_id,
         type:       'warning',
-        subject:    'Booking cancelled by SnapReserve Admin',
-        body:       `Booking #${booking.reference || id.slice(0,8).toUpperCase()} has been cancelled by a SnapReserve admin. Reason: ${reason}. Check-in was ${booking.check_in}.`,
+        subject:    'Booking cancelled by SnapReserve™ Admin',
+        body:       `Booking #${booking.reference || id.slice(0,8).toUpperCase()} has been cancelled by a SnapReserve™ admin. Reason: ${reason}. Check-in was ${booking.check_in}.`,
       })
     }
   } catch (e) { console.error('[admin-cancel] notify-host error:', e.message) }

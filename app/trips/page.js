@@ -152,7 +152,7 @@ export default function TripsPage() {
       <div className="page">
         <div className="page-header">
           <h1 className="page-title">My Trips</h1>
-          <p className="page-sub">All your SnapReserve bookings in one place</p>
+          <p className="page-sub">All your SnapReserve™ bookings in one place</p>
         </div>
 
         <div className="tabs">

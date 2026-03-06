@@ -77,22 +77,24 @@ export async function POST(request) {
       roomId = room.id
     }
 
-    // Resolve host user_id from hosts table (listing.host_id = hosts.id)
+    // Resolve host user_id and founder status from hosts table (listing.host_id = hosts.id)
     let hostUserId = listing.host_id
+    let isFounderHost = false
     const { data: hostRow } = await admin
       .from('hosts')
-      .select('user_id')
+      .select('user_id, is_founder_host')
       .eq('id', listing.host_id)
       .maybeSingle()
     if (hostRow?.user_id) hostUserId = hostRow.user_id
+    if (hostRow?.is_founder_host) isFounderHost = true
 
     // Calculate amounts — NO guest-facing service fee; host pays platform fee instead
     const subtotal    = pricePerNight * nights
     const cleaningFee = listing.cleaning_fee || 0
     const totalAmount = subtotal + cleaningFee   // guests pay clean total, no added fees
 
-    // Platform fee charged to host (7% + $1) — stored for host payout calculation
-    const { platformFee, platformFixedFee } = calcPlatformFee(totalAmount)
+    // Platform fee charged to host — 6.5%+$1 for Founder hosts, 7%+$1 for standard
+    const { platformFeePct, platformFee, platformFixedFee } = calcPlatformFee(totalAmount, isFounderHost)
 
     // Get user email for receipt
     const { data: userProfile } = await admin

@@ -350,7 +350,7 @@ function BookingPageContent() {
 
             {/* Policies */}
             <div style={{ fontSize: '0.78rem', color: '#A89880', lineHeight: 1.6 }}>
-              By reserving, you agree to SnapReserve's{' '}
+              By reserving, you agree to SnapReserve™'s{' '}
               <a href="/terms" style={{ color: '#F4601A' }}>Terms of Service</a> and{' '}
               <a href="/refund-policy" style={{ color: '#F4601A' }}>Refund Policy</a>.
               Host cancellation policy applies.

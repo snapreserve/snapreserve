@@ -146,7 +146,7 @@ export default function ContactPage() {
         <div style={{paddingBottom:'60px'}}>
           <div className="eyebrow">Get in Touch</div>
           <h1 className="ci-title">Let&apos;s <em>talk</em></h1>
-          <p className="ci-body">Have a question, want to list your property, or just curious about SnapReserve? We'd love to hear from you — send us a message and we'll get back to you within 24 hours.</p>
+          <p className="ci-body">Have a question, want to list your property, or just curious about SnapReserve™? We'd love to hear from you — send us a message and we'll get back to you within 24 hours.</p>
 
           <div className="ci-items">
             <div className="ci-item">
@@ -210,7 +210,7 @@ export default function ContactPage() {
             <div className="success-card">
               <div className="success-icon">✉️</div>
               <div className="success-title">Message sent!</div>
-              <p className="success-body">Thanks for reaching out to SnapReserve. We'll get back to you within 24 hours.</p>
+              <p className="success-body">Thanks for reaching out to SnapReserve™. We'll get back to you within 24 hours.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
@@ -306,7 +306,7 @@ export default function ContactPage() {
         <div className="eyebrow" style={{justifyContent:'center'}}>Where We Serve</div>
         <h2 className="section-title">Currently in the<br /><em>United States</em></h2>
         <p style={{fontSize:'0.88rem', color:'var(--sr-muted)', lineHeight:1.8, maxWidth:'480px', margin:'0 auto'}}>
-          SnapReserve is launching with destinations across the United States. International expansion is on the roadmap — sign up to be notified when we reach your region.
+          SnapReserve™ is launching with destinations across the United States. International expansion is on the roadmap — sign up to be notified when we reach your region.
         </p>
         <div className="geo-card-inline">
           <span style={{fontSize:'1.6rem'}}>🇺🇸</span>
@@ -328,7 +328,7 @@ export default function ContactPage() {
             Outside the United States?
           </div>
           <p style={{ fontSize:'0.88rem', color:'var(--sr-muted)', lineHeight:1.7, marginBottom:20 }}>
-            We&apos;re expanding internationally. Drop your email and you&apos;ll be the first to know when SnapReserve reaches your country.
+            We&apos;re expanding internationally. Drop your email and you&apos;ll be the first to know when SnapReserve™ reaches your country.
           </p>
           {intlSubmitted ? (
             <div style={{ background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:14, padding:'18px 22px', display:'flex', alignItems:'center', gap:12 }}>
@@ -374,7 +374,7 @@ export default function ContactPage() {
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         </div>
-        <span className="footer-copy">© 2026 SnapReserve. All rights reserved.</span>
+        <span className="footer-copy">© 2026 SnapReserve™. All rights reserved.</span>
       </footer>
     </>
   )

@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         <div className="updated">Last updated: March 1, 2026</div>
 
         <div className="intro">
-          At SnapReserve™, we take your privacy seriously. This policy explains what data we collect, how we use it, and your rights as a user of our platform at snapreserve.app.
+          At SnapReserve™™, we take your privacy seriously. This policy explains what data we collect, how we use it, and your rights as a user of our platform at snapreserve.app.
         </div>
 
         <h2>📋 Information We Collect</h2>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
         </div>
 
         <h2>📍 Information Collected Automatically</h2>
-        <p>When you use SnapReserve™, we automatically collect certain technical information to improve our service.</p>
+        <p>When you use SnapReserve™™, we automatically collect certain technical information to improve our service.</p>
         <ul>
           <li>IP address and device type</li>
           <li>Browser type and version</li>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
         </ul>
 
         <h2>🔒 How We Use Your Information</h2>
-        <p>We use the information we collect to operate, improve, and personalise your experience on SnapReserve™.</p>
+        <p>We use the information we collect to operate, improve, and personalise your experience on SnapReserve™™.</p>
         <div className="highlight">
           <ul>
             <li>Process bookings and payments</li>
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
         </ul>
 
         <h2>🍪 Cookies</h2>
-        <p>SnapReserve™ uses cookies to maintain your session, remember your preferences, and improve platform performance. You can control cookies through your browser settings, though disabling them may affect functionality.</p>
+        <p>SnapReserve™™ uses cookies to maintain your session, remember your preferences, and improve platform performance. You can control cookies through your browser settings, though disabling them may affect functionality.</p>
 
         <h2>🔐 Data Security</h2>
         <p>We implement industry-standard security measures to protect your data, including encryption in transit (HTTPS), encrypted storage, and regular security audits. However, no method of transmission over the internet is 100% secure.</p>
@@ -112,13 +112,13 @@ export default function PrivacyPage() {
         </div>
 
         <h2>👶 Children's Privacy</h2>
-        <p>SnapReserve™ is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe a minor has provided us with their information, please contact us immediately.</p>
+        <p>SnapReserve™™ is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe a minor has provided us with their information, please contact us immediately.</p>
 
         <h2>🌍 International Transfers</h2>
-        <p>SnapReserve™ is based in the United States. If you access our platform from outside the US, your data may be transferred to and processed in the United States, where data protection laws may differ from those in your country.</p>
+        <p>SnapReserve™™ is based in the United States. If you access our platform from outside the US, your data may be transferred to and processed in the United States, where data protection laws may differ from those in your country.</p>
 
         <h2>📝 Changes to This Policy</h2>
-        <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes by email or by posting a prominent notice on our platform. Your continued use of SnapReserve™ after changes take effect constitutes acceptance of the updated policy.</p>
+        <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes by email or by posting a prominent notice on our platform. Your continued use of SnapReserve™™ after changes take effect constitutes acceptance of the updated policy.</p>
 
         <div className="contact-card">
           <div className="cc-title">Questions about your privacy?</div>
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
         </div>
-        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™ · snapreserve.app</div>
+        <div style={{fontSize:'0.74rem'}}>© 2026 SnapReserve™™ · snapreserve.app</div>
       </footer>
     </>
   )

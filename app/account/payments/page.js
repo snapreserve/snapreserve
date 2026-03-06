@@ -129,7 +129,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...`}
           )}
 
           <p style={{ fontSize: '0.72rem', color: '#A89880', marginTop: '16px' }}>
-            🔒 Card details are encrypted and handled by Stripe. SnapReserve never stores your card number or CVV.
+            🔒 Card details are encrypted and handled by Stripe. SnapReserve™ never stores your card number or CVV.
           </p>
         </>
       )}

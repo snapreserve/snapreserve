@@ -82,14 +82,14 @@ export async function PATCH(request, { params }) {
       userId:  appeal.user_id,
       type:    'reactivation',
       subject: 'Your appeal has been approved',
-      body:    `Great news! Your SnapReserve account appeal has been approved and your account has been reinstated.\n\n${admin_response?.trim() ?? ''}\n\nWelcome back.`,
+      body:    `Great news! Your SnapReserve™ account appeal has been approved and your account has been reinstated.\n\n${admin_response?.trim() ?? ''}\n\nWelcome back.`,
     })
   } else if (action === 'reject') {
     await notifyUser({
       userId:  appeal.user_id,
       type:    'rejection',
       subject: 'Your appeal has been reviewed',
-      body:    `Your SnapReserve account appeal has been reviewed.\n\n${admin_response?.trim()}\n\nFor further assistance, contact support@snapreserve.app.`,
+      body:    `Your SnapReserve™ account appeal has been reviewed.\n\n${admin_response?.trim()}\n\nFor further assistance, contact support@snapreserve.app.`,
     })
   } else {
     await notifyUser({

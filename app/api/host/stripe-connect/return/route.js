@@ -14,7 +14,7 @@ export async function GET(request) {
 
   try {
     const ready = await isConnectAccountReady(accountId)
-    console.log(`[SnapReserve] Connect return: account ${accountId} ready=${ready} (${APP_ENV})`)
+    console.log(`[SnapReserve™] Connect return: account ${accountId} ready=${ready} (${APP_ENV})`)
 
     if (ready) {
       const admin = createAdminClient()
@@ -29,7 +29,7 @@ export async function GET(request) {
       redirect('/host/dashboard?connect=pending')
     }
   } catch (err) {
-    console.error(`[SnapReserve] Connect return error (${APP_ENV}):`, err.message)
+    console.error(`[SnapReserve™] Connect return error (${APP_ENV}):`, err.message)
     redirect('/host/dashboard?connect=error')
   }
 }
