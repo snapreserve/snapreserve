@@ -178,15 +178,11 @@ export async function POST(request) {
   }
 
   // Email invitation (works for both existing and new users)
-  const { html, text } = await import('@/lib/send-email').then(m => ({
-    html: m.teamInviteEmailHtml({ inviteeEmail, orgName, role, inviteLink, expiresAt }),
-    text: m.teamInviteEmailText({ inviteeEmail, orgName, role, inviteLink, expiresAt }),
-  }))
   await sendEmail({
     to:      inviteEmail,
     subject: `You've been invited to join ${orgName} on SnapReserve™`,
-    html,
-    text,
+    html:    teamInviteEmailHtml({ inviteeEmail: inviteEmail, orgName, role, inviteLink, expiresAt }),
+    text:    teamInviteEmailText({ inviteeEmail: inviteEmail, orgName, role, inviteLink, expiresAt }),
   })
 
   return NextResponse.json({ success: true, invite_link: inviteLink, member_id: member.id })

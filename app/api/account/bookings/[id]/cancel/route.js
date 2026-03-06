@@ -64,6 +64,11 @@ export async function POST(request, { params }) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
+  // Restore room inventory if this was a hotel booking
+  if (booking.room_id) {
+    await admin.rpc('restore_room_units', { p_room_id: booking.room_id, p_amount: 1 })
+  }
+
   // Notify host — resolve host user_id via hosts table
   try {
     const { data: hostRow } = await admin.from('hosts').select('user_id').eq('id', booking.host_id).maybeSingle()

@@ -30,20 +30,24 @@ function isOwnerEmail(user) {
   return user?.email === 'owner@snapreserve.app'
 }
 
-const _approvalCache = new Map() // userId → { status, expiry }
-async function getApprovalStatus(supabase, userId) {
+const _approvalCache = new Map() // userId → { status, isTeamMember, expiry }
+async function getUserProfile(supabase, userId) {
   const cached = _approvalCache.get(userId)
-  if (cached && Date.now() < cached.expiry) return cached.status
+  if (cached && Date.now() < cached.expiry) return cached
   try {
     const { data } = await supabase
       .from('users')
-      .select('approval_status')
+      .select('approval_status, is_team_member')
       .eq('id', userId)
       .maybeSingle()
-    const status = data?.approval_status ?? 'pending'
-    _approvalCache.set(userId, { status, expiry: Date.now() + 60_000 })
-    return status
-  } catch { return 'pending' } // fail closed
+    // Team members are explicitly invited by a host — they bypass the waitlist gate
+    // regardless of approval_status, so they can always reach the host portal.
+    const isTeamMember = data?.is_team_member === true
+    const status = isTeamMember ? 'approved' : (data?.approval_status ?? 'pending')
+    const entry = { status, isTeamMember, expiry: Date.now() + 60_000 }
+    _approvalCache.set(userId, entry)
+    return entry
+  } catch { return { status: 'pending', isTeamMember: false } } // fail closed
 }
 
 // Inline base64url decode — works in Edge Runtime (no Buffer)
@@ -117,14 +121,17 @@ export async function proxy(request) {
     const isBypassPath =
       path === '/waitlist' || path.startsWith('/waitlist/') ||
       path === '/login'    || path === '/signup' ||
-      path === '/pending-approval'
+      path === '/pending-approval' ||
+      // Team invite join page — must be reachable by unauthenticated/unapproved users
+      // since invitees may not have an account yet or may not be waitlist-approved
+      path.startsWith('/team/join')
 
     if (!isOwner && !isBypassPath) {
       if (user) {
         // Authenticated: check approval status
         // Approved users bypass the waitlist lock entirely
-        const approvalStatus = await getApprovalStatus(supabase, user.id)
-        if (approvalStatus !== 'approved') {
+        const profile = await getUserProfile(supabase, user.id)
+        if (profile.status !== 'approved') {
           const url = request.nextUrl.clone()
           url.pathname = '/waitlist'
           url.search   = ''
@@ -316,6 +323,26 @@ export async function proxy(request) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // ----------------------------------------------------------------
+  // Team member portal gate — restrict to host portal only
+  // Team members (is_team_member=true) have no explore/guest access.
+  // If they hit any consumer route, redirect them to /host/dashboard.
+  // ----------------------------------------------------------------
+  if (user) {
+    const TEAM_MEMBER_BLOCKED = ['/home', '/listings', '/property', '/trips', '/booking', '/dashboard']
+    const isBlockedForTeam = TEAM_MEMBER_BLOCKED.some(r => path.startsWith(r))
+    if (isBlockedForTeam) {
+      // getUserProfile is cached (60s TTL) — no extra DB hit if already fetched above
+      const profile = await getUserProfile(supabase, user.id)
+      if (profile.isTeamMember) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/host/dashboard'
+        url.search = ''
+        return NextResponse.redirect(url)
+      }
+    }
   }
 
   return supabaseResponse

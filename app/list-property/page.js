@@ -135,8 +135,10 @@ function ListPropertyInner() {
       if (editId) {
         setDraftId(editId)
         setEditMode(true)
-        const { data: listing } = await supabase
-          .from('listings').select('*').eq('id', editId).single()
+        const [{ data: listing }, { data: existingRooms }] = await Promise.all([
+          supabase.from('listings').select('*').eq('id', editId).single(),
+          supabase.from('rooms').select('*').eq('listing_id', editId).order('price_per_night', { ascending: true }),
+        ])
         if (!listing) return
         setInitialStatus(listing.status)
         setHostType(listing.type || 'private_stay')
@@ -173,6 +175,20 @@ function ListPropertyInner() {
           minBookingAge:      listing.min_booking_age      != null ? String(listing.min_booking_age)  : '18',
           extraGuestFee:      listing.extra_guest_fee      != null ? String(listing.extra_guest_fee)  : '',
         }))
+        // Load existing rooms for hotel listings
+        if (existingRooms?.length) {
+          setRoomTypes(existingRooms.map(r => ({
+            id:             r.id,
+            name:           r.name || '',
+            tier:           r.tier || 'Standard',
+            price:          r.price_per_night?.toString() || '',
+            maxGuests:      r.max_guests?.toString() || '2',
+            beds:           r.bed_type || '',
+            view:           r.view_type || '',
+            amenities:      r.amenities || '',
+            unitsAvailable: r.units_available?.toString() || '1',
+          })))
+        }
         if (listing.status === 'changes_requested') {
           const { data: crs } = await supabase
             .from('listing_change_requests')
@@ -271,12 +287,44 @@ function ListPropertyInner() {
       }
 
       if (error) throw error
+
+      // Save rooms for hotel listings
+      if (savedId && hostType === 'hotel' && roomTypes.length > 0) {
+        await saveRooms(savedId)
+      }
+
       if (!silent) { setDraftSaved(true); setTimeout(() => setDraftSaved(false), 3000) }
     } catch (err) {
       if (!silent) alert(err?.message || 'Failed to save draft.')
     }
     if (!silent) setSaving(false)
     return savedId
+  }
+
+  // Shared room save helper — upserts rooms for a listing
+  async function saveRooms(listingId) {
+    for (const rt of roomTypes) {
+      const roomPayload = {
+        listing_id:      listingId,
+        name:            rt.name,
+        tier:            rt.tier || 'Standard',
+        price_per_night: parseFloat(rt.price) || 0,
+        max_guests:      parseInt(rt.maxGuests) || 2,
+        bed_type:        rt.beds || null,
+        view_type:       rt.view || null,
+        amenities:       rt.amenities || null,
+        units_available: parseInt(rt.unitsAvailable) || 1,
+        is_available:    true,
+      }
+      if (rt.id) {
+        // Existing room — update
+        await supabase.from('rooms').update(roomPayload).eq('id', rt.id)
+      } else {
+        // New room — insert and store returned id
+        const { data: inserted } = await supabase.from('rooms').insert(roomPayload).select('id').single()
+        if (inserted?.id) rt.id = inserted.id
+      }
+    }
   }
 
   async function handlePreview() {
@@ -367,6 +415,11 @@ function ListPropertyInner() {
             sort_order:  existingUrls.length + i,
           }))
         )
+      }
+
+      // Save rooms for hotel listings
+      if (hostType === 'hotel' && roomTypes.length > 0) {
+        await saveRooms(listingId)
       }
 
       if (editMode) {

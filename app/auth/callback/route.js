@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
+import { isSafeRedirectPath } from '@/lib/validate'
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+
+  // Validate the `next` param to prevent open-redirect attacks.
+  // Only allow internal relative paths (e.g. /dashboard, /host).
+  // Protocol-relative paths (//evil.com) and external URLs are rejected.
+  const rawNext = searchParams.get('next') ?? '/dashboard'
+  const next    = isSafeRedirectPath(rawNext) ? rawNext : '/dashboard'
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=oauth_failed`)

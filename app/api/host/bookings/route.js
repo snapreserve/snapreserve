@@ -12,7 +12,7 @@ function payoutStatus(b) {
   return 'pending'
 }
 
-// GET /api/host/bookings?listing_id=&status=&page=1
+// GET /api/host/bookings?listing_id=&status=&page=1&limit=25
 export async function GET(request) {
   const { user } = await getUserSession()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -21,13 +21,14 @@ export async function GET(request) {
   const listingId    = searchParams.get('listing_id') || null
   const statusFilter = searchParams.get('status')     || null   // 'upcoming'|'completed'|'cancelled'
   const page         = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-  const limit        = 25
+  const limit        = Math.min(300, Math.max(1, parseInt(searchParams.get('limit') || '25', 10)))
   const offset       = (page - 1) * limit
 
   const admin = createAdminClient()
 
-  // ── Resolve host user_id ──────────────────────────────────────────────────
+  // ── Resolve host user_id + team member's allowed listings ─────────────────
   let hostUserId = null
+  let allowedListingIds = null   // null = all listings; array = restricted
 
   // Direct host
   const { data: hostRow } = await admin
@@ -39,10 +40,10 @@ export async function GET(request) {
   if (hostRow) {
     hostUserId = user.id // bookings.host_id stores host's user_id
   } else {
-    // Team member — find the org owner's user_id
+    // Team member — find the org owner's user_id + property access
     const { data: membership } = await admin
       .from('host_team_members')
-      .select('host_id, role, status')
+      .select('host_id, role, status, allowed_listing_ids')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .maybeSingle()
@@ -54,6 +55,10 @@ export async function GET(request) {
         .eq('id', membership.host_id)
         .maybeSingle()
       hostUserId = ownerHost?.user_id || null
+      // Restrict to allowed listings if set (null = full access)
+      if (Array.isArray(membership.allowed_listing_ids) && membership.allowed_listing_ids.length > 0) {
+        allowedListingIds = membership.allowed_listing_ids
+      }
     }
   }
 
@@ -68,10 +73,12 @@ export async function GET(request) {
     .lt('check_out', new Date().toISOString().slice(0, 10))
 
   // ── Metrics: all bookings (not paginated) ─────────────────────────────────
-  const { data: allBookings } = await admin
+  let metricsQ = admin
     .from('bookings')
     .select('status, payment_status, total_amount, service_fee, platform_fee, platform_fixed_fee, refund_amount, check_in')
     .eq('host_id', hostUserId)
+  if (allowedListingIds) metricsQ = metricsQ.in('listing_id', allowedListingIds)
+  const { data: allBookings } = await metricsQ
 
   const all      = allBookings || []
   const now      = new Date()
@@ -107,7 +114,18 @@ export async function GET(request) {
     .eq('host_id', hostUserId)
     .order('created_at', { ascending: false })
 
-  if (listingId) q = q.eq('listing_id', listingId)
+  // Apply listing filter(s)
+  if (allowedListingIds) {
+    if (listingId) {
+      // Only return results if the requested listing is in the allowed set
+      if (allowedListingIds.includes(listingId)) q = q.eq('listing_id', listingId)
+      else q = q.eq('listing_id', 'none') // ensures 0 results
+    } else {
+      q = q.in('listing_id', allowedListingIds)
+    }
+  } else if (listingId) {
+    q = q.eq('listing_id', listingId)
+  }
 
   // Map UI status filter → DB statuses
   if (statusFilter === 'upcoming')   q = q.in('status', ['confirmed', 'checked_in'])

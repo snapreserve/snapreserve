@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 const STATUS_CFG = {
   confirmed:  { label: 'Confirmed',  color: '#60A5FA', bg: 'rgba(96,165,250,0.1)' },
-  checked_in: { label: 'Checked In', color: '#F4601A', bg: 'rgba(244,96,26,0.13)' },
+  checked_in: { label: 'Checked In', color: 'var(--sr-orange)', bg: 'var(--sr-ol)' },
   completed:  { label: 'Completed',  color: '#4ADE80', bg: 'rgba(74,222,128,0.1)' },
   pending:    { label: 'Pending',    color: '#FCD34D', bg: 'rgba(251,191,36,0.1)' },
   cancelled:  { label: 'Cancelled',  color: '#F87171', bg: 'rgba(248,113,113,0.1)' },

@@ -1,17 +1,22 @@
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
 import StagingBanner from "./components/StagingBanner"
 import { ThemeProvider } from "./components/ThemeProvider"
 import FloatingThemeToggle from "./components/FloatingThemeToggle"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Primary UI font — used for all body/nav/button/label text
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 })
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Display font — used for headings, logo, stat numbers
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 })
 
 export const metadata = {
@@ -22,7 +27,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${cormorant.variable} antialiased`} suppressHydrationWarning>
         {/* Anti-FOUC: set data-theme from localStorage before first paint */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('sr-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}else if(window.matchMedia&&!window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','light')}}catch(e){}})()` }} />
         <ThemeProvider>

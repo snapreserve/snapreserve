@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 import stripe from '@/lib/stripe'
 import { calcPlatformFee } from '@/lib/platform-fee'
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export async function POST(request) {
   try {
@@ -21,8 +22,12 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return Response.json({ error: 'Please log in to book.' }, { status: 401 })
 
+    // Rate limit: max 10 checkout attempts per user per hour to prevent abuse
+    const rl = rateLimit(`checkout:${user.id}`, 10, 60 * 60 * 1000)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body = await request.json()
-    const { listing_id, room_id, check_in, check_out, guests } = body
+    const { listing_id, room_id, check_in, check_out, guests, promo_code } = body
 
     if (!listing_id || !check_in || !check_out) {
       return Response.json({ error: 'Missing required fields.' }, { status: 400 })
@@ -49,7 +54,7 @@ export async function POST(request) {
     // Fetch listing
     const { data: listing } = await admin
       .from('listings')
-      .select('id, title, city, state, host_id, price_per_night, cleaning_fee, max_guests, is_active, status, is_instant_book, cancellation_policy, rating, review_count')
+      .select('id, title, city, state, host_id, price_per_night, cleaning_fee, max_guests, min_nights, is_active, status, is_instant_book, cancellation_policy, rating, review_count')
       .eq('id', listing_id)
       .single()
 
@@ -58,6 +63,26 @@ export async function POST(request) {
     if (listing.status === 'suspended') return Response.json({ error: 'This listing is temporarily unavailable.' }, { status: 400 })
 
     const guestsCount = Math.min(Number(guests) || 1, listing.max_guests)
+
+    // Minimum stay validation
+    if (listing.min_nights && nights < listing.min_nights) {
+      return Response.json({ error: `Minimum stay is ${listing.min_nights} night${listing.min_nights !== 1 ? 's' : ''}.` }, { status: 400 })
+    }
+
+    // ── Availability check ──────────────────────────────────────────────
+    // Reject if any non-cancelled booking overlaps the requested dates.
+    // Overlap condition (exclusive end): new.check_in < existing.check_out AND new.check_out > existing.check_in
+    const { count: conflictCount } = await admin
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('listing_id', listing_id)
+      .not('status', 'in', '("cancelled","refunded")')
+      .lt('check_in', check_out)   // existing starts before new checkout
+      .gt('check_out', check_in)  // existing ends after new check-in
+
+    if (conflictCount && conflictCount > 0) {
+      return Response.json({ error: 'These dates are already booked. Please choose different dates.' }, { status: 400 })
+    }
 
     // Resolve price — use room price if room selected
     let pricePerNight = listing.price_per_night
@@ -91,17 +116,66 @@ export async function POST(request) {
     // Calculate amounts — NO guest-facing service fee; host pays platform fee instead
     const subtotal    = pricePerNight * nights
     const cleaningFee = listing.cleaning_fee || 0
-    const totalAmount = subtotal + cleaningFee   // guests pay clean total, no added fees
+
+    // Apply promo code if provided (server-side validation)
+    let discountAmount = 0
+    let promotionId    = null
+    if (promo_code) {
+      const { data: promo } = await admin
+        .from('promotions')
+        .select('*')
+        .eq('host_id', listing.host_id)
+        .eq('code', promo_code.trim().toUpperCase())
+        .eq('is_active', true)
+        .maybeSingle()
+
+      const nowIso = new Date().toISOString()
+      const promoValid = promo
+        && (!promo.starts_at || nowIso >= promo.starts_at)
+        && (!promo.ends_at   || nowIso <= promo.ends_at)
+        && (promo.max_uses === null || promo.uses_count < promo.max_uses)
+        && nights >= (promo.min_nights || 1)
+        && subtotal >= (promo.min_booking_amount || 0)
+        && (!promo.listing_ids?.length || promo.listing_ids.includes(listing_id))
+
+      if (promoValid) {
+        // Per-user limit check
+        const { count: userUses } = await admin
+          .from('promotion_uses')
+          .select('id', { count: 'exact', head: true })
+          .eq('promotion_id', promo.id)
+          .eq('guest_id', user.id)
+
+        if ((userUses || 0) < (promo.max_uses_per_user || 1)) {
+          promotionId = promo.id
+          if (promo.discount_type === 'percentage') {
+            discountAmount = Math.round((subtotal * promo.discount_value / 100) * 100) / 100
+          } else {
+            discountAmount = Math.min(Number(promo.discount_value), subtotal)
+          }
+        }
+      }
+    }
+
+    const totalAmount = subtotal + cleaningFee - discountAmount   // guests pay discounted total
 
     // Platform fee charged to host — 6.5%+$1 for Founder hosts, 7%+$1 for standard
     const { platformFeePct, platformFee, platformFixedFee } = calcPlatformFee(totalAmount, isFounderHost)
 
-    // Get user email for receipt
+    // Get user profile — also checks is_team_member flag to block booking
     const { data: userProfile } = await admin
       .from('users')
-      .select('email, full_name')
+      .select('email, full_name, is_team_member')
       .eq('id', user.id)
       .maybeSingle()
+
+    // Team-only accounts can't book as guests — they have host portal access only
+    if (userProfile?.is_team_member) {
+      return Response.json({
+        error: 'Team member accounts are for hosting only. To book as a guest, create a separate personal account at snapreserve.app/signup.',
+      }, { status: 403 })
+    }
+
     const email = userProfile?.email || user.email
 
     // Create Stripe PaymentIntent
@@ -139,6 +213,9 @@ export async function POST(request) {
         price_per_night:    pricePerNight,
         cleaning_fee:       cleaningFee,
         service_fee:        0,             // legacy column — no guest-facing fee
+        discount_amount:    discountAmount,
+        promotion_id:       promotionId,
+        promo_code:         promotionId ? promo_code.trim().toUpperCase() : null,
         total_amount:       totalAmount,
         platform_fee:       platformFee,
         platform_fixed_fee: platformFixedFee,
@@ -159,6 +236,20 @@ export async function POST(request) {
       return Response.json({ error: 'Failed to create booking.' }, { status: 500 })
     }
 
+    // Record promotion use and increment counter (non-blocking)
+    if (promotionId) {
+      Promise.all([
+        admin.from('promotion_uses').insert({
+          promotion_id:    promotionId,
+          booking_id:      booking.id,
+          guest_id:        user.id,
+          discount_amount: discountAmount,
+          original_amount: subtotal + cleaningFee,
+        }),
+        admin.rpc('increment_promotion_uses', { promo_id: promotionId }),
+      ]).catch(() => {})
+    }
+
     return Response.json({
       clientSecret: paymentIntent.client_secret,
       bookingId: booking.id,
@@ -174,6 +265,8 @@ export async function POST(request) {
         pricePerNight,
         subtotal,
         cleaningFee,
+        discountAmount,
+        promoCode:    promotionId ? promo_code.trim().toUpperCase() : null,
         total: totalAmount,
       },
     })

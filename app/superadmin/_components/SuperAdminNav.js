@@ -22,11 +22,12 @@ const SECTIONS = [
     title: 'Super Admin',
     items: [
       { href: '/superadmin',          icon: '⚡', label: 'Dashboard',    exact: true },
-      { href: '/superadmin/roles',    icon: '🔑', label: 'Roles' },
-      { href: '/superadmin/audit',    icon: '📋', label: 'Audit Log' },
-      { href: '/superadmin/invites',  icon: '✉️', label: 'Invites' },
-      { href: '/superadmin/settings', icon: '⚙️', label: 'Settings' },
-      { href: '/superadmin/override', icon: '🔐', label: 'Override Mode' },
+      { href: '/superadmin/roles',        icon: '🔑', label: 'Roles' },
+      { href: '/superadmin/permissions',  icon: '🛡️', label: 'Permissions' },
+      { href: '/superadmin/audit',        icon: '📋', label: 'Audit Log' },
+      { href: '/superadmin/invites',      icon: '✉️', label: 'Invites' },
+      { href: '/superadmin/settings',     icon: '⚙️', label: 'Settings' },
+      { href: '/superadmin/override',     icon: '🔐', label: 'Override Mode' },
     ],
   },
 ]

@@ -37,7 +37,7 @@ export default async function HostBookingDetailPage({ params }) {
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('*, listings(id, title, city, state, country, type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy)')
+    .select('*, listings(id, title, city, state, country, type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy, images, checkin_start_time, checkin_end_time, checkout_time)')
     .eq('id', id)
     .eq('host_id', hostUserId)
     .maybeSingle()
@@ -45,7 +45,7 @@ export default async function HostBookingDetailPage({ params }) {
   if (!booking) redirect('/host/dashboard')
 
   const { data: guest } = booking.guest_id
-    ? await admin.from('users').select('id, full_name, email, created_at').eq('id', booking.guest_id).maybeSingle()
+    ? await admin.from('users').select('id, full_name, email, avatar_url, phone, email_confirmed_at, phone_confirmed_at, id_verified, is_verified, created_at').eq('id', booking.guest_id).maybeSingle()
     : { data: null }
 
   const { data: guestBookings } = booking.guest_id
@@ -53,23 +53,56 @@ export default async function HostBookingDetailPage({ params }) {
     : { data: [] }
 
   const pastStaysHere = (guestBookings || []).filter(b => b.listing_id === booking.listing_id && b.id !== id)
-  const hostEarnings = Math.max(0, (Number(booking.total_amount) || 0) - (Number(booking.service_fee) || 0))
+
+  // Fetch room details if hotel booking
+  const { data: room } = booking.room_id
+    ? await admin.from('rooms').select('id, name, tier, price_per_night, max_guests, bed_type, view_type').eq('id', booking.room_id).maybeSingle()
+    : { data: null }
 
   // Host display name
-  const { data: hostProfile } = await admin.from('users').select('full_name').eq('id', user.id).maybeSingle()
+  const [{ data: hostProfile }, { data: hostRow }, { data: teamMem }] = await Promise.all([
+    admin.from('users').select('full_name, avatar_url').eq('id', user.id).maybeSingle(),
+    admin.from('hosts').select('is_founder_host, fee_rate').eq('user_id', user.id).maybeSingle(),
+    admin.from('host_team_members').select('role').eq('user_id', user.id).eq('status', 'active').maybeSingle(),
+  ])
+  const myRole = directHost ? 'owner' : (teamMem?.role || 'owner')
+
+  const isFounder = hostRow?.is_founder_host === true
+  const feeRate   = Number(hostRow?.fee_rate ?? 0.07)
+  const platformFee      = Number(booking.platform_fee || 0)
+  const platformFixedFee = Number(booking.platform_fixed_fee || 0)
+  const totalPlatformFee = Math.round((platformFee + platformFixedFee) * 100) / 100
+  const fixedHostEarnings = Math.max(0, Math.round((Number(booking.total_amount || 0) - totalPlatformFee) * 100) / 100)
 
   return (
     <BookingDetailClient
-      booking={{ ...booking, host_earnings: Math.round(hostEarnings * 100) / 100 }}
-      guest={{
-        full_name:   guest?.full_name  || '—',
-        email:       guest?.email      || '',
-        created_at:  guest?.created_at || null,
-        total_stays: (guestBookings || []).length,
-        stays_here:  pastStaysHere.length,
+      booking={{
+        ...booking,
+        host_earnings:      fixedHostEarnings,
+        total_platform_fee: totalPlatformFee,
+        platform_fee:       platformFee,
+        platform_fixed_fee: platformFixedFee,
       }}
+      guest={{
+        full_name:      guest?.full_name          || '—',
+        email:          guest?.email              || '',
+        avatar_url:     guest?.avatar_url         || null,
+        phone:          guest?.phone              || null,
+        email_verified: !!guest?.email_confirmed_at,
+        phone_verified: !!guest?.phone_confirmed_at,
+        id_verified:    !!guest?.id_verified,
+        is_verified:    !!guest?.is_verified,
+        created_at:     guest?.created_at         || null,
+        total_stays:    (guestBookings || []).length,
+        stays_here:     pastStaysHere.length,
+      }}
+      room={room || null}
       pastStaysHere={pastStaysHere.slice(0, 5)}
       hostName={hostProfile?.full_name || ''}
+      hostAvatar={hostProfile?.avatar_url || null}
+      isFounder={isFounder}
+      feeRate={feeRate}
+      myRole={myRole}
     />
   )
 }

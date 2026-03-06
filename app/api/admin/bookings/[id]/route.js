@@ -89,6 +89,11 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
+  // Restore room inventory if this was a hotel booking
+  if (booking.room_id) {
+    await adminClient.rpc('restore_room_units', { p_room_id: booking.room_id, p_amount: 1 })
+  }
+
   // Notify host
   try {
     const { data: hostRow } = await adminClient.from('hosts').select('user_id').eq('id', booking.host_id).maybeSingle()

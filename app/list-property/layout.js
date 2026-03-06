@@ -22,12 +22,14 @@ export default async function ListPropertyLayout({ children }) {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('user_role')
+    .select('user_role, is_team_member')
     .eq('id', user.id)
     .maybeSingle()
 
   if (profile?.user_role === 'pending_host') redirect('/become-a-host?status=pending')
   if (profile?.user_role !== 'host') redirect('/become-a-host')
+  // Team members are not org owners — they cannot create new listings
+  if (profile?.is_team_member) redirect('/host/dashboard')
 
   return <>{children}</>
 }

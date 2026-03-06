@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/get-user-session'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { sendEmail, teamInviteEmailHtml, teamInviteEmailText } from '@/lib/send-email'
 
 // Helper: verify caller is the org owner for a given host_team_members row
 async function getOrgOwner(admin, userId) {
@@ -17,7 +18,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json().catch(() => ({}))
   const { action, role } = body
 
-  if (!['change_role', 'remove', 'resend_invite', 'set_property_access'].includes(action)) {
+  if (!['change_role', 'remove', 'resend_invite', 'get_invite_link', 'set_property_access', 'grant_all_access'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
 
@@ -69,15 +70,58 @@ export async function PATCH(request, { params }) {
     if (member.status !== 'pending') {
       return NextResponse.json({ error: 'Can only resend to pending invites' }, { status: 400 })
     }
-    // Regenerate token
+    // Regenerate token (old link invalidated) and refresh expiry
     const newToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
     const { error } = await admin
       .from('host_team_members')
       .update({ invite_token: newToken, invited_at: new Date().toISOString() })
       .eq('id', memberId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const appUrl    = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const inviteLink = `${appUrl}/team/join?token=${newToken}`
+    const expiresAt  = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
+    // Fetch org name for email
+    const { data: hostRow } = await admin
+      .from('hosts')
+      .select('display_name')
+      .eq('id', member.host_id)
+      .maybeSingle()
+    const orgName = hostRow?.display_name || 'a SnapReserve™ organisation'
+
+    // Re-send the invite email with fresh link
+    if (member.invite_email) {
+      await sendEmail({
+        to:      member.invite_email,
+        subject: `You've been invited to join ${orgName} on SnapReserve™`,
+        html:    teamInviteEmailHtml({ inviteeEmail: member.invite_email, orgName, role: member.role, inviteLink, expiresAt }),
+        text:    teamInviteEmailText({ inviteeEmail: member.invite_email, orgName, role: member.role, inviteLink, expiresAt }),
+      })
+    }
+
+    return NextResponse.json({ success: true, invite_link: inviteLink })
+  }
+
+  // Return the current invite link without regenerating it (for "Copy Link" button)
+  if (action === 'get_invite_link') {
+    if (member.status !== 'pending') {
+      return NextResponse.json({ error: 'Can only get link for pending invites' }, { status: 400 })
+    }
+    if (!member.invite_token) {
+      return NextResponse.json({ error: 'No invite link available — try resending' }, { status: 400 })
+    }
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    return NextResponse.json({ success: true, invite_link: `${appUrl}/team/join?token=${newToken}` })
+    return NextResponse.json({ success: true, invite_link: `${appUrl}/team/join?token=${member.invite_token}` })
+  }
+
+  if (action === 'grant_all_access') {
+    const { error } = await admin
+      .from('host_team_members')
+      .update({ allowed_listing_ids: null })
+      .eq('id', memberId)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
   }
 
   if (action === 'set_property_access') {

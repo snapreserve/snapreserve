@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getUserSession } from '@/lib/get-user-session'
 import ReportButton from './ReportButton'
@@ -26,7 +27,7 @@ export default async function PropertyPage({ params, searchParams }) {
   const admin = createAdminClient()
 
   const [{ data: listing }, { data: rooms }, { user }] = await Promise.all([
-    admin.from('listings').select('*').eq('id', id).single(),
+    admin.from('listings').select('id, title, city, state, country, type, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active').eq('id', id).single(),
     admin.from('rooms').select('*').eq('listing_id', id).eq('is_available', true).order('price_per_night', { ascending: true }),
     getUserSession(),
   ])
@@ -62,7 +63,7 @@ export default async function PropertyPage({ params, searchParams }) {
     : { data: null }
   const isFounderHost = !!hostRow?.is_founder_host
   const { data: host } = hostRow?.user_id
-    ? await admin.from('users').select('*').eq('id', hostRow.user_id).single()
+    ? await admin.from('users').select('id, full_name, avatar_url, is_verified').eq('id', hostRow.user_id).single()
     : { data: null }
 
   // Fetch current user's profile for nav avatar
@@ -167,7 +168,7 @@ export default async function PropertyPage({ params, searchParams }) {
           body { font-family: 'Syne', sans-serif; background: var(--cream); color: var(--brown); }
 
           /* NAV */
-          .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+          .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
           .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; text-decoration: none; color: var(--brown); }
           .logo em { color: var(--orange); font-style: normal; }
           .nav-btn { padding: 8px 20px; border-radius: 100px; font-size: 0.84rem; font-weight: 600; text-decoration: none; font-family: 'Syne', sans-serif; }
@@ -176,20 +177,16 @@ export default async function PropertyPage({ params, searchParams }) {
           .nav-btn.solid { background: var(--orange); color: white; }
           .nav-btn.solid:hover { background: #d45520; }
           .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: white; text-decoration: none; overflow: hidden; flex-shrink: 0; }
-          .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
           /* GALLERY */
           .gallery-grid { display: grid; grid-template-columns: 1fr 340px; gap: 8px; max-width: 1280px; margin: 0 auto; padding: 24px 48px 0; }
           .gallery-main { border-radius: 16px; overflow: hidden; height: 480px; position: relative; }
-          .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
           .gallery-thumbs { display: flex; flex-direction: column; gap: 8px; }
           .gallery-thumb { border-radius: 12px; overflow: hidden; flex: 1; position: relative; }
-          .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
           .gallery-more-overlay { position: absolute; inset: 0; background: rgba(58,31,13,0.55); display: flex; align-items: center; justify-content: center; }
           .gallery-more-overlay span { color: white; font-weight: 700; font-size: 1rem; font-family: 'Syne', sans-serif; }
           .gallery-strip { max-width: 1280px; margin: 8px auto 0; padding: 0 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-          .gallery-strip-thumb { height: 110px; border-radius: 10px; overflow: hidden; }
-          .gallery-strip-thumb img { width: 100%; height: 100%; object-fit: cover; }
+          .gallery-strip-thumb { height: 110px; border-radius: 10px; overflow: hidden; position: relative; }
 
           /* BREADCRUMB */
           .breadcrumb { max-width: 1280px; margin: 20px auto 0; padding: 0 48px; display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--mid); }
@@ -215,9 +212,8 @@ export default async function PropertyPage({ params, searchParams }) {
           .description { font-size: 0.9rem; color: #5a3e2a; line-height: 1.85; }
 
           /* HOST */
-          .host-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+          .host-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; }
           .host-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; overflow: hidden; flex-shrink: 0; }
-          .host-avatar img { width: 100%; height: 100%; object-fit: cover; }
           .host-name { font-weight: 700; font-size: 0.94rem; margin-bottom: 2px; color: var(--brown); }
           .host-meta { font-size: 0.76rem; color: var(--mid); }
           .host-verified { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700; color: #16a34a; background: rgba(22,163,74,0.08); border-radius: 100px; padding: 2px 8px; margin-top: 4px; }
@@ -225,11 +221,11 @@ export default async function PropertyPage({ params, searchParams }) {
 
           /* AMENITIES */
           .amenities-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-          .amenity { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--brown); }
+          .amenity { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--brown); }
 
           /* ROOMS */
           .rooms-list { display: flex; flex-direction: column; gap: 14px; }
-          .room-card { background: white; border-radius: 16px; border: 2px solid var(--border); padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; }
+          .room-card { background: var(--card); border-radius: 16px; border: 2px solid var(--border); padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; }
           .room-card:hover { border-color: var(--orange); box-shadow: 0 4px 20px rgba(232,98,42,0.1); }
           .room-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
           .room-tier { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
@@ -245,7 +241,7 @@ export default async function PropertyPage({ params, searchParams }) {
 
           /* SIDEBAR */
           .sidebar { position: sticky; top: 88px; }
-          .booking-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px rgba(58,31,13,0.08); }
+          .booking-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px rgba(58,31,13,0.08); }
           .bc-price { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--brown); }
           .bc-price span { font-size: 0.9rem; font-weight: 400; color: var(--mid); font-family: 'Syne', sans-serif; }
           .bc-rating { font-size: 0.8rem; color: #d97706; margin-bottom: 20px; }
@@ -283,7 +279,7 @@ export default async function PropertyPage({ params, searchParams }) {
           .review-stars { color: #d97706; font-size: 1.1rem; }
           .review-count { font-size: 0.84rem; color: var(--mid); }
           .review-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-          .review-card { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+          .review-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
           .rc-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
           .rc-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 0.88rem; font-weight: 700; color: var(--orange); flex-shrink: 0; }
           .rc-name { font-weight: 700; font-size: 0.88rem; color: var(--brown); }
@@ -293,7 +289,7 @@ export default async function PropertyPage({ params, searchParams }) {
 
           /* POLICIES */
           .policies-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-          .policy-card { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+          .policy-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
           .policy-icon { font-size: 1.4rem; margin-bottom: 8px; }
           .policy-title { font-weight: 700; font-size: 0.88rem; color: var(--brown); margin-bottom: 4px; }
           .policy-val { font-size: 0.8rem; color: var(--mid); }
@@ -312,7 +308,7 @@ export default async function PropertyPage({ params, searchParams }) {
                 <a href="/dashboard" className="nav-btn outline" style={{ fontSize: '0.82rem' }}>Dashboard</a>
                 <a href="/dashboard" className="user-avatar">
                   {userAvatar
-                    ? <img src={userAvatar} alt="Profile" />
+                    ? <Image src={userAvatar} alt="Profile" width={36} height={36} style={{ objectFit: 'cover' }} />
                     : userInitials
                   }
                 </a>
@@ -329,18 +325,18 @@ export default async function PropertyPage({ params, searchParams }) {
         {/* GALLERY */}
         <div className="gallery-grid">
           <div className="gallery-main">
-            <img src={heroImg} alt={listing.title} />
+            <Image src={heroImg} alt={listing.title} fill style={{ objectFit: 'cover' }} priority sizes="(max-width: 1100px) 100vw, (max-width: 1280px) 60vw, 800px" />
           </div>
           {(thumb1 || thumb2) && (
             <div className="gallery-thumbs">
               {thumb1 && (
                 <div className="gallery-thumb">
-                  <img src={thumb1} alt={`${listing.title} photo 2`} />
+                  <Image src={thumb1} alt={`${listing.title} photo 2`} fill style={{ objectFit: 'cover' }} sizes="340px" />
                 </div>
               )}
               {thumb2 && (
                 <div className="gallery-thumb" style={{ position: 'relative' }}>
-                  <img src={thumb2} alt={`${listing.title} photo 3`} />
+                  <Image src={thumb2} alt={`${listing.title} photo 3`} fill style={{ objectFit: 'cover' }} sizes="340px" />
                   {uploadedImages.length > 3 && (
                     <div className="gallery-more-overlay">
                       <span>+{uploadedImages.length - 3} more</span>
@@ -356,7 +352,7 @@ export default async function PropertyPage({ params, searchParams }) {
           <div className="gallery-strip">
             {extraGallery.slice(0, 4).map((url, i) => (
               <div key={i} className="gallery-strip-thumb">
-                <img src={url} alt={`${listing.title} photo ${i + 4}`} />
+                <Image src={url} alt={`${listing.title} photo ${i + 4}`} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 0px, (max-width: 1280px) 25vw, 320px" />
               </div>
             ))}
           </div>
@@ -429,7 +425,7 @@ export default async function PropertyPage({ params, searchParams }) {
             <div className="section">
               <div className="host-card">
                 <div className="host-avatar">
-                  {host?.avatar_url ? <img src={host.avatar_url} alt={host.full_name} /> : '👤'}
+                  {host?.avatar_url ? <Image src={host.avatar_url} alt={host.full_name || 'Host'} width={56} height={56} style={{ objectFit: 'cover' }} /> : '👤'}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div className="host-name">Hosted by {host?.full_name || 'SnapReserve™ Host'}</div>
@@ -684,11 +680,11 @@ export default async function PropertyPage({ params, searchParams }) {
 
           {/* SIDEBAR */}
           <div className="sidebar">
-            <BookingSidebar listing={listing} />
+            <BookingSidebar listing={listing} rooms={rooms || []} />
           </div>
         </div>
 
-        <Footer darkBg={false} />
+        <Footer />
       </div>
     </>
   )

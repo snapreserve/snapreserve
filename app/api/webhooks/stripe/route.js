@@ -40,16 +40,25 @@ export async function POST(request) {
 
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object
-    const { error } = await admin
+    const { data: confirmedBookings, error } = await admin
       .from('bookings')
       .update({ status: 'confirmed', payment_status: 'paid' })
       .eq('payment_intent_id', pi.id)
       .eq('status', 'pending')
+      .select('id, room_id')
 
     if (error) {
       console.error(`[SnapReserve™] Webhook: failed to confirm booking (${APP_ENV})`, error)
       return Response.json({ error: 'Database error' }, { status: 500 })
     }
+
+    // Decrement room inventory for hotel bookings
+    for (const booking of (confirmedBookings || [])) {
+      if (booking.room_id) {
+        await admin.rpc('decrement_room_units', { p_room_id: booking.room_id, p_amount: 1 })
+      }
+    }
+
     console.log(`[SnapReserve™] Webhook: booking confirmed for PI ${pi.id} (${APP_ENV})`)
   }
 

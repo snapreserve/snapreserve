@@ -99,34 +99,34 @@ function SignupInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
         @keyframes popIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-        .sr-fi{width:100%;padding:11px 13px;background:white;border:1.5px solid #e2dbd2;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:#0f0e0c;outline:none;transition:all .18s}
-        .sr-fi:focus{border-color:#e8622a;box-shadow:0 0 0 3px rgba(232,98,42,.1)}
-        .sr-fi::placeholder{color:#b5afa8}
-        .sr-cta{width:100%;padding:13px;border-radius:10px;background:#e8622a;border:none;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;margin-top:4px}
-        .sr-cta:hover:not(:disabled){background:#cf5522;transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,98,42,.28)}
+        .sr-fi{width:100%;padding:11px 13px;background:var(--sr-card);border:1.5px solid var(--sr-border-solid,#e2dbd2);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--sr-text);outline:none;transition:all .18s}
+        .sr-fi:focus{border-color:var(--sr-orange);box-shadow:0 0 0 3px var(--sr-ol)}
+        .sr-fi::placeholder{color:var(--sr-sub)}
+        .sr-cta{width:100%;padding:13px;border-radius:10px;background:var(--sr-orange);border:none;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;margin-top:4px}
+        .sr-cta:hover:not(:disabled){opacity:.88;transform:translateY(-1px);box-shadow:0 6px 20px var(--sr-ob)}
         .sr-cta:disabled{opacity:0.6;cursor:not-allowed}
-        .sr-google{width:100%;padding:12px;background:white;border:1.5px solid #e2dbd2;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#0f0e0c;cursor:pointer;transition:all .18s;margin-bottom:16px;border:1.5px solid #e2dbd2}
-        .sr-google:hover{border-color:#c9c2ba;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+        .sr-google{width:100%;padding:12px;background:var(--sr-card);border:1.5px solid var(--sr-border-solid,#e2dbd2);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--sr-text);cursor:pointer;transition:all .18s;margin-bottom:16px}
+        .sr-google:hover{border-color:var(--sr-border2);box-shadow:0 2px 8px rgba(0,0,0,.07)}
         .sr-google:disabled{opacity:0.6;cursor:not-allowed}
-        .sr-back{display:flex;align-items:center;gap:5px;background:none;border:none;color:#8a8278;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-bottom:18px;transition:color .14s}
-        .sr-back:hover{color:#0f0e0c}
-        .sr-doc{padding:13px;border:2px solid #e2dbd2;border-radius:11px;background:white;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+        .sr-back{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--sr-muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-bottom:18px;transition:color .14s}
+        .sr-back:hover{color:var(--sr-text)}
+        .sr-doc{padding:13px;border:2px solid var(--sr-border-solid,#e2dbd2);border-radius:11px;background:var(--sr-card);cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
         .sr-doc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:#e8622a;transform:scaleX(0);transform-origin:left;transition:transform .22s}
-        .sr-doc.on{border-color:#e8622a;background:rgba(232,98,42,.1)}
+        .sr-doc.on{border-color:var(--sr-orange);background:var(--sr-ol)}
         .sr-doc.on::after{transform:scaleX(1)}
-        .sr-upload{border:2px dashed #e2dbd2;border-radius:11px;background:white;padding:20px 13px;text-align:center;cursor:pointer;transition:all .2s;position:relative;min-height:136px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-        .sr-upload:hover{border-color:#e8622a;background:rgba(232,98,42,.1)}
+        .sr-upload{border:2px dashed var(--sr-border-solid,#e2dbd2);border-radius:11px;background:var(--sr-card);padding:20px 13px;text-align:center;cursor:pointer;transition:all .2s;position:relative;min-height:136px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+        .sr-upload:hover{border-color:var(--sr-orange);background:var(--sr-ol)}
         .sr-upload.done{border-style:solid;border-color:#16a34a;background:rgba(22,163,74,.04)}
-        .sr-selfie{border:2px dashed #e2dbd2;border-radius:11px;background:white;padding:14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:12px}
-        .sr-selfie:hover{border-color:#e8622a;background:rgba(232,98,42,.1)}
+        .sr-selfie{border:2px dashed var(--sr-border-solid,#e2dbd2);border-radius:11px;background:var(--sr-card);padding:14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .2s;margin-bottom:12px}
+        .sr-selfie:hover{border-color:var(--sr-orange);background:var(--sr-ol)}
         .sr-selfie.done{border-style:solid;border-color:#16a34a;background:rgba(22,163,74,.04)}
         .sr-anim{animation:fadeUp .36s ease both}
         .sr-right::-webkit-scrollbar{width:0}
-        .sr-pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#b5afa8;font-size:14px;padding:0;line-height:1}
+        .sr-pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--sr-sub);font-size:14px;padding:0;line-height:1}
         .dot-anim{width:6px;height:6px;border-radius:50%;background:#d97706;display:inline-block;animation:pulse 1.5s infinite;margin-right:5px;vertical-align:middle}
-        .sr-skip-btn{background:none;border:none;color:#8a8278;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline}
-        .sr-skip-btn:hover{color:#0f0e0c}
-        .sr-ub-btn{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:5px 11px;background:#0f0e0c;border-radius:6px;color:white;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif}
+        .sr-skip-btn{background:none;border:none;color:var(--sr-muted);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline}
+        .sr-skip-btn:hover{color:var(--sr-text)}
+        .sr-ub-btn{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:5px 11px;background:var(--sr-text);border-radius:6px;color:var(--sr-bg);font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif}
       `}</style>
 
       <div style={{ display:'grid', gridTemplateColumns:'42% 1fr', height:'100vh', overflow:'hidden', fontFamily:"'DM Sans',sans-serif" }}>
@@ -195,22 +195,22 @@ function SignupInner() {
         </div>
 
         {/* RIGHT */}
-        <div className="sr-right" style={{ background:'#f5f0ea', overflowY:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'40px 24px' }}>
+        <div className="sr-right" style={{ background:'var(--sr-bg)', overflowY:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center', padding:'40px 24px' }}>
           <div style={{ width:'100%', maxWidth:430, padding:'16px 0' }}>
 
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <div className="sr-anim">
                 {/* Auth tabs */}
-                <div style={{ display:'flex', background:'rgba(224,216,206,.55)', borderRadius:100, padding:4, marginBottom:26 }}>
-                  <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ flex:1, padding:9, borderRadius:100, textAlign:'center', fontSize:13, fontWeight:600, color:'#8a8278', textDecoration:'none' }}>Log in</a>
-                  <div style={{ flex:1, padding:9, borderRadius:100, textAlign:'center', fontSize:13, fontWeight:600, background:'white', color:'#0f0e0c', boxShadow:'0 2px 8px rgba(0,0,0,.07)' }}>Sign up</div>
+                <div style={{ display:'flex', background:'var(--sr-surface)', borderRadius:100, padding:4, marginBottom:26 }}>
+                  <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ flex:1, padding:9, borderRadius:100, textAlign:'center', fontSize:13, fontWeight:600, color:'var(--sr-muted)', textDecoration:'none' }}>Log in</a>
+                  <div style={{ flex:1, padding:9, borderRadius:100, textAlign:'center', fontSize:13, fontWeight:600, background:'var(--sr-card)', color:'var(--sr-text)', boxShadow:'0 2px 8px rgba(0,0,0,.07)' }}>Sign up</div>
                 </div>
 
-                <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:25, fontWeight:900, color:'#0f0e0c', marginBottom:5, lineHeight:1.1 }}>
+                <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:25, fontWeight:900, color:'var(--sr-text)', marginBottom:5, lineHeight:1.1 }}>
                   Create your<br /><em style={{ color:'#e8622a', fontStyle:'italic' }}>account.</em>
                 </h2>
-                <p style={{ fontSize:13, color:'#8a8278', marginBottom:22, lineHeight:1.65 }}>Join 180,000+ hosts and travellers on SnapReserve™.</p>
+                <p style={{ fontSize:13, color:'var(--sr-muted)', marginBottom:22, lineHeight:1.65 }}>Join 180,000+ hosts and travellers on SnapReserve™.</p>
 
                 {error && (
                   <div style={{ background:'rgba(239,68,68,.08)', border:'1px solid rgba(239,68,68,.2)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#ef4444', marginBottom:14 }}>{error}</div>
@@ -227,22 +227,22 @@ function SignupInner() {
                 </button>
 
                 <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-                  <div style={{ flex:1, height:1, background:'#e0d8ce' }} />
-                  <span style={{ fontSize:10, fontWeight:600, color:'#b5afa8', whiteSpace:'nowrap' }}>or sign up with email</span>
-                  <div style={{ flex:1, height:1, background:'#e0d8ce' }} />
+                  <div style={{ flex:1, height:1, background:'var(--sr-border-solid,#e0d8ce)' }} />
+                  <span style={{ fontSize:10, fontWeight:600, color:'var(--sr-sub)', whiteSpace:'nowrap' }}>or sign up with email</span>
+                  <div style={{ flex:1, height:1, background:'var(--sr-border-solid,#e0d8ce)' }} />
                 </div>
 
                 <form onSubmit={goToStep2}>
                   <div style={{ marginBottom:13 }}>
-                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:5 }}>Full name <span style={{ color:'#e8622a' }}>*</span></label>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:5 }}>Full name <span style={{ color:'var(--sr-orange)' }}>*</span></label>
                     <input className="sr-fi" type="text" required placeholder="Your full name" value={fullName} onChange={e => setFullName(e.target.value)} />
                   </div>
                   <div style={{ marginBottom:13 }}>
-                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:5 }}>Email address <span style={{ color:'#e8622a' }}>*</span></label>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:5 }}>Email address <span style={{ color:'var(--sr-orange)' }}>*</span></label>
                     <input className="sr-fi" type="email" required placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
                   </div>
                   <div style={{ marginBottom:13 }}>
-                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:5 }}>Password <span style={{ color:'#e8622a' }}>*</span></label>
+                    <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:5 }}>Password <span style={{ color:'var(--sr-orange)' }}>*</span></label>
                     <div style={{ position:'relative' }}>
                       <input className="sr-fi" type={showPw ? 'text' : 'password'} required minLength={8} placeholder="Min. 8 characters" value={password} onChange={e => handlePwChange(e.target.value)} style={{ paddingRight:40 }} />
                       <button className="sr-pw-eye" type="button" onClick={() => setShowPw(p => !p)}>👁</button>
@@ -250,7 +250,7 @@ function SignupInner() {
                     <div style={{ display:'flex', gap:4, marginTop:5 }}>
                       {[0,1,2].map(i => <div key={i} style={{ flex:1, height:3, borderRadius:100, background:barColor(i), transition:'background .3s' }} />)}
                     </div>
-                    <div style={{ fontSize:10, color:'#b5afa8', marginTop:4 }}>
+                    <div style={{ fontSize:10, color:'var(--sr-sub)', marginTop:4 }}>
                       {pwStrength === 0 ? 'Use at least 8 characters with letters and numbers' :
                        pwStrength === 1 ? 'Too short — keep going' :
                        pwStrength === 2 ? 'Getting stronger — add numbers' : 'Strong password ✓'}
@@ -259,11 +259,11 @@ function SignupInner() {
                   <button type="submit" className="sr-cta">Create Account <span>→</span></button>
                 </form>
 
-                <p style={{ fontSize:10, color:'#b5afa8', marginTop:9, lineHeight:1.65, textAlign:'center' }}>
-                  By signing up you agree to our <a href="/terms" style={{ color:'#e8622a', textDecoration:'none' }}>Terms of Service</a> and <a href="/privacy" style={{ color:'#e8622a', textDecoration:'none' }}>Privacy Policy</a>.
+                <p style={{ fontSize:10, color:'var(--sr-sub)', marginTop:9, lineHeight:1.65, textAlign:'center' }}>
+                  By signing up you agree to our <a href="/terms" style={{ color:'var(--sr-orange)', textDecoration:'none' }}>Terms of Service</a> and <a href="/privacy" style={{ color:'var(--sr-orange)', textDecoration:'none' }}>Privacy Policy</a>.
                 </p>
-                <p style={{ fontSize:12, color:'#8a8278', textAlign:'center', marginTop:14 }}>
-                  Already have an account? <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ color:'#e8622a', fontWeight:700, textDecoration:'none' }}>Log in →</a>
+                <p style={{ fontSize:12, color:'var(--sr-muted)', textAlign:'center', marginTop:14 }}>
+                  Already have an account? <a href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ color:'var(--sr-orange)', fontWeight:700, textDecoration:'none' }}>Log in →</a>
                 </p>
               </div>
             )}
@@ -272,24 +272,24 @@ function SignupInner() {
             {step === 2 && (
               <div className="sr-anim">
                 <button className="sr-back" onClick={() => setStep(1)}>← Back</button>
-                <div style={{ height:3, background:'#e0d8ce', borderRadius:100, marginBottom:24, overflow:'hidden' }}>
-                  <div style={{ height:'100%', background:'#e8622a', borderRadius:100, width:'50%' }} />
+                <div style={{ height:3, background:'var(--sr-border-solid,#e0d8ce)', borderRadius:100, marginBottom:24, overflow:'hidden' }}>
+                  <div style={{ height:'100%', background:'var(--sr-orange)', borderRadius:100, width:'50%' }} />
                 </div>
-                <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.2em', textTransform:'uppercase', color:'#e8622a', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
-                  <div style={{ width:16, height:1, background:'#e8622a' }} />
+                <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.2em', textTransform:'uppercase', color:'var(--sr-orange)', marginBottom:10, display:'flex', alignItems:'center', gap:7 }}>
+                  <div style={{ width:16, height:1, background:'var(--sr-orange)' }} />
                   Step 2 of 2 — Identity Verification
                 </div>
-                <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:25, fontWeight:900, color:'#0f0e0c', marginBottom:5, lineHeight:1.1 }}>
+                <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:25, fontWeight:900, color:'var(--sr-text)', marginBottom:5, lineHeight:1.1 }}>
                   Verify your<br /><em style={{ color:'#e8622a', fontStyle:'italic' }}>identity.</em>
                 </h2>
-                <p style={{ fontSize:13, color:'#8a8278', marginBottom:22, lineHeight:1.65 }}>Upload your driving licence so we can confirm who you are. Encrypted and kept private — never shown publicly.</p>
+                <p style={{ fontSize:13, color:'var(--sr-muted)', marginBottom:22, lineHeight:1.65 }}>Upload your driving licence so we can confirm who you are. Encrypted and kept private — never shown publicly.</p>
 
                 {error && (
                   <div style={{ background:'rgba(239,68,68,.08)', border:'1px solid rgba(239,68,68,.2)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#ef4444', marginBottom:14 }}>{error}</div>
                 )}
 
                 {/* Doc type */}
-                <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:8 }}>Choose document type <span style={{ color:'#e8622a' }}>*</span></div>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:8 }}>Choose document type <span style={{ color:'var(--sr-orange)' }}>*</span></div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:18 }}>
                   {[
                     { id:'dl', icon:'🪪', title:'Driving Licence', sub:'Front & back required', tag:'⭐ Recommended', tagBg:'rgba(22,163,74,.1)', tagColor:'#16a34a', tagBorder:'1px solid rgba(22,163,74,.25)' },
@@ -300,8 +300,8 @@ function SignupInner() {
                         <span style={{ fontSize:20 }}>{icon}</span>
                         <div style={{ width:17, height:17, borderRadius:'50%', border: docType === id ? 'none' : '1.5px solid #e2dbd2', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, background: docType === id ? '#e8622a' : 'transparent', color: docType === id ? 'white' : 'transparent', transition:'all .18s' }}>✓</div>
                       </div>
-                      <div style={{ fontSize:12, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>{title}</div>
-                      <div style={{ fontSize:10, color:'#8a8278' }}>{sub}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>{title}</div>
+                      <div style={{ fontSize:10, color:'var(--sr-muted)' }}>{sub}</div>
                       <div style={{ display:'inline-flex', fontSize:8, fontWeight:700, padding:'2px 7px', borderRadius:100, marginTop:5, background:tagBg, color:tagColor, border:tagBorder }}>{tag}</div>
                     </div>
                   ))}
@@ -310,7 +310,7 @@ function SignupInner() {
                 {/* DL Upload */}
                 {docType === 'dl' && (
                   <div style={{ marginBottom:12 }}>
-                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:7 }}>Upload Driving Licence <span style={{ color:'#e8622a' }}>*</span></div>
+                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:7 }}>Upload Driving Licence <span style={{ color:'var(--sr-orange)' }}>*</span></div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                       {[
                         { side:'front', tag:'FRONT', icon:'🪪', title:'Front side', sub:'Name, photo & expiry visible', thumbBg:'linear-gradient(135deg,#1e3a8a,#3b82f6)', thumbText:'🪪 FRONT', fileName:'licence_front.jpg', size:'2.4 MB · JPG' },
@@ -321,15 +321,15 @@ function SignupInner() {
                           {!uploads[side] ? (
                             <>
                               <div style={{ fontSize:24, marginBottom:6 }}>{icon}</div>
-                              <div style={{ fontSize:11, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>{title}</div>
-                              <div style={{ fontSize:10, color:'#8a8278', lineHeight:1.5 }}>{sub}</div>
+                              <div style={{ fontSize:11, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>{title}</div>
+                              <div style={{ fontSize:10, color:'var(--sr-muted)', lineHeight:1.5 }}>{sub}</div>
                               <button className="sr-ub-btn">📁 Upload</button>
                             </>
                           ) : (
                             <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%' }}>
                               <div style={{ width:'100%', maxWidth:170, height:76, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:6, background:thumbBg, color:'white', fontSize:10, fontWeight:700, textAlign:'center', lineHeight:1.4 }}>{thumbText}</div>
-                              <div style={{ fontSize:10, fontWeight:700, color:'#0f0e0c', marginBottom:1 }}>{fileName}</div>
-                              <div style={{ fontSize:9, color:'#b5afa8', marginBottom:4 }}>{size}</div>
+                              <div style={{ fontSize:10, fontWeight:700, color:'var(--sr-text)', marginBottom:1 }}>{fileName}</div>
+                              <div style={{ fontSize:9, color:'var(--sr-sub)', marginBottom:4 }}>{size}</div>
                               <div style={{ fontSize:10, fontWeight:700, color:'#16a34a' }}>✓ Uploaded</div>
                               <div style={{ fontSize:9, color:'#b5afa8', textDecoration:'underline', cursor:'pointer', marginTop:3 }} onClick={e => { e.stopPropagation(); resetUpload(side) }}>Re-upload</div>
                             </div>
@@ -343,21 +343,21 @@ function SignupInner() {
                 {/* Passport Upload */}
                 {docType === 'pp' && (
                   <div style={{ marginBottom:12 }}>
-                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:7 }}>Upload Passport <span style={{ color:'#e8622a' }}>*</span></div>
+                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:7 }}>Upload Passport <span style={{ color:'var(--sr-orange)' }}>*</span></div>
                     <div className={`sr-upload${uploads.passport ? ' done' : ''}`} onClick={() => simUpload('passport')}>
-                      <span style={{ position:'absolute', top:8, left:8, fontSize:7, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', color:'#b5afa8' }}>PHOTO / DATA PAGE</span>
+                      <span style={{ position:'absolute', top:8, left:8, fontSize:7, fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', color:'var(--sr-sub)' }}>PHOTO / DATA PAGE</span>
                       {!uploads.passport ? (
                         <>
                           <div style={{ fontSize:24, marginBottom:6 }}>📘</div>
-                          <div style={{ fontSize:11, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>Passport photo page</div>
-                          <div style={{ fontSize:10, color:'#8a8278', lineHeight:1.5 }}>Page with your photo, name, DOB & MRZ lines</div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>Passport photo page</div>
+                          <div style={{ fontSize:10, color:'var(--sr-muted)', lineHeight:1.5 }}>Page with your photo, name, DOB & MRZ lines</div>
                           <button className="sr-ub-btn">📁 Upload</button>
                         </>
                       ) : (
                         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:'100%' }}>
                           <div style={{ width:'100%', maxWidth:230, height:96, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:6, background:'linear-gradient(135deg,#1e3a5f,#2563eb)', color:'white', fontSize:10, fontWeight:700 }}>📘 PASSPORT</div>
-                          <div style={{ fontSize:10, fontWeight:700, color:'#0f0e0c', marginBottom:1 }}>passport_photo.jpg</div>
-                          <div style={{ fontSize:9, color:'#b5afa8', marginBottom:4 }}>3.1 MB · JPG</div>
+                          <div style={{ fontSize:10, fontWeight:700, color:'var(--sr-text)', marginBottom:1 }}>passport_photo.jpg</div>
+                          <div style={{ fontSize:9, color:'var(--sr-sub)', marginBottom:4 }}>3.1 MB · JPG</div>
                           <div style={{ fontSize:10, fontWeight:700, color:'#16a34a' }}>✓ Uploaded</div>
                           <div style={{ fontSize:9, color:'#b5afa8', textDecoration:'underline', cursor:'pointer', marginTop:3 }} onClick={e => { e.stopPropagation(); resetUpload('passport') }}>Re-upload</div>
                         </div>
@@ -367,23 +367,23 @@ function SignupInner() {
                 )}
 
                 {/* Selfie */}
-                <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'#8a8278', marginBottom:7, marginTop:2 }}>Selfie holding your ID <span style={{ color:'#e8622a' }}>*</span></div>
+                <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:7, marginTop:2 }}>Selfie holding your ID <span style={{ color:'var(--sr-orange)' }}>*</span></div>
                 <div className={`sr-selfie${uploads.selfie ? ' done' : ''}`} onClick={() => simUpload('selfie')}>
-                  <div style={{ width:46, height:46, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, background: uploads.selfie ? 'linear-gradient(135deg,#065f46,#16a34a)' : '#ede7de', border: uploads.selfie ? '2px solid #16a34a' : '2px solid #e2dbd2', flexShrink:0, transition:'all .2s' }}>🤳</div>
+                  <div style={{ width:46, height:46, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, background: uploads.selfie ? 'linear-gradient(135deg,#065f46,#16a34a)' : 'var(--sr-surface)', border: uploads.selfie ? '2px solid #16a34a' : '2px solid var(--sr-border-solid,#e2dbd2)', flexShrink:0, transition:'all .2s' }}>🤳</div>
                   {!uploads.selfie ? (
                     <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>Hold your ID next to your face</div>
-                      <div style={{ fontSize:10, color:'#8a8278', lineHeight:1.55, marginBottom:6 }}>One clear photo showing your face and the front of your ID side by side.</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>Hold your ID next to your face</div>
+                      <div style={{ fontSize:10, color:'var(--sr-muted)', lineHeight:1.55, marginBottom:6 }}>One clear photo showing your face and the front of your ID side by side.</div>
                       <div style={{ display:'flex', gap:6 }} onClick={e => e.stopPropagation()}>
                         <button style={{ padding:'5px 10px', borderRadius:6, fontFamily:"'DM Sans',sans-serif", fontSize:10, fontWeight:700, cursor:'pointer', border:'none', background:'#e8622a', color:'white' }} onClick={() => simUpload('selfie')}>📷 Take photo</button>
-                        <button style={{ padding:'5px 10px', borderRadius:6, fontFamily:"'DM Sans',sans-serif", fontSize:10, fontWeight:700, cursor:'pointer', border:'1px solid #e2dbd2', background:'transparent', color:'#8a8278' }} onClick={() => simUpload('selfie')}>📁 Upload</button>
+                        <button style={{ padding:'5px 10px', borderRadius:6, fontFamily:"'DM Sans',sans-serif", fontSize:10, fontWeight:700, cursor:'pointer', border:'1px solid var(--sr-border-solid,#e2dbd2)', background:'transparent', color:'var(--sr-muted)' }} onClick={() => simUpload('selfie')}>📁 Upload</button>
                       </div>
                     </div>
                   ) : (
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:'#16a34a' }}>✓ Selfie uploaded</div>
-                      <div style={{ fontSize:10, color:'#8a8278' }}>selfie_with_id.jpg · 3.2 MB</div>
-                      <div style={{ fontSize:9, color:'#b5afa8', textDecoration:'underline', cursor:'pointer', marginTop:4 }} onClick={e => { e.stopPropagation(); resetUpload('selfie') }}>Re-upload</div>
+                      <div style={{ fontSize:10, color:'var(--sr-muted)' }}>selfie_with_id.jpg · 3.2 MB</div>
+                      <div style={{ fontSize:9, color:'var(--sr-sub)', textDecoration:'underline', cursor:'pointer', marginTop:4 }} onClick={e => { e.stopPropagation(); resetUpload('selfie') }}>Re-upload</div>
                     </div>
                   )}
                 </div>
@@ -391,14 +391,14 @@ function SignupInner() {
                 {/* Tips */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:14 }}>
                   {[['☀️','Bright light — avoid flash glare on ID'],['📐','All four ID corners must be visible'],['🔍','Text and photo sharp and in focus'],['📵','Original photo only — no screenshots']].map(([icon, text]) => (
-                    <div key={text} style={{ background:'white', border:'1px solid #e2dbd2', borderRadius:8, padding:'8px 10px', display:'flex', alignItems:'flex-start', gap:6, fontSize:10, color:'#8a8278', lineHeight:1.5 }}>
+                    <div key={text} style={{ background:'var(--sr-card)', border:'1px solid var(--sr-border-solid,#e2dbd2)', borderRadius:8, padding:'8px 10px', display:'flex', alignItems:'flex-start', gap:6, fontSize:10, color:'var(--sr-muted)', lineHeight:1.5 }}>
                       <span style={{ fontSize:13, flexShrink:0 }}>{icon}</span>{text}
                     </div>
                   ))}
                 </div>
 
                 {/* Security note */}
-                <div style={{ background:'white', border:'1px solid #e2dbd2', borderRadius:9, padding:'11px 13px', marginBottom:18, display:'flex', gap:8, fontSize:10, color:'#8a8278', lineHeight:1.65 }}>
+                <div style={{ background:'var(--sr-card)', border:'1px solid var(--sr-border-solid,#e2dbd2)', borderRadius:9, padding:'11px 13px', marginBottom:18, display:'flex', gap:8, fontSize:10, color:'var(--sr-muted)', lineHeight:1.65 }}>
                   <span style={{ fontSize:16, flexShrink:0 }}>🔒</span>
                   <span>256-bit SSL encrypted. Never shown publicly or shared with third parties. Only SnapReserve™ staff access your ID for verification — then it is securely deleted after 12 months.</span>
                 </div>
@@ -406,7 +406,7 @@ function SignupInner() {
                 <button className="sr-cta" onClick={() => completeSignup(false)} disabled={loading}>
                   {loading ? 'Creating account…' : <>Complete Sign Up <span>→</span></>}
                 </button>
-                <div style={{ textAlign:'center', marginTop:11, fontSize:11, color:'#b5afa8' }}>
+                <div style={{ textAlign:'center', marginTop:11, fontSize:11, color:'var(--sr-sub)' }}>
                   Prefer to verify later? <button className="sr-skip-btn" onClick={() => completeSignup(true)}>Skip for now</button> — some features will be limited.
                 </div>
               </div>
@@ -421,17 +421,17 @@ function SignupInner() {
 
                 {skipped ? (
                   <>
-                    <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#0f0e0c', marginBottom:8, lineHeight:1.1 }}>
+                    <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'var(--sr-text)', marginBottom:8, lineHeight:1.1 }}>
                       You're in,<br /><em style={{ color:'#e8622a', fontStyle:'italic' }}>{firstName}!</em>
                     </h2>
-                    <p style={{ fontSize:13, color:'#8a8278', lineHeight:1.75, maxWidth:330, margin:'0 auto 22px' }}>Account created. To unlock full booking and listing features, verify your identity from your account settings.</p>
-                    <div style={{ background:'white', border:'1px solid #e2dbd2', borderRadius:11, padding:'14px 20px', display:'inline-block', marginBottom:22 }}>
-                      <div style={{ fontSize:8, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase', color:'#b5afa8', marginBottom:4 }}>Account ID</div>
+                    <p style={{ fontSize:13, color:'var(--sr-muted)', lineHeight:1.75, maxWidth:330, margin:'0 auto 22px' }}>Account created. To unlock full booking and listing features, verify your identity from your account settings.</p>
+                    <div style={{ background:'var(--sr-card)', border:'1px solid var(--sr-border-solid,#e2dbd2)', borderRadius:11, padding:'14px 20px', display:'inline-block', marginBottom:22 }}>
+                      <div style={{ fontSize:8, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase', color:'var(--sr-sub)', marginBottom:4 }}>Account ID</div>
                       <div style={{ fontFamily:"'DM Mono',monospace", fontSize:15, fontWeight:700, color:'#e8622a', letterSpacing:'.05em' }}>{accountId}</div>
                     </div>
                     <div style={{ maxWidth:340, margin:'0 auto', textAlign:'left' }}>
-                      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.15em', textTransform:'uppercase', color:'#8a8278', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                        Next step <div style={{ flex:1, height:1, background:'#e0d8ce' }} />
+                      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.15em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+                        Next step <div style={{ flex:1, height:1, background:'var(--sr-border-solid,#e0d8ce)' }} />
                       </div>
                       {[
                         { n:'!', strong:'Verify your identity', desc:'Go to Account → Settings → Identity to upload your ID and unlock all features.' },
@@ -440,8 +440,8 @@ function SignupInner() {
                         <div key={strong} style={{ display:'flex', gap:10, marginBottom:11 }}>
                           <div style={{ width:21, height:21, borderRadius:'50%', background:'rgba(232,98,42,.1)', border:'1px solid rgba(232,98,42,.28)', color:'#e8622a', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>{n}</div>
                           <div>
-                            <div style={{ fontSize:12, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>{strong}</div>
-                            <div style={{ fontSize:11, color:'#8a8278', lineHeight:1.5 }}>{desc}</div>
+                            <div style={{ fontSize:12, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>{strong}</div>
+                            <div style={{ fontSize:11, color:'var(--sr-muted)', lineHeight:1.5 }}>{desc}</div>
                           </div>
                         </div>
                       ))}
@@ -449,17 +449,17 @@ function SignupInner() {
                   </>
                 ) : (
                   <>
-                    <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'#0f0e0c', marginBottom:8, lineHeight:1.1 }}>
+                    <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:900, color:'var(--sr-text)', marginBottom:8, lineHeight:1.1 }}>
                       Welcome to<br /><em style={{ color:'#e8622a', fontStyle:'italic' }}>SnapReserve™!</em>
                     </h2>
-                    <p style={{ fontSize:13, color:'#8a8278', lineHeight:1.75, maxWidth:330, margin:'0 auto 22px' }}>Account created and your ID is under review. We'll confirm within <strong>24–48 hours</strong>. You can start exploring right now.</p>
-                    <div style={{ background:'white', border:'1px solid #e2dbd2', borderRadius:11, padding:'14px 20px', display:'inline-block', marginBottom:22 }}>
-                      <div style={{ fontSize:8, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase', color:'#b5afa8', marginBottom:4 }}>Verification Reference</div>
+                    <p style={{ fontSize:13, color:'var(--sr-muted)', lineHeight:1.75, maxWidth:330, margin:'0 auto 22px' }}>Account created and your ID is under review. We'll confirm within <strong>24–48 hours</strong>. You can start exploring right now.</p>
+                    <div style={{ background:'var(--sr-card)', border:'1px solid var(--sr-border-solid,#e2dbd2)', borderRadius:11, padding:'14px 20px', display:'inline-block', marginBottom:22 }}>
+                      <div style={{ fontSize:8, fontWeight:700, letterSpacing:'.18em', textTransform:'uppercase', color:'var(--sr-sub)', marginBottom:4 }}>Verification Reference</div>
                       <div style={{ fontFamily:"'DM Mono',monospace", fontSize:15, fontWeight:700, color:'#e8622a', letterSpacing:'.05em' }}>{refCode}</div>
                     </div>
                     <div style={{ maxWidth:340, margin:'0 auto', textAlign:'left' }}>
-                      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.15em', textTransform:'uppercase', color:'#8a8278', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                        What happens next <div style={{ flex:1, height:1, background:'#e0d8ce' }} />
+                      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'.15em', textTransform:'uppercase', color:'var(--sr-muted)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+                        What happens next <div style={{ flex:1, height:1, background:'var(--sr-border-solid,#e0d8ce)' }} />
                       </div>
                       {[
                         { n:'1', dot:true, strong:'ID under review', desc:'Our team verifies your document within 24–48 hours.' },
@@ -469,8 +469,8 @@ function SignupInner() {
                         <div key={strong} style={{ display:'flex', gap:10, marginBottom:11 }}>
                           <div style={{ width:21, height:21, borderRadius:'50%', background:'rgba(232,98,42,.1)', border:'1px solid rgba(232,98,42,.28)', color:'#e8622a', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>{n}</div>
                           <div>
-                            <div style={{ fontSize:12, fontWeight:700, color:'#0f0e0c', marginBottom:2 }}>{dot && <span className="dot-anim" />}{strong}</div>
-                            <div style={{ fontSize:11, color:'#8a8278', lineHeight:1.5 }}>{desc}</div>
+                            <div style={{ fontSize:12, fontWeight:700, color:'var(--sr-text)', marginBottom:2 }}>{dot && <span className="dot-anim" />}{strong}</div>
+                            <div style={{ fontSize:11, color:'var(--sr-muted)', lineHeight:1.5 }}>{desc}</div>
                           </div>
                         </div>
                       ))}
@@ -478,7 +478,7 @@ function SignupInner() {
                   </>
                 )}
 
-                <a href={next || '/home'} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, maxWidth:340, padding:13, borderRadius:10, background:'#e8622a', color:'white', fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700, textDecoration:'none', margin:'22px auto 0', transition:'all .2s' }}>
+                <a href={next || '/home'} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, maxWidth:340, padding:13, borderRadius:10, background:'var(--sr-orange)', color:'white', fontFamily:"'DM Sans',sans-serif", fontSize:14, fontWeight:700, textDecoration:'none', margin:'22px auto 0', transition:'all .2s' }}>
                   Go to my Dashboard →
                 </a>
               </div>
@@ -494,7 +494,7 @@ function SignupInner() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight:'100vh', background:'#f5f0ea' }} />}>
+    <Suspense fallback={<div style={{ minHeight:'100vh', background:'var(--sr-bg)' }} />}>
       <SignupInner />
     </Suspense>
   )

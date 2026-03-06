@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/get-user-session'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 // GET /api/reviews?listing_id=&limit=20&offset=0
 export async function GET(request) {
@@ -60,6 +61,10 @@ export async function POST(request) {
   const { user } = await getUserSession()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Rate limit: max 10 review submissions per user per hour
+  const rl = rateLimit(`reviews:${user.id}`, 10, 60 * 60 * 1000)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
@@ -67,6 +72,10 @@ export async function POST(request) {
 
   if (!booking_id) return NextResponse.json({ error: 'booking_id required' }, { status: 400 })
   if (!rating || rating < 1 || rating > 5) return NextResponse.json({ error: 'rating must be 1–5' }, { status: 400 })
+  // Guard against excessively long comments (stored as text in DB)
+  if (comment && comment.trim().length > 2000) {
+    return NextResponse.json({ error: 'Review comment must be 2000 characters or less.' }, { status: 400 })
+  }
 
   const cats = { cleanliness, accuracy, communication, location, value }
   for (const [k, v] of Object.entries(cats)) {

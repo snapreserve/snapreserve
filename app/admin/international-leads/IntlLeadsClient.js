@@ -18,25 +18,41 @@ const COUNTRIES = [
 
 const QUARTERS = ['Q1 2026','Q2 2026','Q3 2026','Q4 2026','Q1 2027','Q2 2027','Q3 2027','Q4 2027']
 
+const LAUNCH_PRIORITY_CONFIG = {
+  high:   { label: 'High',   color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
+  medium: { label: 'Medium', color: '#FBBF24', bg: 'rgba(251,191,36,0.12)' },
+  low:    { label: 'Low',    color: '#9CA3AF', bg: 'rgba(156,163,175,0.12)' },
+}
+
 export default function IntlLeadsClient({ leads, total, topCountries, trend, expansion: initialExpansion, canEdit }) {
   const [tab, setTab]               = useState('leads')
   const [search, setSearch]         = useState('')
   const [countryFilter, setCountryFilter] = useState('all')
   const [roleFilter, setRoleFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [regionTagFilter, setRegionTagFilter] = useState('all')
+  const [founderPotential, setFounderPotential] = useState(false)
   const [copied, setCopied]         = useState(false)
   const [expansion, setExpansion]   = useState(initialExpansion)
   const [editRow, setEditRow]       = useState(null) // null | { country, status, priority_rank, target_quarter, notes }
+  const [editLeadRow, setEditLeadRow] = useState(null) // null | lead id being edited inline
+  const [editLeadData, setEditLeadData] = useState({})
   const [saving, setSaving]         = useState(false)
   const [toast, setToast]           = useState(null)
+  const [localLeads, setLocalLeads] = useState(leads)
 
-  const allCountries = ['all', ...Array.from(new Set(leads.map(l => l.country))).sort()]
+  const allCountries = ['all', ...Array.from(new Set(localLeads.map(l => l.country))).sort()]
+  const allRegionTags = ['all', ...Array.from(new Set(localLeads.map(l => l.region_tag).filter(Boolean))).sort()]
 
-  const filtered = leads.filter(l => {
-    const matchCountry = countryFilter === 'all' || l.country === countryFilter
-    const matchRole    = roleFilter    === 'all' || l.role    === roleFilter
+  const filtered = localLeads.filter(l => {
+    const matchCountry  = countryFilter   === 'all' || l.country       === countryFilter
+    const matchRole     = roleFilter      === 'all' || l.role          === roleFilter
+    const matchPriority = priorityFilter  === 'all' || l.launch_priority === priorityFilter
+    const matchRegion   = regionTagFilter === 'all' || l.region_tag    === regionTagFilter
+    const matchFounder  = !founderPotential || l.founder_potential
     const q = search.toLowerCase()
-    const matchSearch  = !q || l.email.toLowerCase().includes(q) || l.country.toLowerCase().includes(q)
-    return matchCountry && matchRole && matchSearch
+    const matchSearch   = !q || l.email.toLowerCase().includes(q) || l.country.toLowerCase().includes(q) || (l.region_tag || '').toLowerCase().includes(q)
+    return matchCountry && matchRole && matchPriority && matchRegion && matchFounder && matchSearch
   })
 
   function showToast(msg, type = 'success') {
@@ -50,11 +66,28 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
     })
   }
 
+  async function saveLead(id) {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/intl-leads/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editLeadData),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? 'Failed') }
+      setLocalLeads(prev => prev.map(l => l.id === id ? { ...l, ...editLeadData } : l))
+      setEditLeadRow(null)
+      showToast('Lead updated')
+    } catch (err) { showToast(err.message, 'error') }
+    finally { setSaving(false) }
+  }
+
   function exportCSV() {
     const rows = [
-      ['Email','Country','Role','Source','Signed up'],
+      ['Email','Country','Role','Source','Region Tag','Launch Priority','Founder Potential','Signed up'],
       ...filtered.map(l => [
-        l.email, l.country, l.role, l.source,
+        l.email, l.country, l.role, l.source, l.region_tag||'', l.launch_priority||'medium',
+        l.founder_potential ? 'Yes' : 'No',
         new Date(l.created_at).toLocaleString(),
       ])
     ]
@@ -105,7 +138,7 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
     }
   }
 
-  const recentCount = leads.filter(l =>
+  const recentCount = localLeads.filter(l =>
     new Date(l.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   ).length
 
@@ -215,6 +248,11 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
             <div className="stat-sub">{allCountries.length - 1} countries</div>
           </div>
           <div className="stat-card">
+            <div className="stat-label">Founder Potential</div>
+            <div className="stat-value">{localLeads.filter(l => l.founder_potential).length}</div>
+            <div className="stat-sub">marked leads</div>
+          </div>
+          <div className="stat-card">
             <div className="stat-label">Last 7 Days</div>
             <div className="stat-value">{recentCount}</div>
             <div className="stat-sub">new signups</div>
@@ -226,8 +264,8 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
           </div>
           <div className="stat-card">
             <div className="stat-label">Hosts</div>
-            <div className="stat-value">{leads.filter(l => l.role === 'host').length}</div>
-            <div className="stat-sub">{leads.filter(l => l.role === 'guest').length} guests</div>
+            <div className="stat-value">{localLeads.filter(l => l.role === 'host').length}</div>
+            <div className="stat-sub">{localLeads.filter(l => l.role === 'guest').length} guests</div>
           </div>
         </div>
 
@@ -266,7 +304,7 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
             <div className="controls">
               <input
                 className="search-input"
-                placeholder="Search email or country…"
+                placeholder="Search email, country, or region…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -278,32 +316,108 @@ export default function IntlLeadsClient({ leads, total, topCountries, trend, exp
                 <option value="guest">Guest</option>
                 <option value="host">Host</option>
               </select>
+              <select className="filter-select" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
+                <option value="all">All priorities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              {allRegionTags.length > 1 && (
+                <select className="filter-select" value={regionTagFilter} onChange={e => setRegionTagFilter(e.target.value)}>
+                  {allRegionTags.map(r => <option key={r} value={r}>{r === 'all' ? 'All regions' : r}</option>)}
+                </select>
+              )}
+              <button
+                onClick={() => setFounderPotential(p => !p)}
+                style={{
+                  padding:'5px 12px', borderRadius:8, fontSize:'0.72rem', fontWeight:700, cursor:'pointer',
+                  border:'1px solid var(--sr-border-solid)', background: founderPotential ? 'rgba(245,158,11,0.15)' : 'var(--sr-surface)',
+                  color: founderPotential ? '#F59E0B' : 'var(--sr-muted)', fontFamily:'inherit',
+                }}
+              >
+                {founderPotential ? '⭐ Founder Only' : 'Founder Potential'}
+              </button>
               <span className="result-count">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
             </div>
 
-            <div className="table-wrap">
-              <div className="table-row hdr">
+            <div className="table-wrap" style={{overflowX:'auto'}}>
+              <div className="table-row" style={{gridTemplateColumns:'1fr 150px 80px 90px 110px 110px 80px 130px'}}>
                 <span className="th">Email</span>
                 <span className="th">Country</span>
                 <span className="th">Role</span>
+                <span className="th">Region Tag</span>
+                <span className="th">Priority</span>
+                <span className="th">Founder</span>
                 <span className="th">Source</span>
                 <span className="th">Signed up</span>
               </div>
               {filtered.length === 0 ? (
                 <div className="empty-row">{search || countryFilter !== 'all' || roleFilter !== 'all' ? 'No results.' : 'No leads yet.'}</div>
-              ) : filtered.map(l => (
-                <div key={l.id} className="table-row">
-                  <div className="td"><a href={`mailto:${l.email}`}>{l.email}</a></div>
-                  <div className="td">{l.country}</div>
-                  <div className="td">
-                    <span className={`role-badge ${l.role === 'host' ? 'rb-host' : 'rb-guest'}`}>{l.role}</span>
+              ) : filtered.map(l => {
+                const priCfg = LAUNCH_PRIORITY_CONFIG[l.launch_priority] ?? LAUNCH_PRIORITY_CONFIG.medium
+                if (editLeadRow === l.id) {
+                  return (
+                    <div key={l.id} style={{padding:'10px 16px',borderBottom:'1px solid var(--sr-border-solid)',background:'var(--sr-bg)',display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+                      <input
+                        className="form-input"
+                        placeholder="Region tag"
+                        value={editLeadData.region_tag ?? l.region_tag ?? ''}
+                        onChange={e => setEditLeadData(d => ({ ...d, region_tag: e.target.value }))}
+                        style={{width:120,marginBottom:0}}
+                      />
+                      <select
+                        className="form-select"
+                        value={editLeadData.launch_priority ?? l.launch_priority ?? 'medium'}
+                        onChange={e => setEditLeadData(d => ({ ...d, launch_priority: e.target.value }))}
+                        style={{width:100,marginBottom:0}}
+                      >
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                      </select>
+                      <label style={{display:'flex',alignItems:'center',gap:4,fontSize:'0.76rem',color:'var(--sr-text)',cursor:'pointer'}}>
+                        <input
+                          type="checkbox"
+                          checked={editLeadData.founder_potential ?? l.founder_potential ?? false}
+                          onChange={e => setEditLeadData(d => ({ ...d, founder_potential: e.target.checked }))}
+                        />
+                        Founder Potential
+                      </label>
+                      <button className="btn btn-orange btn-sm" disabled={saving} onClick={() => saveLead(l.id)}>{saving ? '…' : 'Save'}</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => { setEditLeadRow(null); setEditLeadData({}) }}>Cancel</button>
+                    </div>
+                  )
+                }
+                return (
+                  <div key={l.id} className="table-row" style={{gridTemplateColumns:'1fr 150px 80px 90px 110px 110px 80px 130px'}}>
+                    <div className="td"><a href={`mailto:${l.email}`}>{l.email}</a></div>
+                    <div className="td">{l.country}</div>
+                    <div className="td">
+                      <span className={`role-badge ${l.role === 'host' ? 'rb-host' : 'rb-guest'}`}>{l.role}</span>
+                    </div>
+                    <div className="td" style={{fontSize:'0.74rem',color:'var(--sr-muted)'}}>{l.region_tag || <span style={{color:'#3A3028'}}>—</span>}</div>
+                    <div className="td">
+                      {l.launch_priority ? (
+                        <span className="status-badge" style={{background:priCfg.bg,color:priCfg.color,fontSize:'0.65rem'}}>{priCfg.label}</span>
+                      ) : <span style={{color:'#3A3028',fontSize:'0.72rem'}}>—</span>}
+                    </div>
+                    <div className="td" style={{fontSize:'0.8rem'}}>
+                      {l.founder_potential ? <span style={{color:'#F59E0B'}}>⭐ Yes</span> : <span style={{color:'#3A3028'}}>—</span>}
+                    </div>
+                    <div className="td" style={{fontSize:'0.74rem',color:'var(--sr-sub)'}}>{l.source}</div>
+                    <div className="td td-date" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'space-between'}}>
+                      <span>{new Date(l.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+                      {canEdit && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => { setEditLeadRow(l.id); setEditLeadData({ region_tag: l.region_tag ?? '', launch_priority: l.launch_priority ?? 'medium', founder_potential: l.founder_potential ?? false }) }}
+                          style={{padding:'2px 8px',fontSize:'0.65rem'}}
+                        >Edit</button>
+                      )}
+                    </div>
                   </div>
-                  <div className="td" style={{fontSize:'0.74rem',color:'var(--sr-sub)'}}>{l.source}</div>
-                  <div className="td td-date">
-                    {new Date(l.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}

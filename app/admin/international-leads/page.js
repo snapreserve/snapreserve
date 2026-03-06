@@ -12,7 +12,7 @@ async function getData() {
   ] = await Promise.all([
     adminClient
       .from('international_leads')
-      .select('id, email, country, role, source, created_at', { count: 'exact' })
+      .select('id, email, country, role, source, region_tag, launch_priority, founder_potential, admin_notes, created_at', { count: 'exact' })
       .order('created_at', { ascending: false }),
     adminClient
       .from('country_expansion')

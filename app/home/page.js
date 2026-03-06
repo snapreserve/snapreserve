@@ -84,11 +84,15 @@ export default function HomePage() {
   }, [])
 
   async function fetchData() {
-    const { data } = await supabase.from('listings').select('*').eq('is_active', true).order('rating', { ascending: false })
+    const { data } = await supabase
+      .from('listings')
+      .select('id, title, city, state, type, price_per_night, rating, review_count, amenities')
+      .eq('is_active', true)
+      .order('rating', { ascending: false })
     const all = data || []
     setListings(all)
     const cities = [...new Set(all.map(l => l.city))].length
-    const { count: hostCount } = await supabase.from('users').select('*', { count: 'exact', head: true }).eq('is_host', true)
+    const { count: hostCount } = await supabase.from('users').select('id', { count: 'exact', head: true }).eq('is_host', true)
     setStats({ hotels: all.filter(l => l.type === 'hotel').length, private_stays: all.filter(l => l.type === 'private_stay').length, cities, hosts: hostCount || 0 })
   }
 
@@ -158,53 +162,57 @@ export default function HomePage() {
 
   const isHotel = mode === 'hotel'
   const accent = isHotel ? '#1A6EF4' : '#F4601A'
-  const heroBg = isHotel
-    ? 'radial-gradient(ellipse at 60% 0%, #e8f0ff 0%, #FAF8F5 55%)'
-    : 'radial-gradient(ellipse at 60% 0%, #ffeade 0%, #FAF8F5 55%)'
+  const heroBg = darkMode
+    ? (isHotel
+        ? 'radial-gradient(ellipse at 60% 0%, rgba(26,110,244,0.12) 0%, #0D0D0D 55%)'
+        : 'radial-gradient(ellipse at 60% 0%, rgba(232,98,42,0.12) 0%, #0D0D0D 55%)')
+    : (isHotel
+        ? 'radial-gradient(ellipse at 60% 0%, #e8f0ff 0%, #faf6f0 55%)'
+        : 'radial-gradient(ellipse at 60% 0%, #ffeade 0%, #faf6f0 55%)')
   const chips = isHotel ? hotelChips : privateChips
   const steps = isHotel ? hotelSteps : privateSteps
   const filteredListings = listings.filter(l => l.type === mode).slice(0, 4)
 
   return (
-    <div className={darkMode ? 'dm' : ''}>
+    <div>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'DM Sans',-apple-system,sans-serif; color:#1A1410; }
+        body { font-family:'DM Sans',-apple-system,sans-serif; color:var(--sr-text); }
 
         .hero { padding:52px 40px 44px; text-align:center; transition:background 0.4s; }
 
         .toggle-wrap { display:flex; justify-content:center; margin-bottom:40px; }
-        .toggle-pill { display:inline-flex; background:white; border-radius:100px; padding:5px; gap:4px; box-shadow:0 2px 16px rgba(0,0,0,0.1); }
-        .toggle-btn { padding:11px 28px; border-radius:100px; font-size:0.88rem; font-weight:700; border:none; cursor:pointer; font-family:inherit; color:#6B5F54; background:transparent; transition:all 0.25s; }
+        .toggle-pill { display:inline-flex; background:var(--sr-card); border-radius:100px; padding:5px; gap:4px; box-shadow:0 2px 16px rgba(0,0,0,0.1); }
+        .toggle-btn { padding:11px 28px; border-radius:100px; font-size:0.88rem; font-weight:700; border:none; cursor:pointer; font-family:inherit; color:var(--sr-muted); background:transparent; transition:all 0.25s; }
         .toggle-btn.hotel-on { background:#1A6EF4; color:white; box-shadow:0 2px 12px rgba(26,110,244,0.4); }
-        .toggle-btn.private-on { background:#F4601A; color:white; box-shadow:0 2px 12px rgba(244,96,26,0.4); }
+        .toggle-btn.private-on { background:#E8622A; color:white; box-shadow:0 2px 12px rgba(232,98,42,0.4); }
 
-        .hero-headline { font-family:'Playfair Display',serif; font-size:clamp(3rem,7vw,5.5rem); font-weight:900; line-height:1.05; letter-spacing:-2px; margin-bottom:8px; }
+        .hero-headline { font-family:'Playfair Display',serif; font-size:clamp(3rem,7vw,5.5rem); font-weight:900; line-height:1.05; letter-spacing:-2px; margin-bottom:8px; color:var(--sr-text); }
         .hero-headline .blue-accent { color:#1A6EF4; font-style:italic; display:block; text-decoration:underline; text-decoration-color:rgba(26,110,244,0.2); text-underline-offset:6px; }
-        .hero-headline .orange-accent { color:#F4601A; font-style:italic; text-decoration:underline; text-decoration-color:rgba(244,96,26,0.2); text-underline-offset:6px; }
-        .hero-sub { font-size:0.96rem; color:#6B5F54; margin-bottom:32px; line-height:1.7; }
+        .hero-headline .orange-accent { color:var(--sr-orange); font-style:italic; text-decoration:underline; text-decoration-color:var(--sr-ob); text-underline-offset:6px; }
+        .hero-sub { font-size:0.96rem; color:var(--sr-muted); margin-bottom:32px; line-height:1.7; }
 
-        .search-box { background:white; border-radius:20px; box-shadow:0 4px 32px rgba(0,0,0,0.1); max-width:780px; margin:0 auto 18px; display:grid; grid-template-columns:1.8fr 1fr 1fr 1fr auto; overflow:visible; border:1px solid #E8E2D9; position:relative; }
-        .search-field { padding:14px 18px; border-right:1px solid #E8E2D9; text-align:left; position:relative; }
+        .search-box { background:var(--sr-card); border-radius:20px; box-shadow:0 4px 32px rgba(0,0,0,0.1); max-width:780px; margin:0 auto 18px; display:grid; grid-template-columns:1.8fr 1fr 1fr 1fr auto; overflow:visible; border:1px solid var(--sr-border); position:relative; }
+        .search-field { padding:14px 18px; border-right:1px solid var(--sr-border); text-align:left; position:relative; }
         .search-field:first-child { border-radius:20px 0 0 20px; overflow:visible; }
-        .sf-label { font-size:0.6rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#A89880; margin-bottom:4px; }
-        .sf-input { width:100%; border:none; outline:none; font-size:0.88rem; font-weight:600; color:#1A1410; background:transparent; font-family:inherit; }
-        .sf-input::placeholder { color:#C4BAB0; font-weight:400; }
+        .sf-label { font-size:0.6rem; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--sr-muted); margin-bottom:4px; }
+        .sf-input { width:100%; border:none; outline:none; font-size:0.88rem; font-weight:600; color:var(--sr-text); background:transparent; font-family:inherit; }
+        .sf-input::placeholder { color:var(--sr-sub); font-weight:400; }
         .search-btn { border:none; padding:0 26px; font-size:0.88rem; font-weight:700; color:white; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:8px; border-radius:0 20px 20px 0; transition:opacity 0.18s; }
         .search-btn:hover { opacity:0.9; }
 
         .chips-row { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; max-width:780px; margin:0 auto; }
-        .chip { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:100px; font-size:0.8rem; font-weight:700; border:1.5px solid #E8E2D9; background:white; cursor:pointer; transition:all 0.18s; color:#1A1410; font-family:inherit; }
-        .chip:hover { border-color:rgba(0,0,0,0.2); box-shadow:0 2px 8px rgba(0,0,0,0.07); }
+        .chip { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:100px; font-size:0.8rem; font-weight:700; border:1.5px solid var(--sr-border); background:var(--sr-card); cursor:pointer; transition:all 0.18s; color:var(--sr-text); font-family:inherit; }
+        .chip:hover { border-color:var(--sr-border2); box-shadow:0 2px 8px rgba(0,0,0,0.07); }
         .chip.active-hotel { background:#1A6EF4; color:white; border-color:#1A6EF4; }
-        .chip.active-private { background:#F4601A; color:white; border-color:#F4601A; }
+        .chip.active-private { background:var(--sr-orange); color:white; border-color:var(--sr-orange); }
 
         .w { max-width:1280px; margin:0 auto; padding:0 40px; }
 
         .choose-section { padding:60px 0 0; }
         .choose-label { font-size:0.7rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; margin-bottom:12px; }
-        .choose-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; line-height:1.15; margin-bottom:40px; }
+        .choose-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3vw,2.6rem); font-weight:700; line-height:1.15; margin-bottom:40px; color:var(--sr-text); }
 
         .cards-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         .big-card { border-radius:22px; overflow:hidden; position:relative; height:340px; text-decoration:none; display:block; transition:transform 0.25s,box-shadow 0.25s; }
@@ -222,76 +230,46 @@ export default function HomePage() {
 
         .top-rated { padding:60px 0 0; }
         .section-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; }
-        .section-title { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; }
+        .section-title { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:700; color:var(--sr-text); }
         .see-all { font-size:0.84rem; font-weight:700; text-decoration:none; }
         .see-all:hover { text-decoration:underline; }
 
         .listings-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
-        .listing-card { background:white; border-radius:18px; overflow:hidden; border:1px solid #E8E2D9; transition:all 0.22s; text-decoration:none; color:inherit; display:block; }
+        .listing-card { background:var(--sr-card); border-radius:18px; overflow:hidden; border:1px solid var(--sr-border); transition:all 0.22s; text-decoration:none; color:inherit; display:block; }
         .listing-card:hover { transform:translateY(-4px); box-shadow:0 16px 48px rgba(0,0,0,0.1); }
-        .card-img { height:200px; position:relative; overflow:hidden; background:#F3F0EB; }
+        .card-img { height:200px; position:relative; overflow:hidden; background:var(--sr-surface); }
         .card-img img { width:100%; height:100%; object-fit:cover; transition:transform 0.3s; }
         .listing-card:hover .card-img img { transform:scale(1.05); }
         .type-pill { position:absolute; top:12px; left:12px; padding:4px 10px; border-radius:100px; font-size:0.66rem; font-weight:700; }
         .instant-pill { position:absolute; top:12px; right:12px; background:white; padding:4px 10px; border-radius:100px; font-size:0.66rem; font-weight:700; color:#1A6EF4; }
         .card-body { padding:14px; }
-        .card-name { font-weight:700; font-size:0.92rem; margin-bottom:3px; line-height:1.3; }
-        .card-loc { font-size:0.75rem; color:#6B5F54; margin-bottom:6px; }
+        .card-name { font-weight:700; font-size:0.92rem; margin-bottom:3px; line-height:1.3; color:var(--sr-text); }
+        .card-loc { font-size:0.75rem; color:var(--sr-muted); margin-bottom:6px; }
         .snap-badge { display:inline-flex; align-items:center; gap:3px; font-size:0.62rem; font-weight:700; color:#A78BFA; background:linear-gradient(90deg,rgba(139,92,246,0.12),rgba(59,130,246,0.12)); border:1px solid rgba(139,92,246,0.25); border-radius:100px; padding:2px 8px; margin-bottom:8px; }
         .amenity-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
-        .a-chip { font-size:0.63rem; background:#F3F0EB; color:#6B5F54; padding:2px 8px; border-radius:100px; font-weight:600; }
+        .a-chip { font-size:0.63rem; background:var(--sr-surface); color:var(--sr-muted); padding:2px 8px; border-radius:100px; font-weight:600; }
         .card-foot { display:flex; align-items:center; justify-content:space-between; }
         .card-price { font-size:0.94rem; font-weight:700; }
-        .card-price small { font-size:0.71rem; font-weight:400; color:#A89880; }
+        .card-price small { font-size:0.71rem; font-weight:400; color:var(--sr-sub); }
         .card-rating { font-size:0.77rem; font-weight:600; color:#D97706; }
 
         .how { padding:60px 0; }
         .how-label { font-size:0.7rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; margin-bottom:26px; }
         .steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-        .step-card { background:white; border:1px solid #E8E2D9; border-radius:20px; padding:28px; position:relative; overflow:hidden; transition:all 0.2s; }
+        .step-card { background:var(--sr-card); border:1px solid var(--sr-border); border-radius:20px; padding:28px; position:relative; overflow:hidden; transition:all 0.2s; }
         .step-card:hover { box-shadow:0 8px 32px rgba(0,0,0,0.07); transform:translateY(-2px); }
-        .step-num-bg { position:absolute; top:10px; right:14px; font-size:3.5rem; font-weight:900; color:rgba(0,0,0,0.04); font-family:'Playfair Display',serif; line-height:1; }
+        .step-num-bg { position:absolute; top:10px; right:14px; font-size:3.5rem; font-weight:900; color:var(--sr-overlay-sm); font-family:'Playfair Display',serif; line-height:1; }
         .step-icon-box { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:16px; }
-        .step-title { font-size:1rem; font-weight:700; margin-bottom:8px; }
-        .step-desc { font-size:0.82rem; color:#6B5F54; line-height:1.7; }
+        .step-title { font-size:1rem; font-weight:700; margin-bottom:8px; color:var(--sr-text); }
+        .step-desc { font-size:0.82rem; color:var(--sr-muted); line-height:1.7; }
 
-        .footer { background:#0F0C09; padding:24px 40px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
-        .footer-logo { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:white; }
-        .footer-logo span { color:#F4601A; }
-        .footer-links { display:flex; gap:22px; }
-        .footer-links a { font-size:0.78rem; color:rgba(255,255,255,0.4); text-decoration:none; }
-        .footer-links a:hover { color:rgba(255,255,255,0.7); }
-
-        .autocomplete-drop { position:absolute; top:calc(100% + 8px); left:-1px; right:-1px; background:white; border-radius:16px; border:1px solid #E8E2D9; box-shadow:0 16px 48px rgba(0,0,0,0.14); z-index:9999; overflow:hidden; }
+        .autocomplete-drop { position:absolute; top:calc(100% + 8px); left:-1px; right:-1px; background:var(--sr-card); border-radius:16px; border:1px solid var(--sr-border); box-shadow:0 16px 48px rgba(0,0,0,0.14); z-index:9999; overflow:hidden; }
         .sug-item { display:flex; align-items:center; gap:12px; padding:10px 16px; cursor:pointer; transition:background 0.15s; }
-        .sug-item:hover { background:#FAF8F5; }
+        .sug-item:hover { background:var(--sr-surface); }
 
         @media(max-width:1024px) { .listings-grid{grid-template-columns:repeat(2,1fr);} }
-        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .hero,.w,.footer{padding-left:20px;padding-right:20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
+        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .hero,.w{padding-left:20px;padding-right:20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
         @media(max-width:480px) { .listings-grid{grid-template-columns:1fr;} }
-
-        /* ── Dark mode ── */
-        .dm { background:#0F0D0A; color:#F5F0EB; }
-        .dm .toggle-pill { background:#1A1712; }
-        .dm .chip { background:#1A1712; border-color:#2A2420; color:#F5F0EB; }
-        .dm .search-box { background:#1A1712; border-color:#2A2420; }
-        .dm .search-field { border-right-color:#2A2420; }
-        .dm .sf-input { color:#F5F0EB; }
-        .dm .autocomplete-drop { background:#1A1712; border-color:#2A2420; }
-        .dm .sug-item:hover { background:#2A2420; }
-        .dm .listing-card { background:#1A1712; border-color:#2A2420; }
-        .dm .card-loc { color:#A89880; }
-        .dm .a-chip { background:#2A2420; color:#A89880; }
-        .dm .card-price small { color:#7A6E64; }
-        .dm .step-card { background:#1A1712; border-color:#2A2420; }
-        .dm .step-desc { color:#A89880; }
-        .dm .hero-sub { color:#A89880; }
-        .dm .choose-title { color:#F5F0EB; }
-        .dm .section-title { color:#F5F0EB; }
-        .dm .see-all { color:#F4601A; }
-        .dm .choose-label { color:#A89880; }
-        .dm .how-label { color:#A89880; }
-
       `}</style>
 
 
@@ -337,20 +315,20 @@ export default function HomePage() {
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               autoComplete="off"
             />
-            {searchLoading && <div style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:'0.8rem', color:'#A89880' }}>...</div>}
+            {searchLoading && <div style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:'0.8rem', color:'var(--sr-muted)' }}>...</div>}
             {showSuggestions && suggestions.length > 0 && (
               <div className="autocomplete-drop">
-                <div style={{ padding:'10px 16px 6px', fontSize:'0.62rem', fontWeight:800, textTransform:'uppercase', letterSpacing:'0.1em', color:'#A89880' }}>Destinations</div>
+                <div style={{ padding:'10px 16px 6px', fontSize:'0.62rem', fontWeight:800, textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--sr-muted)' }}>Destinations</div>
                 {suggestions.map((s, i) => (
                   <div key={i} className="sug-item" onClick={() => selectSuggestion(s)}>
-                    <div style={{ width:36, height:36, borderRadius:10, background:'#F3F0EB', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>
+                    <div style={{ width:36, height:36, borderRadius:10, background:'var(--sr-surface)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', flexShrink:0 }}>
                       {s.flag || '📍'}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:'0.88rem', color:'#1A1410', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.main_text}</div>
-                      <div style={{ fontSize:'0.74rem', color:'#A89880', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.secondary_text}</div>
+                      <div style={{ fontWeight:700, fontSize:'0.88rem', color:'var(--sr-text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.main_text}</div>
+                      <div style={{ fontSize:'0.74rem', color:'var(--sr-muted)', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{s.secondary_text}</div>
                     </div>
-                    <div style={{ fontSize:'0.7rem', color:'#C4BAB0', flexShrink:0 }}>→</div>
+                    <div style={{ fontSize:'0.7rem', color:'var(--sr-sub)', flexShrink:0 }}>→</div>
                   </div>
                 ))}
               </div>
@@ -412,7 +390,7 @@ export default function HomePage() {
 
           <div className="cards-row">
             <a href="/listings?type=hotel" className="big-card" style={{ opacity: isHotel ? 1 : 0.42, transform: isHotel ? 'scale(1)' : 'scale(0.97)', transition:'all 0.3s', filter: isHotel ? 'none' : 'grayscale(40%)' }}>
-              <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80" alt="Hotel" />
+              <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80" alt="Hotel" loading="lazy" />
               <div className="bco" style={{ background:'linear-gradient(to top, rgba(5,20,70,0.94) 0%, rgba(10,30,90,0.5) 55%, rgba(0,0,0,0.08) 100%)' }} />
               <div className="bcc">
                 <div className="type-badge" style={{ background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.18)' }}>🏨 Hotel Bookings</div>
@@ -427,7 +405,7 @@ export default function HomePage() {
             </a>
 
             <a href="/listings?type=private_stay" className="big-card" style={{ opacity: !isHotel ? 1 : 0.42, transform: !isHotel ? 'scale(1)' : 'scale(0.97)', transition:'all 0.3s', filter: !isHotel ? 'none' : 'grayscale(40%)' }}>
-              <img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=900&q=80" alt="Private stay" />
+              <img src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=900&q=80" alt="Private stay" loading="lazy" />
               <div className="bco" style={{ background:'linear-gradient(to top, rgba(40,18,5,0.93) 0%, rgba(50,25,5,0.48) 55%, rgba(0,0,0,0.08) 100%)' }} />
               <div className="bcc">
                 <div className="type-badge" style={{ background:'rgba(244,96,26,0.28)', border:'1px solid rgba(244,96,26,0.45)' }}>🏠 Private Stays</div>
@@ -451,7 +429,7 @@ export default function HomePage() {
           </div>
           <div className="listings-grid">
             {filteredListings.length === 0 && (
-              <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'48px', color:'#A89880' }}>Loading listings...</div>
+              <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'48px', color:'var(--sr-muted)' }}>Loading listings...</div>
             )}
             {filteredListings.map((listing, i) => {
               const img = cityImages[listing.city] || fallbackImages[i % fallbackImages.length]
@@ -462,7 +440,7 @@ export default function HomePage() {
               return (
                 <a key={listing.id} href={`/listings/${listing.id}`} className="listing-card">
                   <div className="card-img">
-                    <img src={img} alt={listing.title} />
+                    <img src={img} alt={listing.title} loading="lazy" />
                     <div className="type-pill" style={{ background:pill.bg, color:pill.color }}>{pill.label}</div>
                     {listing.is_instant_book && <div className="instant-pill">⚡ Instant</div>}
                   </div>
@@ -507,16 +485,16 @@ export default function HomePage() {
       </div>
 
       {/* TOP DESTINATIONS */}
-      <div style={{ background: darkMode ? '#0F0D0A' : '#FAF8F5', padding:'0 40px 60px' }}>
+      <div style={{ background:'var(--sr-bg)', padding:'0 40px 60px' }}>
         <div style={{ maxWidth:1280, margin:'0 auto' }}>
           <div style={{ fontSize:'0.7rem', fontWeight:800, letterSpacing:'0.16em', textTransform:'uppercase', color: accent, marginBottom:10 }}>Browse by destination</div>
-          <h2 style={{ fontFamily:'Playfair Display,serif', fontSize:'1.9rem', fontWeight:700, marginBottom:24, color: darkMode ? '#F5F0EB' : '#1A1410' }}>Top Destinations</h2>
+          <h2 style={{ fontFamily:'Playfair Display,serif', fontSize:'1.9rem', fontWeight:700, marginBottom:24, color:'var(--sr-text)' }}>Top Destinations</h2>
 
           <div style={{ display:'grid', gridTemplateColumns:'1.45fr 1fr 1fr', gridTemplateRows:'1fr 1fr', gap:14, height:440 }}>
             <a href="/listings" style={{ gridRow:'1 / 3', borderRadius:20, overflow:'hidden', position:'relative', display:'block', textDecoration:'none', transition:'transform 0.25s' }}
               onMouseEnter={e => e.currentTarget.style.transform='scale(1.015)'}
               onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
-              <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=900&q=80" alt="Europe" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=900&q=80" alt="Europe" loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
               <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.08) 60%)' }} />
               <div style={{ position:'absolute', bottom:22, left:22 }}>
                 <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1.3rem', fontWeight:700, color:'white', marginBottom:4 }}>Europe</div>
@@ -533,7 +511,7 @@ export default function HomePage() {
               <a key={d.name} href="/listings" style={{ borderRadius:18, overflow:'hidden', position:'relative', display:'block', textDecoration:'none', transition:'transform 0.25s' }}
                 onMouseEnter={e => e.currentTarget.style.transform='scale(1.015)'}
                 onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
-                <img src={d.src} alt={d.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                <img src={d.src} alt={d.name} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.06) 55%)' }} />
                 <div style={{ position:'absolute', bottom:16, left:16 }}>
                   <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1rem', fontWeight:700, color:'white', marginBottom:3 }}>{d.name}</div>
@@ -546,7 +524,7 @@ export default function HomePage() {
       </div>
 
       {/* TWO HOST CTA CARDS */}
-      <div style={{ background: darkMode ? '#0F0D0A' : '#FAF8F5', padding:'0 40px 64px' }}>
+      <div style={{ background:'var(--sr-bg)', padding:'0 40px 64px' }}>
         <div style={{ maxWidth:1280, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
 
           <div style={{ borderRadius:24, overflow:'hidden', position:'relative', padding:'48px 44px', background:'linear-gradient(135deg, #0A1F6E 0%, #1242B4 45%, #0D2E8F 100%)', minHeight:280, display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
@@ -554,7 +532,7 @@ export default function HomePage() {
             <div style={{ position:'relative' }}>
               <div style={{ fontSize:'2rem', marginBottom:20 }}>🏨</div>
               <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1.5rem', fontWeight:700, color:'white', marginBottom:12, lineHeight:1.2 }}>List your hotel or property business</div>
-              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Partner with SnapReserve™™ to reach millions of travellers and manage bookings in real time via our hotel dashboard.</div>
+              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Partner with SnapReserve™ to reach millions of travellers and manage bookings in real time via our hotel dashboard.</div>
             </div>
             <div style={{ display:'flex', gap:12, position:'relative', flexWrap:'wrap' }}>
               <a href="/list-property" style={{ background:'#2B6FEA', color:'white', padding:'12px 26px', borderRadius:100, fontWeight:700, fontSize:'0.88rem', textDecoration:'none' }}>Partner with Us</a>
@@ -567,7 +545,7 @@ export default function HomePage() {
             <div style={{ position:'relative' }}>
               <div style={{ fontSize:'2rem', marginBottom:20 }}>🏠</div>
               <div style={{ fontFamily:'Playfair Display,serif', fontSize:'1.5rem', fontWeight:700, color:'white', marginBottom:12, lineHeight:1.2 }}>Your home could earn while you're away</div>
-              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Join 180,000+ individual hosts on SnapReserve™™ and turn your spare room, apartment, or villa into steady income.</div>
+              <div style={{ fontSize:'0.84rem', color:'rgba(255,255,255,0.5)', lineHeight:1.75, marginBottom:32, maxWidth:320 }}>Join 180,000+ individual hosts on SnapReserve™ and turn your spare room, apartment, or villa into steady income.</div>
             </div>
             <div style={{ display:'flex', gap:12, position:'relative', flexWrap:'wrap' }}>
               {userRole === 'host' ? (
@@ -583,7 +561,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <Footer darkBg={true} />
+      <Footer />
     </div>
   )
 }

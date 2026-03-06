@@ -96,33 +96,50 @@ function BookingPageContent() {
   const checkin   = searchParams.get('checkin')
   const checkout  = searchParams.get('checkout')
   const guests    = searchParams.get('guests') || '1'
+  const promoParam = searchParams.get('promo') || ''
+  const roomParam  = searchParams.get('room') || null
 
   const [step, setStep]             = useState('summary')   // summary | loading | payment | error
   const [listing, setListing]       = useState(null)
+  const [room, setRoom]             = useState(null)
   const [listingLoading, setListingLoading] = useState(true)
   const [clientSecret, setClientSecret]   = useState(null)
   const [bookingId, setBookingId]         = useState(null)
   const [breakdown, setBreakdown]         = useState(null)
   const [errorMsg, setErrorMsg]           = useState(null)
 
-  // Load listing data
+  // Promo code state
+  const [promoInput,   setPromoInput]   = useState(promoParam)
+  const [promoLoading, setPromoLoading] = useState(false)
+  const [promoError,   setPromoError]   = useState(null)
+  const [appliedPromo, setAppliedPromo] = useState(null)
+
+  // Load listing data (and room if roomParam is set)
   useEffect(() => {
     if (!listingId) {
       setErrorMsg('Invalid booking link.')
       setListingLoading(false)
       return
     }
-    supabase
+    const fetchListing = supabase
       .from('listings')
-      .select('id, title, city, state, price_per_night, cleaning_fee, max_guests, rating, review_count, is_instant_book')
+      .select('id, title, city, state, type, price_per_night, cleaning_fee, max_guests, rating, review_count, is_instant_book')
       .eq('id', listingId)
       .single()
-      .then(({ data, error }) => {
-        if (error || !data) setErrorMsg('Listing not found.')
-        else setListing(data)
-        setListingLoading(false)
-      })
-  }, [listingId])
+
+    const fetchRoom = roomParam
+      ? supabase.from('rooms').select('id, name, tier, price_per_night, max_guests, bed_type, view_type, units_available').eq('id', roomParam).maybeSingle()
+      : Promise.resolve({ data: null })
+
+    Promise.all([fetchListing, fetchRoom]).then(([{ data: listingData, error }, { data: roomData }]) => {
+      if (error || !listingData) setErrorMsg('Listing not found.')
+      else {
+        setListing(listingData)
+        if (roomData) setRoom(roomData)
+      }
+      setListingLoading(false)
+    })
+  }, [listingId, roomParam])
 
   // Date + nights calculation
   const nights = checkin && checkout
@@ -136,6 +153,26 @@ function BookingPageContent() {
     })
   }
 
+  async function applyPromo() {
+    const code = promoInput.trim()
+    if (!code || !listingId) return
+    setPromoLoading(true)
+    setPromoError(null)
+    setAppliedPromo(null)
+    try {
+      const res = await fetch('/api/promotions/validate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ code, listing_id: listingId, nights, subtotal: localBreakdown?.subtotal || 0 }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setPromoError('Could not validate promo code.'); return }
+      if (!data.valid) { setPromoError(data.error || 'Invalid promo code'); return }
+      setAppliedPromo(data)
+    } catch { setPromoError('Network error.') }
+    finally { setPromoLoading(false) }
+  }
+
   async function handleConfirm() {
     setStep('loading')
     try {
@@ -147,6 +184,8 @@ function BookingPageContent() {
           check_in: checkin,
           check_out: checkout,
           guests: Number(guests),
+          promo_code: appliedPromo?.code || null,
+          room_id: room?.id || null,
         }),
       })
       const data = await res.json()
@@ -172,9 +211,11 @@ function BookingPageContent() {
 
   // Local breakdown before PaymentIntent is created
   const localBreakdown = listing && nights > 0 ? (() => {
-    const subtotal    = listing.price_per_night * nights
-    const cleaningFee = listing.cleaning_fee || 0
-    return { nights, pricePerNight: listing.price_per_night, subtotal, cleaningFee, total: subtotal + cleaningFee }
+    const pricePerNight  = room ? room.price_per_night : listing.price_per_night
+    const subtotal       = pricePerNight * nights
+    const cleaningFee    = listing.cleaning_fee || 0
+    const discountAmount = appliedPromo ? appliedPromo.discount_amount : 0
+    return { nights, pricePerNight, subtotal, cleaningFee, discountAmount, promoCode: appliedPromo?.code || null, total: subtotal + cleaningFee - discountAmount }
   })() : null
 
   const displayBreakdown = breakdown || localBreakdown
@@ -184,48 +225,48 @@ function BookingPageContent() {
     <>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; color: #1A1410; }
-        .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: white; border-bottom: 1px solid #E8E2D9; }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: #1A1410; }
+        body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
         .logo span { color: #F4601A; }
         .page { max-width: 960px; margin: 40px auto; padding: 0 24px 80px; display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
         .left-col {}
-        .card { background: white; border: 1px solid #E8E2D9; border-radius: 20px; padding: 28px; margin-bottom: 20px; }
+        .card { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); border-radius: 20px; padding: 28px; margin-bottom: 20px; }
         .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .step-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #F4601A; color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 700; }
         .step-badge.done { background: #16A34A; }
 
         .date-row { display: flex; gap: 16px; margin-bottom: 8px; }
-        .date-box { flex: 1; background: #FAF8F5; border: 1px solid #E8E2D9; border-radius: 12px; padding: 12px 16px; }
-        .date-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #A89880; margin-bottom: 4px; }
+        .date-box { flex: 1; background: var(--sr-surface); border: 1px solid var(--sr-border-solid,#E8E2D9); border-radius: 12px; padding: 12px 16px; }
+        .date-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sr-sub); margin-bottom: 4px; }
         .date-value { font-size: 0.9rem; font-weight: 600; }
-        .guests-row { font-size: 0.84rem; color: #6B5F54; }
+        .guests-row { font-size: 0.84rem; color: var(--sr-muted); }
 
         .breakdown { }
-        .br-row { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 10px; color: #4A3F35; }
-        .br-row.total { font-weight: 700; font-size: 0.96rem; padding-top: 12px; border-top: 1px solid #E8E2D9; margin-top: 4px; color: #1A1410; }
+        .br-row { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 10px; color: var(--sr-muted); }
+        .br-row.total { font-weight: 700; font-size: 0.96rem; padding-top: 12px; border-top: 1px solid var(--sr-border-solid,#E8E2D9); margin-top: 4px; color: var(--sr-text); }
         .br-label { }
         .br-fee-tag { font-size: 0.7rem; color: #F4601A; font-weight: 600; margin-left: 4px; }
 
         .confirm-btn { width: 100%; background: linear-gradient(135deg,#F4601A,#FF7A35); border: none; border-radius: 14px; padding: 16px; font-size: 1rem; font-weight: 700; color: white; cursor: pointer; font-family: inherit; transition: all 0.2s; }
         .confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(244,96,26,0.3); }
-        .confirm-note { text-align: center; font-size: 0.72rem; color: #A89880; margin-top: 10px; }
+        .confirm-note { text-align: center; font-size: 0.72rem; color: var(--sr-sub); margin-top: 10px; }
 
-        .spinner { width: 40px; height: 40px; border: 3px solid #E8E2D9; border-top-color: #F4601A; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--sr-border-solid,#E8E2D9); border-top-color: #F4601A; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { text-align: center; color: #6B5F54; font-size: 0.9rem; padding-bottom: 40px; }
+        .loading-text { text-align: center; color: var(--sr-muted); font-size: 0.9rem; padding-bottom: 40px; }
 
         .property-card { display: flex; gap: 16px; }
-        .prop-thumb { width: 80px; height: 80px; border-radius: 12px; background: #E8E2D9; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .prop-thumb { width: 80px; height: 80px; border-radius: 12px; background: var(--sr-surface); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
         .prop-info {}
         .prop-name { font-weight: 700; font-size: 0.94rem; margin-bottom: 4px; }
-        .prop-meta { font-size: 0.78rem; color: #6B5F54; }
+        .prop-meta { font-size: 0.78rem; color: var(--sr-muted); }
         .prop-rating { font-size: 0.78rem; color: #D97706; margin-top: 2px; }
 
         .error-state { text-align: center; padding: 60px 20px; }
         .error-icon { font-size: 3rem; margin-bottom: 16px; }
         .error-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
-        .error-msg { font-size: 0.9rem; color: #6B5F54; margin-bottom: 24px; }
+        .error-msg { font-size: 0.9rem; color: var(--sr-muted); margin-bottom: 24px; }
         .back-btn { display: inline-block; padding: 12px 24px; border-radius: 100px; background: #F4601A; color: white; font-weight: 700; font-size: 0.88rem; text-decoration: none; }
 
         .instant-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600; color: #1A6EF4; margin-top: 8px; }
@@ -236,7 +277,7 @@ function BookingPageContent() {
 
       <nav className="nav">
         <a href="/" className="logo">Snap<span>Reserve</span></a>
-        <a href={listingId ? `/listings/${listingId}` : '/listings'} style={{ fontSize: '0.84rem', color: '#6B5F54', textDecoration: 'none', fontWeight: 600 }}>
+        <a href={listingId ? `/listings/${listingId}` : '/listings'} style={{ fontSize: '0.84rem', color: 'var(--sr-muted)', textDecoration: 'none', fontWeight: 600 }}>
           ← Back
         </a>
       </nav>
@@ -349,7 +390,7 @@ function BookingPageContent() {
             </div>
 
             {/* Policies */}
-            <div style={{ fontSize: '0.78rem', color: '#A89880', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)', lineHeight: 1.6 }}>
               By reserving, you agree to SnapReserve™'s{' '}
               <a href="/terms" style={{ color: '#F4601A' }}>Terms of Service</a> and{' '}
               <a href="/refund-policy" style={{ color: '#F4601A' }}>Refund Policy</a>.
@@ -362,10 +403,15 @@ function BookingPageContent() {
             {listing && (
               <div className="card">
                 <div className="property-card" style={{ marginBottom: '20px' }}>
-                  <div className="prop-thumb">🏠</div>
+                  <div className="prop-thumb">{listing.type === 'hotel' ? '🏨' : '🏠'}</div>
                   <div className="prop-info">
                     <div className="prop-name">{listing.title}</div>
                     <div className="prop-meta">{listing.city}, {listing.state}</div>
+                    {room && (
+                      <div className="prop-meta" style={{ color: '#e8622a', fontWeight: 600 }}>
+                        Room: {room.name}{room.tier ? ` · ${room.tier}` : ''}
+                      </div>
+                    )}
                     <div className="prop-rating">★ {listing.rating} · {listing.review_count} reviews</div>
                     {listing.is_instant_book && (
                       <div className="instant-badge">⚡ Instant book</div>
@@ -375,7 +421,7 @@ function BookingPageContent() {
 
                 {displayBreakdown && (
                   <div className="breakdown">
-                    <div style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '14px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: '14px' }}>
                       Price breakdown
                     </div>
                     <div className="br-row">
@@ -388,9 +434,50 @@ function BookingPageContent() {
                       <span className="br-label">Cleaning fee</span>
                       <span>${displayBreakdown.cleaningFee}</span>
                     </div>
+                    {displayBreakdown.discountAmount > 0 && (
+                      <div className="br-row" style={{ color: '#16A34A' }}>
+                        <span className="br-label">🏷️ Promo ({displayBreakdown.promoCode})</span>
+                        <span>−${displayBreakdown.discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="br-row total">
                       <span>Total</span>
                       <span>${displayBreakdown.total.toLocaleString()}</span>
+                    </div>
+
+                    {/* Promo code input */}
+                    <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--sr-border-solid,#E8E2D9)' }}>
+                      {appliedPromo ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)', borderRadius: '10px', padding: '10px 14px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#16A34A' }}>✓ Promo applied</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--sr-text)', fontWeight: 600 }}>{appliedPromo.name}</div>
+                          </div>
+                          <button onClick={() => { setAppliedPromo(null); setPromoInput('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sr-sub)', fontSize: '0.78rem', fontFamily: 'inherit' }}>Remove</button>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                              type="text"
+                              placeholder="Promo code"
+                              value={promoInput}
+                              onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null) }}
+                              onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                              disabled={step !== 'summary'}
+                              style={{ flex: 1, padding: '9px 12px', borderRadius: '10px', border: '1px solid var(--sr-border-solid,#E8E2D9)', background: 'var(--sr-surface,#F5F0EB)', fontSize: '0.84rem', fontFamily: 'inherit', color: 'var(--sr-text)', outline: 'none' }}
+                            />
+                            <button
+                              onClick={applyPromo}
+                              disabled={promoLoading || !promoInput.trim() || step !== 'summary'}
+                              style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid var(--sr-border-solid,#E8E2D9)', background: 'var(--sr-card)', fontSize: '0.82rem', fontWeight: 700, cursor: promoLoading || !promoInput.trim() ? 'not-allowed' : 'pointer', color: 'var(--sr-text)', fontFamily: 'inherit' }}
+                            >
+                              {promoLoading ? '…' : 'Apply'}
+                            </button>
+                          </div>
+                          {promoError && <div style={{ fontSize: '0.74rem', color: '#EF4444', marginTop: '6px' }}>{promoError}</div>}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

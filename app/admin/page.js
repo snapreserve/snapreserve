@@ -56,23 +56,23 @@ export default async function AdminOverview() {
     <>
       <style>{`
         /* Topbar */
-        .ov-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 68px; border-bottom: 1px solid var(--sr-border); background: var(--sr-surface); position: sticky; top: 0; z-index: 50; }
-        .ov-topbar-left h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 700; color: var(--sr-text); }
-        .ov-topbar-left .ov-date { font-size: 0.72rem; color: var(--sr-sub); margin-top: 2px; }
+        .ov-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 60px; border-bottom: 1px solid var(--sr-border); background: var(--sr-surface); position: sticky; top: 0; z-index: 50; }
+        .ov-topbar-left h1 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--sr-text); }
+        .ov-topbar-left .ov-date { font-size: 0.7rem; color: var(--sr-sub); margin-top: 2px; }
 
         /* Content */
-        .ov-content { padding: 36px 32px; }
+        .ov-content { padding: 28px 32px; }
 
         /* Section label */
-        .ov-section-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sr-sub); margin-bottom: 14px; }
+        .ov-section-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 12px; }
 
         /* Stat grid */
-        .ov-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 36px; }
-        .ov-stat-card { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 14px; padding: 22px; text-decoration: none; display: block; transition: border-color 0.15s; }
+        .ov-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+        .ov-stat-card { background: var(--sr-surface); border: 1px solid var(--sr-border); border-radius: 12px; padding: 20px; text-decoration: none; display: block; transition: border-color 0.13s; }
         .ov-stat-card:hover { border-color: var(--sr-orange); }
-        .ov-stat-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 10px; }
-        .ov-stat-val { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-        .ov-stat-hint { font-size: 0.7rem; color: var(--sr-sub); }
+        .ov-stat-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sr-sub); margin-bottom: 10px; }
+        .ov-stat-val { font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: 500; line-height: 1; margin-bottom: 6px; }
+        .ov-stat-hint { font-size: 0.68rem; color: var(--sr-sub); }
 
         /* Color utils */
         .c-orange { color: var(--sr-orange); }

@@ -3,7 +3,7 @@ import { getAdminSession } from '@/lib/get-admin-session'
 import { redirect } from 'next/navigation'
 import InvitesClient from './InvitesClient'
 
-async function getInvites() {
+async function getAdminInvites() {
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('admin_invites')
@@ -21,12 +21,28 @@ async function getInvites() {
   })
 }
 
+async function getUserInvites() {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('user_invites')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const now = new Date()
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+  return (data ?? []).map(inv => {
+    let status = inv.status
+    if (status === 'pending' && new Date(inv.expires_at) < now) status = 'expired'
+    return { ...inv, status, link: `${BASE_URL}/join?token=${inv.token}` }
+  })
+}
+
 export default async function InvitesPage() {
   const { role, error } = await getAdminSession()
   if (error === 'unauthenticated') redirect('/login?next=/superadmin/invites')
   if (error === 'mfa_required') redirect('/admin/mfa-verify?next=/superadmin/invites')
   if (role !== 'super_admin') redirect('/admin')
 
-  const invites = await getInvites()
-  return <InvitesClient initialInvites={invites} />
+  const [invites, userInvites] = await Promise.all([getAdminInvites(), getUserInvites()])
+  return <InvitesClient initialInvites={invites} initialUserInvites={userInvites} />
 }

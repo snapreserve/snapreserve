@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ThemeToggle from '@/app/components/ThemeToggle'
+import HostSidebar from '@/app/host/_components/HostSidebar'
+import { ROLE_NAV } from '@/app/host/_components/nav-config'
 
 const MSG_TYPE_CFG = {
   info:         { label: 'Message',      color: '#93C5FD', bg: 'rgba(96,165,250,0.1)'   },
@@ -19,6 +21,17 @@ function fmtMsg(d) {
   if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`
   if (diff < 86400000) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function fmtDue(d) {
+  if (!d) return 'No due date'
+  const today     = new Date().toISOString().slice(0, 10)
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  const tomorrow  = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+  if (d === today)     return 'Today'
+  if (d === yesterday) return 'Yesterday'
+  if (d === tomorrow)  return 'Tomorrow'
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function MessagesTab({ userId, onRead }) {
@@ -423,57 +436,6 @@ function getGreeting() {
   return 'Good evening'
 }
 
-function MiniCalendar() {
-  const now    = new Date()
-  const year   = now.getFullYear()
-  const month  = now.getMonth()
-  const today  = now.getDate()
-  const first  = new Date(year, month, 1).getDay()
-  const days   = new Date(year, month + 1, 0).getDate()
-  const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const cells = []
-  for (let i = 0; i < first; i++) cells.push(null)
-  for (let d = 1; d <= days; d++) cells.push(d)
-
-  return (
-    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', padding: '24px', maxWidth: '400px' }}>
-      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.25rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '16px', textAlign: 'center' }}>{monthName}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-          <div key={d} style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--sr-sub)', padding: '4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
-        ))}
-        {cells.map((d, i) => (
-          <div
-            key={i}
-            style={{
-              padding: '8px 4px', fontSize: '0.82rem', fontWeight: d === today ? 700 : 400,
-              borderRadius: '8px',
-              background: d === today ? 'var(--sr-orange)' : 'transparent',
-              color: d === today ? 'white' : d ? 'var(--sr-text)' : 'transparent',
-              cursor: d ? 'default' : 'default',
-            }}
-          >
-            {d || ''}
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: '4px' }}>Legend</div>
-        {[
-          { color: 'var(--sr-orange)', label: 'Today' },
-          { color: 'var(--sr-green)',  label: 'Booked' },
-          { color: 'var(--sr-blue)',   label: 'Blocked' },
-          { color: 'var(--sr-yellow)', label: 'Pending check-in' },
-        ].map(({ color, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: color, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.78rem', color: 'var(--sr-muted)' }}>{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function HostDashboard() {
   const router = useRouter()
@@ -498,6 +460,7 @@ export default function HostDashboard() {
   // Caller identity
   const [myRole,         setMyRole]         = useState(null)   // 'owner'|'manager'|'staff'|'finance'
   const [myHostId,       setMyHostId]       = useState(null)
+  const [orgName,        setOrgName]        = useState(null)
   // Team management
   const [teamData,       setTeamData]       = useState(null)   // { host_id, host_name, caller_role, members }
   const [teamLoading,    setTeamLoading]     = useState(false)
@@ -522,6 +485,13 @@ export default function HostDashboard() {
   const [hostCancelReason,     setHostCancelReason]     = useState('')
   const [hostCancelling,       setHostCancelling]       = useState(false)
   const [hostCancelResult,     setHostCancelResult]     = useState(null)
+  // Calendar
+  const [calYear,          setCalYear]          = useState(new Date().getFullYear())
+  const [calMonth,         setCalMonth]         = useState(new Date().getMonth())    // 0-indexed
+  const [calSelected,      setCalSelected]      = useState(null)                     // 'YYYY-MM-DD'
+  const [calBookings,      setCalBookings]      = useState([])
+  const [calLoading,       setCalLoading]       = useState(false)
+  const [calPropFilter,    setCalPropFilter]    = useState('all')
   // Reviews
   const [hostReviews,          setHostReviews]          = useState([])
   const [hostReviewsMeta,      setHostReviewsMeta]      = useState({ total: 0, page: 1, limit: 20 })
@@ -536,6 +506,44 @@ export default function HostDashboard() {
   const [customRoles,          setCustomRoles]          = useState([])
   const [rolesLoading,         setRolesLoading]         = useState(false)
   const [myCustomRole,         setMyCustomRole]         = useState(null) // { id, name, permissions }
+  // "View As" preview mode — owner can temporarily see the portal as a team member
+  const [viewingAs, setViewingAs] = useState(null) // { id, name, role, email, allowed_listing_ids }
+  // Property access editor modal (per-member)
+  const [accessEditMember, setAccessEditMember] = useState(null) // member object being edited
+  // Property access modal (per-property — manage which members can access a listing)
+  const [propAccessModal, setPropAccessModal] = useState(null) // listing object being edited
+  // Property Access page UI state
+  const [accessFilter, setAccessFilter] = useState('all')  // 'all'|'full'|'partial'|'none'
+  const [accessView,   setAccessView]   = useState('grid') // 'grid'|'list'
+  // Team sub-tabs + tasks (DB-backed)
+  const [teamSubTab,         setTeamSubTab]         = useState('overview')
+  const [taskFilter,         setTaskFilter]         = useState('all')
+  const [taskPropertyFilter, setTaskPropertyFilter] = useState('all')
+  const [tasks,              setTasks]              = useState([])
+  const [tasksLoaded,        setTasksLoaded]        = useState(false)
+  const [taskModal,          setTaskModal]          = useState(false)
+  const [taskForm,           setTaskForm]           = useState({ title: '', description: '', listing_id: '', assigned_to: '', due_date: '', status: 'scheduled' })
+  const [taskFormErr,        setTaskFormErr]        = useState('')
+  const [taskSaving,         setTaskSaving]         = useState(false)
+  // Expenses (UI-only with mock data)
+  const [expCatFilter,  setExpCatFilter]  = useState('all')
+  const [expenseModal,  setExpenseModal]  = useState(false)
+  const [expenses,      setExpenses]      = useState([
+    { id: 1, date: '2026-03-01', desc: 'Professional cleaning service',  category: 'Cleaning',     property: 'All Properties', amount: 280 },
+    { id: 2, date: '2026-02-28', desc: 'Plumbing repair — master bath',  category: 'Maintenance',  property: 'Beach Villa',    amount: 195 },
+    { id: 3, date: '2026-02-25', desc: 'Guest toiletries & supplies',    category: 'Supplies',     property: 'City Loft',      amount: 64  },
+    { id: 4, date: '2026-02-20', desc: 'Property insurance premium',     category: 'Insurance',    property: 'All Properties', amount: 420 },
+    { id: 5, date: '2026-02-15', desc: 'Photography for new listing',    category: 'Marketing',    property: 'Garden Studio',  amount: 350 },
+  ])
+  const [newExp, setNewExp] = useState({ date: '', desc: '', category: 'Cleaning', property: '', amount: '' })
+  // Promotions
+  const [promotions,    setPromotions]    = useState([])
+  const [promoLoaded,   setPromoLoaded]   = useState(false)
+  const [promoModal,    setPromoModal]    = useState(false)
+  const [editingPromo,  setEditingPromo]  = useState(null) // null = create, obj = edit
+  const [promoForm,     setPromoForm]     = useState({ code: '', name: '', description: '', discount_type: 'percentage', discount_value: '', min_nights: 1, min_booking_amount: 0, max_uses: '', is_active: true, auto_apply: false, starts_at: '', ends_at: '', listing_scope: 'all', listing_ids: [] })
+  const [promoSaving,   setPromoSaving]   = useState(false)
+  const [promoToast,    setPromoToast]    = useState(null)
   // Custom role create form
   const [newRoleName,          setNewRoleName]          = useState('')
   const [newRolePerms,         setNewRolePerms]         = useState([])
@@ -578,14 +586,18 @@ export default function HostDashboard() {
       setMyRole(resolvedRole)
       setMyHostId(resolvedHostId)
 
-      const [{ data: prof }, { data: lists }] = await Promise.all([
+      const [{ data: prof }, { data: lists }, { data: hostOrg }] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
         resolvedHostId
           ? supabase.from('listings').select('*').eq('host_id', resolvedHostId).order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
+        resolvedHostId
+          ? supabase.from('hosts').select('display_name').eq('id', resolvedHostId).maybeSingle()
+          : Promise.resolve({ data: null }),
       ])
 
       setProfile(prof)
+      if (hostOrg?.display_name) setOrgName(hostOrg.display_name)
       const listArr = lists || []
       setListings(listArr)
 
@@ -811,6 +823,70 @@ export default function HostDashboard() {
     }
   }
 
+  async function loadPromotions() {
+    try {
+      const res  = await fetch('/api/host/promotions')
+      const data = await res.json()
+      if (res.ok) setPromotions(data.promotions || [])
+    } catch {}
+    finally { setPromoLoaded(true) }
+  }
+
+  async function loadTasks() {
+    try {
+      const res  = await fetch('/api/host/tasks')
+      if (!res.ok) return
+      const data = await res.json()
+      setTasks(data.tasks || [])
+      setTasksLoaded(true)
+    } catch {}
+  }
+
+  async function handleCreateTask(e) {
+    e.preventDefault()
+    setTaskFormErr('')
+    if (!taskForm.listing_id) { setTaskFormErr('Please select a property.'); return }
+    if (!taskForm.title.trim()) { setTaskFormErr('Please enter a task title.'); return }
+    setTaskSaving(true)
+    try {
+      const res  = await fetch('/api/host/tasks', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          title:       taskForm.title.trim(),
+          description: taskForm.description.trim() || null,
+          listing_id:  taskForm.listing_id,
+          assigned_to: taskForm.assigned_to || null,
+          due_date:    taskForm.due_date || null,
+          status:      taskForm.status,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setTaskFormErr(data.error || 'Failed to create task.'); return }
+      setTasks(prev => [data.task, ...prev])
+      setTaskModal(false)
+      setTaskForm({ title: '', description: '', listing_id: '', assigned_to: '', due_date: '', status: 'scheduled' })
+    } catch {
+      setTaskFormErr('Something went wrong. Please try again.')
+    } finally {
+      setTaskSaving(false)
+    }
+  }
+
+  async function handleTaskStatus(id, newStatus) {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t))
+    await fetch(`/api/host/tasks/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status: newStatus }),
+    }).catch(() => {})
+  }
+
+  async function handleDeleteTask(id) {
+    setTasks(prev => prev.filter(t => t.id !== id))
+    await fetch(`/api/host/tasks/${id}`, { method: 'DELETE' }).catch(() => {})
+  }
+
   async function loadTeam() {
     if (teamLoading) return
     setTeamLoading(true)
@@ -910,11 +986,12 @@ export default function HostDashboard() {
       })
       const data = await res.json()
       if (data.success) {
-        if (action === 'resend_invite' && data.invite_link) {
+        if ((action === 'resend_invite' || action === 'get_invite_link') && data.invite_link) {
           setInviteLink(data.invite_link)
-          showToast('New invite link generated', 'success')
+          navigator.clipboard.writeText(data.invite_link).catch(() => {})
+          showToast(action === 'resend_invite' ? 'Invite resent & link copied!' : 'Invite link copied!', 'success')
         } else {
-          showToast(action === 'remove' ? 'Member removed' : 'Role updated', 'success')
+          showToast(action === 'remove' ? 'Invite cancelled' : 'Role updated', 'success')
         }
         loadTeam()
       } else {
@@ -962,6 +1039,19 @@ export default function HostDashboard() {
       if (data.metrics) setHostMetrics(data.metrics)
     } finally {
       setHostBookingsLoading(false)
+    }
+  }
+
+  async function loadCalBookings(propId = calPropFilter) {
+    setCalLoading(true)
+    try {
+      const p = new URLSearchParams({ page: '1', limit: '300' })
+      if (propId !== 'all') p.set('listing_id', propId)
+      const res  = await fetch(`/api/host/bookings?${p.toString()}`)
+      const data = await res.json()
+      if (res.ok) setCalBookings(data.bookings || [])
+    } finally {
+      setCalLoading(false)
     }
   }
 
@@ -1024,7 +1114,7 @@ export default function HostDashboard() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sr-bg)' }}>
-      <div style={{ color: 'var(--sr-sub)', fontSize: '0.9rem', fontFamily: 'Syne, sans-serif' }}>Loading…</div>
+      <div style={{ color: 'var(--sr-sub)', fontSize: '0.9rem', fontFamily: 'var(--sr-font-sans)' }}>Loading…</div>
     </div>
   )
 
@@ -1049,10 +1139,10 @@ export default function HostDashboard() {
     return (
       <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s', position: 'relative' }}>
         {/* Image */}
-        <div style={{ height: compact ? '120px' : '160px', position: 'relative', overflow: 'hidden', background: 'var(--sr-card2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ height: compact ? '120px' : '200px', position: 'relative', overflow: 'hidden', background: 'var(--sr-card2)', borderRadius: '16px 16px 0 0' }}>
           {Array.isArray(l.images) && l.images[0]
-            ? <img src={l.images[0]} alt={l.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <div style={{ fontSize: '3rem', opacity: 0.3 }}>{l.type === 'hotel' ? '🏨' : '🏠'}</div>
+            ? <img src={l.images[0]} alt={l.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', opacity: 0.3 }}>{l.type === 'hotel' ? '🏨' : '🏠'}</div>
           }
           <div style={{ position: 'absolute', top: '10px', left: '10px', padding: '3px 10px', borderRadius: '100px', fontSize: '0.66rem', fontWeight: 700, background: cfg.bg + '22', color: cfg.color, border: `1px solid ${cfg.color}44` }}>
             {cfg.label}
@@ -1167,8 +1257,8 @@ export default function HostDashboard() {
             ))}
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {/* Action buttons — owner/manager only */}
+          {(myRole === 'owner' || myRole === 'manager') && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {l.status === 'live' && (
               <>
                 <a href={`/listings/${l.id}`} style={{ borderRadius: '8px', padding: '9px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', background: 'var(--sr-card2)', color: 'var(--sr-muted)' }} target="_blank" rel="noreferrer">View listing</a>
@@ -1221,7 +1311,7 @@ export default function HostDashboard() {
                 <a href={`/listings/${l.id}?preview=1`} style={{ borderRadius: '8px', padding: '9px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', background: 'var(--sr-card2)', color: 'var(--sr-muted)' }} target="_blank" rel="noreferrer">Preview</a>
               </>
             )}
-          </div>
+          </div>}
 
           {/* Edit policies */}
           {!['draft', 'rejected'].includes(l.status) && (
@@ -1334,68 +1424,64 @@ export default function HostDashboard() {
               })()}
             </div>
           )}
+
+          {/* Team Access — only when team data is loaded and there are non-owner members */}
+          {teamData && (() => {
+            const nonOwners = (teamData.members || []).filter(m => m.status === 'active' && m.role !== 'owner')
+            if (nonOwners.length === 0) return null
+            const withAccess = nonOwners.filter(m => !m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id))
+            const visible = withAccess.slice(0, 3)
+            const extra = withAccess.length - visible.length
+            return (
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--sr-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {visible.map((m, i) => {
+                        const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
+                        return (
+                          <div key={m.id} title={m.full_name || m.email} style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--sr-orange)', border: '2px solid var(--sr-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'white', marginLeft: i > 0 ? -7 : 0, position: 'relative', zIndex: 3 - i }}>
+                            {ini}
+                          </div>
+                        )
+                      })}
+                      {extra > 0 && <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--sr-surface)', border: '2px solid var(--sr-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.58rem', fontWeight: 700, color: 'var(--sr-sub)', marginLeft: -7 }}>+{extra}</div>}
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>
+                      {withAccess.length === 0 ? 'No members assigned' : `${withAccess.length} member${withAccess.length !== 1 ? 's' : ''} with access`}
+                    </span>
+                  </div>
+                  {myRole === 'owner' && (
+                    <button
+                      onClick={() => setPropAccessModal(l)}
+                      style={{ background: 'none', border: '1px solid var(--sr-border)', borderRadius: 7, padding: '4px 10px', fontSize: '0.68rem', fontWeight: 700, color: 'var(--sr-sub)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sr-orange)'; e.currentTarget.style.color = 'var(--sr-orange)' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sr-border)'; e.currentTarget.style.color = 'var(--sr-sub)' }}
+                    >
+                      {withAccess.length === 0 ? 'Assign Access' : 'Manage Access'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
     )
   }
 
-  // Sidebar nav config
-  const ROLE_NAV = {
-    owner:   new Set(['overview','bookings','properties','calendar','messages','earnings','payouts','team','permissions','access','activity','reviews','settings']),
-    manager: new Set(['overview','bookings','properties','calendar','messages','activity','reviews']),
-    staff:   new Set(['overview','bookings','calendar','messages']),
-    finance: new Set(['overview','earnings','payouts','activity']),
-  }
-  // Custom role: use permissions[] from host_custom_roles
-  const customNavSet = myCustomRole
-    ? new Set(['overview', ...(myCustomRole.permissions || [])])
-    : null
-  const allowedNav = myRole === 'custom' && customNavSet
-    ? customNavSet
-    : myRole ? (ROLE_NAV[myRole] || ROLE_NAV.owner) : ROLE_NAV.owner
+  // effectiveAllowedNav still used by content sections to gate Quick Actions etc.
+  const customNavSet = myCustomRole ? new Set(['overview', ...(myCustomRole.permissions || [])]) : null
+  const allowedNav = myRole === 'custom' && customNavSet ? customNavSet : (ROLE_NAV[myRole] || ROLE_NAV.owner)
+  const effectiveAllowedNav = viewingAs ? (ROLE_NAV[viewingAs.role] || ROLE_NAV.staff) : allowedNav
 
   const pendingCount = teamData?.members?.filter(m => m.status === 'pending').length || 0
-  const NAV_SECTIONS = [
-    {
-      title: 'MAIN',
-      items: [
-        { id: 'overview',    label: 'Overview',    icon: '⬛' },
-        { id: 'bookings',    label: 'Bookings',    icon: '📋', badge: 0 },
-        { id: 'properties',  label: 'Properties',  icon: '🏨' },
-        { id: 'calendar',    label: 'Calendar',    icon: '📅' },
-        { id: 'messages',    label: 'Messages',    icon: '💬', badge: totalUnread },
-      ],
-    },
-    {
-      title: 'FINANCE',
-      items: [
-        { id: 'earnings', label: 'Earnings', icon: '💰' },
-        { id: 'payouts',  label: 'Payouts',  icon: '🏦' },
-      ],
-    },
-    {
-      title: 'TEAM',
-      items: [
-        { id: 'team',        label: 'Team Members',        icon: '👥', badge: pendingCount },
-        { id: 'permissions', label: 'Roles & Permissions', icon: '🔐' },
-        { id: 'access',      label: 'Property Access',     icon: '🏢' },
-        { id: 'activity',    label: 'Activity Log',        icon: '📜' },
-      ],
-    },
-    {
-      title: 'ACCOUNT',
-      items: [
-        { id: 'reviews',  label: 'Reviews',  icon: '⭐' },
-        { id: 'settings', label: 'Settings', icon: '⚙️' },
-      ],
-    },
-  ]
 
   function PlaceholderPage({ icon, title, subtitle }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', gap: '16px' }}>
         <div style={{ fontSize: '3rem' }}>{icon}</div>
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.6rem', fontWeight: 700, color: 'var(--sr-text)' }}>{title}</div>
+        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.6rem', fontWeight: 700, color: 'var(--sr-text)' }}>{title}</div>
         <div style={{ fontSize: '0.88rem', color: 'var(--sr-sub)', maxWidth: '340px', textAlign: 'center', lineHeight: 1.7 }}>{subtitle}</div>
       </div>
     )
@@ -1404,53 +1490,30 @@ export default function HostDashboard() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { font-family: 'Syne', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
+        html, body { font-family: var(--sr-font-sans); background: var(--sr-bg); color: var(--sr-text); }
         .hd-layout { display: flex; min-height: 100vh; background: var(--sr-bg); }
-        .hd-sidebar { width: 240px; background: var(--sr-surface); border-right: 1px solid var(--sr-border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
-        .hd-logo-wrap { padding: 24px 20px 20px; border-bottom: 1px solid var(--sr-border); flex-shrink: 0; }
-        .hd-logo-text { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 700; color: var(--sr-text); text-decoration: none; display: block; letter-spacing: -0.01em; }
-        .hd-logo-text span { color: var(--sr-orange); }
-        .hd-logo-text sup { font-size: 0.55em; vertical-align: super; opacity: 0.7; }
-        .hd-logo-sub { font-size: 0.6rem; font-weight: 700; color: var(--sr-sub); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; }
-        .hd-nav-wrap { flex: 1; padding: 16px 12px; }
-        .hd-nav-section-title { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sr-sub); padding: 0 10px; margin-bottom: 6px; margin-top: 16px; }
-        .hd-nav-section-title:first-child { margin-top: 0; }
-        .hd-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; color: var(--sr-muted); font-size: 0.86rem; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; font-family: 'Syne', sans-serif; }
-        .hd-nav-item:hover { background: var(--sr-overlay-xs); color: var(--sr-text); }
-        .hd-nav-item.active { background: var(--sr-orange); color: white; font-weight: 700; }
-        .hd-nav-badge { display: inline-flex; align-items: center; justify-content: center; background: var(--sr-red); color: white; border-radius: 100px; font-size: 0.58rem; font-weight: 800; min-width: 16px; height: 16px; padding: 0 4px; margin-left: auto; }
-        .hd-sidebar-footer { padding: 14px 12px; border-top: 1px solid var(--sr-border); flex-shrink: 0; }
-        .hd-user-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: default; margin-bottom: 8px; }
-        .hd-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--sr-orange); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: white; flex-shrink: 0; font-family: 'Syne', sans-serif; }
-        .hd-user-name { font-size: 0.8rem; font-weight: 700; color: var(--sr-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .hd-user-role { font-size: 0.62rem; color: var(--sr-sub); margin-top: 1px; }
-        .hd-guest-link { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; text-decoration: none; font-size: 0.78rem; font-weight: 600; color: var(--sr-muted); background: var(--sr-overlay-xs); border: 1px solid var(--sr-border); transition: all 0.15s; margin-bottom: 6px; }
-        .hd-guest-link:hover { color: var(--sr-text); background: var(--sr-overlay-sm); }
-        .hd-logout-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 9px; font-size: 0.78rem; font-weight: 600; color: var(--sr-sub); background: none; border: none; cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s; }
-        .hd-logout-btn:hover { color: var(--sr-red); background: var(--sr-redl); }
         .hd-main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         .hd-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 68px; border-bottom: 1px solid var(--sr-border); background: var(--sr-surface); position: sticky; top: 0; z-index: 50; gap: 16px; }
-        .hd-greeting { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 600; color: var(--sr-text); }
+        .hd-greeting { font-family: var(--sr-font-display); font-size: 1.15rem; font-weight: 600; color: var(--sr-text); }
         .hd-date { font-size: 0.72rem; color: var(--sr-sub); margin-top: 2px; }
         .hd-topbar-right { display: flex; align-items: center; gap: 10px; }
-        .hd-add-btn { background: var(--sr-orange); color: white; border: none; border-radius: 10px; padding: 9px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.15s; white-space: nowrap; }
+        .hd-add-btn { background: var(--sr-orange); color: white; border: none; border-radius: 10px; padding: 9px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: var(--sr-font-sans); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.15s; white-space: nowrap; }
         .hd-add-btn:hover { opacity: 0.88; }
         .hd-bell { position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--sr-border); background: transparent; cursor: pointer; font-size: 1rem; color: var(--sr-muted); transition: all 0.15s; }
         .hd-bell:hover { border-color: var(--sr-orange); color: var(--sr-text); }
         .hd-bell-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--sr-red); border: 2px solid var(--sr-surface); }
         .hd-content { padding: 32px; flex: 1; }
-        .hd-page-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: var(--sr-text); margin-bottom: 4px; }
+        .hd-page-title { font-family: var(--sr-font-display); font-size: 1.8rem; font-weight: 700; color: var(--sr-text); margin-bottom: 4px; }
         .hd-page-sub { font-size: 0.84rem; color: var(--sr-sub); margin-bottom: 28px; }
         .hd-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
         .hd-stat-card { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 14px; padding: 20px 22px; }
         .hd-stat-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sr-sub); margin-bottom: 10px; }
-        .hd-stat-val { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--sr-text); line-height: 1; margin-bottom: 6px; }
+        .hd-stat-val { font-family: var(--sr-font-display); font-size: 2.2rem; font-weight: 700; color: var(--sr-text); line-height: 1; margin-bottom: 6px; }
         .hd-stat-hint { font-size: 0.72rem; color: var(--sr-sub); }
-        .hd-section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700; color: var(--sr-text); margin-bottom: 14px; }
+        .hd-section-title { font-family: var(--sr-font-display); font-size: 1.2rem; font-weight: 700; color: var(--sr-text); margin-bottom: 14px; }
         .hd-qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-        .hd-qa-btn { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 12px; padding: 16px; text-align: left; cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.18s; text-decoration: none; display: block; color: var(--sr-text); }
+        .hd-qa-btn { background: var(--sr-card); border: 1px solid var(--sr-border); border-radius: 12px; padding: 16px; text-align: left; cursor: pointer; font-family: var(--sr-font-sans); transition: all 0.18s; text-decoration: none; display: block; color: var(--sr-text); }
         .hd-qa-btn:hover { border-color: var(--sr-orange); background: var(--sr-card2); }
         .hd-qa-icon { font-size: 1.4rem; margin-bottom: 8px; display: block; }
         .hd-qa-label { font-size: 0.82rem; font-weight: 700; color: var(--sr-text); }
@@ -1469,93 +1532,42 @@ export default function HostDashboard() {
         .hd-add-sub { font-size: 0.72rem; color: var(--sr-sub); opacity: 0.7; }
         .hd-empty { text-align: center; padding: 72px 20px; }
         .hd-empty-icon { font-size: 2.8rem; margin-bottom: 16px; }
-        .hd-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: var(--sr-text); }
+        .hd-empty-title { font-family: var(--sr-font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; color: var(--sr-text); }
         .hd-empty-sub { font-size: 0.84rem; color: var(--sr-sub); margin-bottom: 24px; }
-        .hd-toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 12px; font-size: 0.86rem; font-weight: 600; z-index: 9999; animation: hd-fadein 0.2s; max-width: 320px; font-family: 'Syne', sans-serif; }
+        .hd-toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 12px; font-size: 0.86rem; font-weight: 600; z-index: 9999; animation: hd-fadein 0.2s; max-width: 320px; font-family: var(--sr-font-sans); }
         .hd-toast.success { background: var(--sr-green); color: white; }
         .hd-toast.error   { background: var(--sr-red);   color: white; }
         @keyframes hd-fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 1200px) { .hd-stat-grid { grid-template-columns: repeat(2,1fr); } .hd-qa-grid { grid-template-columns: repeat(2,1fr); } .hd-prop-grid { grid-template-columns: repeat(2,1fr); } .hd-prop-preview-grid { grid-template-columns: repeat(2,1fr); } }
         @media (max-width: 900px)  { .hd-stat-grid { grid-template-columns: repeat(2,1fr); } .hd-prop-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 768px)  { .hd-sidebar { display: none; } .hd-main { margin-left: 0; } .hd-content { padding: 20px; } .hd-stat-grid { grid-template-columns: 1fr 1fr; } .hd-qa-grid { grid-template-columns: 1fr 1fr; } .hd-prop-preview-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px)  { .hd-main { margin-left: 0; } .hd-content { padding: 20px; } .hd-stat-grid { grid-template-columns: 1fr 1fr; } .hd-qa-grid { grid-template-columns: 1fr 1fr; } .hd-prop-preview-grid { grid-template-columns: 1fr; } }
       `}</style>
 
       {toast && <div className={`hd-toast ${toast.type}`}>{toast.msg}</div>}
 
       <div className="hd-layout">
-        {/* SIDEBAR */}
-        <aside className="hd-sidebar">
-          <div className="hd-logo-wrap">
-            <a href="/" className="hd-logo-text">Snap<span>Reserve</span><sup>™</sup></a>
-            <div className="hd-logo-sub">Host Portal</div>
-          </div>
-
-          <nav className="hd-nav-wrap">
-            {NAV_SECTIONS.map(section => {
-              const visibleItems = section.items.filter(item => allowedNav.has(item.id))
-              if (!visibleItems.length) return null
-              return (
-                <div key={section.title}>
-                  <div className="hd-nav-section-title">{section.title}</div>
-                  {visibleItems.map(item => (
-                    <button
-                      key={item.id}
-                      className={`hd-nav-item ${activeNav === item.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setActiveNav(item.id)
-                        if (['team','permissions','access','activity'].includes(item.id) && !teamData) loadTeam()
-                        if (['bookings','earnings'].includes(item.id) && hostBookings.length === 0 && !hostBookingsLoading) loadHostBookings('all', 'all', 1)
-                        if (item.id === 'reviews' && !hostReviewsMetrics && !hostReviewsLoading) loadHostReviews('all', 1)
-                      }}
-                    >
-                      <span style={{ fontSize: '1rem', lineHeight: 1 }}>{item.icon}</span>
-                      <span>{item.label}</span>
-                      {item.badge > 0 && (
-                        <span className="hd-nav-badge">{item.badge}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )
-            })}
-          </nav>
-
-          <div className="hd-sidebar-footer">
-            <div className="hd-user-row">
-              <div className="hd-avatar">{initials}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="hd-user-name">{profile?.full_name || 'Host'}</div>
-                <div className="hd-user-role">
-                  {myRole === 'owner'   ? 'Host · Owner'
-                  : myRole === 'manager' ? 'Host · Manager'
-                  : myRole === 'staff'   ? 'Host · Staff'
-                  : myRole === 'finance' ? 'Host · Finance'
-                  : myRole === 'custom' && myCustomRole ? `Host · ${myCustomRole.name}`
-                  : 'Host Account'}
-                </div>
-              </div>
-            </div>
-            {myRole === 'owner' && (
-              <button
-                className="hd-guest-link"
-                style={{ border: 'none', width: '100%', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}
-                onClick={() => setSwitchModal(true)}
-              >
-                <span>🔄</span>
-                <span>Switch to Guest Mode</span>
-              </button>
-            )}
-            {myRole && myRole !== 'owner' && (
-              <div style={{ fontSize: '0.68rem', color: 'var(--sr-sub)', padding: '8px 10px', background: 'var(--sr-overlay-xs)', borderRadius: 8, lineHeight: 1.5 }}>
-                🔐 Team member account. For personal bookings, use a separate guest account.
-              </div>
-            )}
-            <button className="hd-logout-btn" onClick={handleLogout}>
-              <span>↪</span>
-              <span>Sign out</span>
-            </button>
-          </div>
-        </aside>
+        {/* SIDEBAR — shared HostSidebar component */}
+        <HostSidebar
+          activeNav={activeNav}
+          onNavChange={(id) => {
+            setActiveNav(id)
+            if (['team','permissions','access','activity'].includes(id) && !teamData) loadTeam()
+            if (id === 'team' && !tasksLoaded) loadTasks()
+            if (id === 'promotions' && !promoLoaded) loadPromotions()
+            if (['bookings','earnings'].includes(id) && hostBookings.length === 0 && !hostBookingsLoading) loadHostBookings('all', 'all', 1)
+            if (id === 'reviews' && !hostReviewsMetrics && !hostReviewsLoading) loadHostReviews('all', 1)
+            if (id === 'calendar' && calBookings.length === 0 && !calLoading) loadCalBookings('all')
+          }}
+          myRole={myRole}
+          myCustomRole={myCustomRole}
+          viewingAs={viewingAs}
+          userName={profile?.full_name || ''}
+          userAvatar={profile?.avatar_url || null}
+          orgName={orgName}
+          unreadCount={totalUnread}
+          pendingInviteCount={pendingCount}
+          onSwitchToGuest={() => setSwitchModal(true)}
+        />
 
         {/* MAIN */}
         <div className="hd-main">
@@ -1577,6 +1589,47 @@ export default function HostDashboard() {
 
           {/* CONTENT */}
           <div className="hd-content">
+
+            {/* ========== VIEW AS BANNER ========== */}
+            {viewingAs && (() => {
+              const ROLE_PERMS = {
+                manager: ['Edit listings', 'Manage bookings', 'View earnings & reports', 'Reply to guest reviews'],
+                staff:   ['View upcoming bookings', 'Manage check-in calendar', 'Send guest messages'],
+                finance: ['View earnings & payouts', 'Export financial reports', 'View booking revenue'],
+                custom:  ['Permissions defined by host'],
+              }
+              const perms = ROLE_PERMS[viewingAs.role] || []
+              const propAccess = viewingAs.allowed_listing_ids == null
+                ? 'All properties'
+                : viewingAs.allowed_listing_ids.length === 0
+                  ? 'No properties assigned'
+                  : `${viewingAs.allowed_listing_ids.length} propert${viewingAs.allowed_listing_ids.length !== 1 ? 'ies' : 'y'}`
+              return (
+                <div style={{ background: 'rgba(244,96,26,0.07)', border: '1.5px solid rgba(244,96,26,0.3)', borderRadius: 14, padding: '14px 20px', marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                  <div style={{ fontSize: '1.3rem', flexShrink: 0, marginTop: 2 }}>👁</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-orange)', marginBottom: 4 }}>
+                      Previewing as {viewingAs.name}
+                      <span style={{ fontWeight: 400, color: 'var(--sr-sub)', marginLeft: 8, textTransform: 'capitalize' }}>· {viewingAs.role}</span>
+                      <span style={{ fontWeight: 400, color: 'var(--sr-sub)', marginLeft: 8 }}>· {propAccess}</span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', display: 'flex', flexWrap: 'wrap', gap: '4px 10px' }}>
+                      {perms.map(p => (
+                        <span key={p} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ color: '#4ade80', fontSize: '0.7rem' }}>✓</span> {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewingAs(null)}
+                    style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '6px 14px', fontSize: '0.72rem', fontWeight: 700, color: 'var(--sr-text)', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    Exit Preview
+                  </button>
+                </div>
+              )
+            })()}
 
             {/* ========== OVERVIEW ========== */}
             {activeNav === 'overview' && (
@@ -1603,26 +1656,32 @@ export default function HostDashboard() {
                 {/* Quick actions */}
                 <div className="hd-section-title">Quick actions</div>
                 <div className="hd-qa-grid">
-                  <a href="/list-property" className="hd-qa-btn">
-                    <span className="hd-qa-icon">🏠</span>
-                    <div className="hd-qa-label">Add Property</div>
-                    <div className="hd-qa-sub">List a new space</div>
-                  </a>
-                  <button className="hd-qa-btn" style={{ border: '1px solid var(--sr-border)', color: 'var(--sr-text)' }} onClick={() => setActiveNav('properties')}>
-                    <span className="hd-qa-icon">📋</span>
-                    <div className="hd-qa-label">Edit Policies</div>
-                    <div className="hd-qa-sub">Update listing rules</div>
-                  </button>
+                  {myRole === 'owner' && (
+                    <a href="/list-property" className="hd-qa-btn">
+                      <span className="hd-qa-icon">🏠</span>
+                      <div className="hd-qa-label">Add Property</div>
+                      <div className="hd-qa-sub">List a new space</div>
+                    </a>
+                  )}
+                  {effectiveAllowedNav.has('properties') && (
+                    <button className="hd-qa-btn" style={{ border: '1px solid var(--sr-border)', color: 'var(--sr-text)' }} onClick={() => setActiveNav('properties')}>
+                      <span className="hd-qa-icon">📋</span>
+                      <div className="hd-qa-label">Edit Policies</div>
+                      <div className="hd-qa-sub">Update listing rules</div>
+                    </button>
+                  )}
                   <button className="hd-qa-btn" style={{ border: '1px solid var(--sr-border)', color: 'var(--sr-text)' }} onClick={() => setActiveNav('messages')}>
                     <span className="hd-qa-icon">💬</span>
                     <div className="hd-qa-label">View Messages</div>
                     <div className="hd-qa-sub">{totalUnread > 0 ? `${totalUnread} unread` : 'No new messages'}</div>
                   </button>
-                  <button className="hd-qa-btn" style={{ border: '1px solid var(--sr-border)', color: 'var(--sr-text)' }} onClick={() => setSwitchModal(true)}>
-                    <span className="hd-qa-icon">🔄</span>
-                    <div className="hd-qa-label">Switch to Guest</div>
-                    <div className="hd-qa-sub">Browse as a traveler</div>
-                  </button>
+                  {myRole === 'owner' && (
+                    <button className="hd-qa-btn" style={{ border: '1px solid var(--sr-border)', color: 'var(--sr-text)' }} onClick={() => setSwitchModal(true)}>
+                      <span className="hd-qa-icon">🔄</span>
+                      <div className="hd-qa-label">Switch to Guest</div>
+                      <div className="hd-qa-sub">Browse as a traveler</div>
+                    </button>
+                  )}
                 </div>
 
                 {/* Properties preview */}
@@ -1630,9 +1689,9 @@ export default function HostDashboard() {
                 {listings.length === 0 ? (
                   <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🏠</div>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '6px' }}>No properties yet</div>
+                    <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '6px' }}>No properties yet</div>
                     <div style={{ fontSize: '0.82rem', color: 'var(--sr-sub)', marginBottom: '18px' }}>Add your first property to start earning.</div>
-                    <a href="/list-property" className="hd-add-btn" style={{ display: 'inline-flex' }}>+ Add Property</a>
+                    {myRole === 'owner' && <a href="/list-property" className="hd-add-btn" style={{ display: 'inline-flex' }}>+ Add Property</a>}
                   </div>
                 ) : (
                   <div className="hd-prop-preview-grid">
@@ -1671,7 +1730,7 @@ export default function HostDashboard() {
                     </div>
                     <button
                       onClick={() => setActiveNav('messages')}
-                      style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: '9px', padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif', whiteSpace: 'nowrap' }}
+                      style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: '9px', padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', whiteSpace: 'nowrap' }}
                     >
                       Open inbox
                     </button>
@@ -1755,7 +1814,7 @@ export default function HostDashboard() {
                                       ✅ Check In
                                     </a>
                                   )}
-                                  {['confirmed','pending'].includes(b.status) && (
+                                  {['confirmed','pending'].includes(b.status) && (myRole === 'owner' || myRole === 'manager') && (
                                     <button onClick={e => { e.stopPropagation(); setHostCancelModal(b); setHostCancelReason(''); setHostCancelResult(null) }}
                                       style={{ background: 'none', border: '1px solid #f87171', color: '#f87171', borderRadius: 6, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>
                                       Cancel
@@ -1794,7 +1853,7 @@ export default function HostDashboard() {
                     <div className="hd-page-title">Properties</div>
                     <div className="hd-page-sub" style={{ marginBottom: 0 }}>Manage your listings, policies, and status.</div>
                   </div>
-                  <a href="/list-property" className="hd-add-btn">+ Add Property</a>
+                  {myRole === 'owner' && <a href="/list-property" className="hd-add-btn">+ Add Property</a>}
                 </div>
 
                 {listings.length === 0 ? (
@@ -1802,40 +1861,283 @@ export default function HostDashboard() {
                     <div className="hd-empty-icon">🏠</div>
                     <div className="hd-empty-title">No properties yet</div>
                     <div className="hd-empty-sub">List your first space and start earning on SnapReserve™.</div>
-                    <a href="/list-property" className="hd-add-btn" style={{ display: 'inline-flex' }}>+ Add your first property</a>
+                    {myRole === 'owner' && <a href="/list-property" className="hd-add-btn" style={{ display: 'inline-flex' }}>+ Add your first property</a>}
                   </div>
                 ) : (
                   <div className="hd-prop-grid">
                     {listings.map(l => <PropertyCard key={l.id} l={l} />)}
-                    <a href="/list-property" className="hd-add-card">
-                      <div className="hd-add-icon">+</div>
-                      <div className="hd-add-title">Add new property</div>
-                      <div className="hd-add-sub">List your space on SnapReserve™</div>
-                    </a>
+                    {myRole === 'owner' && (
+                      <a href="/list-property" className="hd-add-card">
+                        <div className="hd-add-icon">+</div>
+                        <div className="hd-add-title">Add new property</div>
+                        <div className="hd-add-sub">List your space on SnapReserve™</div>
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* ========== CALENDAR ========== */}
-            {activeNav === 'calendar' && (
-              <div>
-                <div className="hd-page-title">Calendar</div>
-                <div className="hd-page-sub">View your property availability and upcoming stays.</div>
-                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                  <MiniCalendar />
-                  <div style={{ flex: 1, minWidth: '240px' }}>
-                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', padding: '24px' }}>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '14px' }}>Upcoming</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', gap: '10px' }}>
-                        <div style={{ fontSize: '2rem' }}>📅</div>
-                        <div style={{ fontSize: '0.86rem', color: 'var(--sr-sub)', textAlign: 'center' }}>No upcoming bookings. Your calendar is clear.</div>
+            {activeNav === 'calendar' && (() => {
+              const todayStr   = new Date().toISOString().slice(0, 10)
+              const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+              const firstDow    = new Date(calYear, calMonth, 1).getDay()
+              const monthLabel  = new Date(calYear, calMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+              // Build date → bookings map for this month
+              const activeBks = calBookings.filter(b => !['cancelled'].includes(b.status))
+              function pad(n) { return String(n).padStart(2, '0') }
+              function dateStr(y, m, d) { return `${y}-${pad(m+1)}-${pad(d)}` }
+
+              // Tag each calendar date
+              function getDateTags(ds) {
+                const tags = []
+                for (const b of activeBks) {
+                  if (b.check_in === ds)  tags.push({ type: 'checkin',   booking: b })
+                  else if (b.check_out === ds) tags.push({ type: 'checkout', booking: b })
+                  else if (b.check_in < ds && b.check_out > ds) tags.push({ type: 'stay', booking: b })
+                }
+                return tags
+              }
+
+              // Navigate months
+              function prevMonth() {
+                if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
+                else setCalMonth(m => m - 1)
+              }
+              function nextMonth() {
+                if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0) }
+                else setCalMonth(m => m + 1)
+              }
+
+              // Bookings for the selected date
+              const selectedBks = calSelected ? activeBks.filter(b =>
+                b.check_in === calSelected || b.check_out === calSelected ||
+                (b.check_in < calSelected && b.check_out > calSelected)
+              ) : []
+
+              // Upcoming bookings (next 7 days from today)
+              const soon = activeBks
+                .filter(b => b.check_in >= todayStr)
+                .sort((a, b) => a.check_in.localeCompare(b.check_in))
+                .slice(0, 8)
+
+              const STATUS_COLOR = {
+                confirmed:   { bg: '#22c55e22', dot: '#22c55e',  label: 'Confirmed' },
+                checked_in:  { bg: '#3b82f622', dot: '#60a5fa',  label: 'Checked In' },
+                completed:   { bg: '#6b728022', dot: '#9ca3af',  label: 'Completed' },
+                pending:     { bg: '#f59e0b22', dot: '#fcd34d',  label: 'Pending' },
+              }
+
+              const cells = []
+              for (let i = 0; i < firstDow; i++) cells.push(null)
+              for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+
+              const filteredBks = calPropFilter === 'all'
+                ? calBookings
+                : calBookings.filter(b => b.listing_id === calPropFilter)
+
+              return (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <div className="hd-page-title">Calendar</div>
+                      <div className="hd-page-sub">Click any date to see bookings. Navigate months with the arrows.</div>
+                    </div>
+                    {listings.length > 1 && (
+                      <select
+                        value={calPropFilter}
+                        onChange={e => { setCalPropFilter(e.target.value); loadCalBookings(e.target.value) }}
+                        style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '8px 12px', fontSize: '0.82rem', color: 'var(--sr-text)', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                      >
+                        <option value="all">All properties</option>
+                        {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                      </select>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'flex-start' }}>
+                    {/* ── Month grid ── */}
+                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                      {/* Month nav */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--sr-border)' }}>
+                        <button onClick={prevMonth} style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem', color: 'var(--sr-text)', flexShrink: 0 }}>‹</button>
+                        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)' }}>{monthLabel}</div>
+                        <button onClick={nextMonth} style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem', color: 'var(--sr-text)', flexShrink: 0 }}>›</button>
+                      </div>
+
+                      {/* Day headers */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '12px 16px 0' }}>
+                        {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                          <div key={d} style={{ textAlign: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'var(--sr-sub)', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 8 }}>{d}</div>
+                        ))}
+                      </div>
+
+                      {/* Date cells */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, padding: '0 16px 16px' }}>
+                        {cells.map((d, i) => {
+                          if (!d) return <div key={`e${i}`} />
+                          const ds   = dateStr(calYear, calMonth, d)
+                          const tags = getDateTags(ds)
+                          const isToday    = ds === todayStr
+                          const isSelected = ds === calSelected
+                          const hasCheckin  = tags.some(t => t.type === 'checkin')
+                          const hasCheckout = tags.some(t => t.type === 'checkout')
+                          const hasStay     = tags.some(t => t.type === 'stay')
+                          const hasPending  = tags.some(t => t.booking.status === 'pending')
+
+                          let bg = 'transparent'
+                          let textColor = 'var(--sr-text)'
+                          if (isSelected)    { bg = 'var(--sr-orange)';       textColor = 'white' }
+                          else if (isToday)  { bg = 'rgba(244,96,26,0.15)';   textColor = 'var(--sr-orange)' }
+                          else if (hasCheckin)  bg = 'rgba(34,197,94,0.15)'
+                          else if (hasStay)     bg = 'rgba(59,130,246,0.12)'
+                          else if (hasCheckout) bg = 'rgba(245,158,11,0.15)'
+
+                          return (
+                            <button
+                              key={ds}
+                              onClick={() => setCalSelected(isSelected ? null : ds)}
+                              style={{
+                                background: bg, color: textColor,
+                                border: isToday && !isSelected ? '1.5px solid var(--sr-orange)' : '1.5px solid transparent',
+                                borderRadius: 8, padding: '10px 4px', fontSize: '0.82rem',
+                                fontWeight: isToday || isSelected ? 700 : 400,
+                                cursor: 'pointer', fontFamily: 'inherit',
+                                position: 'relative', textAlign: 'center',
+                                transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = isToday ? 'rgba(244,96,26,0.2)' : 'var(--sr-card2)' }}
+                              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = bg }}
+                            >
+                              {d}
+                              {/* Status dots */}
+                              {tags.length > 0 && !isSelected && (
+                                <div style={{ position: 'absolute', bottom: 3, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 2 }}>
+                                  {hasCheckin  && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block' }} />}
+                                  {hasStay     && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#60a5fa', display: 'block' }} />}
+                                  {hasCheckout && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', display: 'block' }} />}
+                                  {hasPending  && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fcd34d', display: 'block' }} />}
+                                </div>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Legend */}
+                      <div style={{ borderTop: '1px solid var(--sr-border)', padding: '12px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                        {[
+                          { color: 'var(--sr-orange)', label: 'Today' },
+                          { color: '#22c55e',           label: 'Check-in' },
+                          { color: '#60a5fa',           label: 'In stay' },
+                          { color: '#f59e0b',           label: 'Check-out' },
+                          { color: '#fcd34d',           label: 'Pending' },
+                        ].map(({ color, label }) => (
+                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, display: 'block', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {calLoading && (
+                        <div style={{ textAlign: 'center', padding: '12px', fontSize: '0.8rem', color: 'var(--sr-sub)' }}>Loading bookings…</div>
+                      )}
+                    </div>
+
+                    {/* ── Right panel ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {/* Selected date detail */}
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)' }}>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>
+                            {calSelected
+                              ? new Date(calSelected + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+                              : 'Select a date'}
+                          </div>
+                          {calSelected && <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 2 }}>{selectedBks.length} booking{selectedBks.length !== 1 ? 's' : ''}</div>}
+                        </div>
+                        {!calSelected ? (
+                          <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>
+                            <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>📅</div>
+                            Click any date to see booking details
+                          </div>
+                        ) : selectedBks.length === 0 ? (
+                          <div style={{ padding: '28px 20px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>
+                            <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>✓</div>
+                            No bookings on this date
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {selectedBks.map(b => {
+                              const sc = STATUS_COLOR[b.status] || STATUS_COLOR.confirmed
+                              const eventType = b.check_in === calSelected ? 'Check-in' : b.check_out === calSelected ? 'Check-out' : 'In stay'
+                              return (
+                                <div key={b.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--sr-border)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 700, background: sc.bg, color: sc.dot, borderRadius: 100, padding: '2px 8px' }}>{eventType}</span>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--sr-sub)' }}>{b.reference || b.id.slice(0,8).toUpperCase()}</span>
+                                  </div>
+                                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 2 }}>{b.guest_name || '—'}</div>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginBottom: 4 }}>{b.listing_title || '—'}</div>
+                                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.68rem', background: 'var(--sr-surface)', color: 'var(--sr-sub)', borderRadius: 6, padding: '2px 7px' }}>
+                                      {b.check_in} → {b.check_out}
+                                    </span>
+                                    <span style={{ fontSize: '0.68rem', background: 'var(--sr-surface)', color: 'var(--sr-sub)', borderRadius: 6, padding: '2px 7px' }}>
+                                      {b.guests} guest{b.guests !== 1 ? 's' : ''}
+                                    </span>
+                                    <span style={{ fontSize: '0.68rem', background: 'var(--sr-surface)', color: 'var(--sr-sub)', borderRadius: 6, padding: '2px 7px' }}>
+                                      ${b.total_amount}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Upcoming check-ins */}
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--sr-border)' }}>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Upcoming</div>
+                        </div>
+                        {soon.length === 0 ? (
+                          <div style={{ padding: '28px 20px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>No upcoming bookings.</div>
+                        ) : (
+                          <div>
+                            {soon.map(b => (
+                              <button
+                                key={b.id}
+                                onClick={() => { setCalSelected(b.check_in); setCalYear(parseInt(b.check_in.slice(0,4))); setCalMonth(parseInt(b.check_in.slice(5,7)) - 1) }}
+                                style={{ width: '100%', padding: '12px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', borderBottom: '1px solid var(--sr-border)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.12s' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--sr-card2)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                              >
+                                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--sr-surface)', border: '1px solid var(--sr-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  <div style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--sr-orange)', textTransform: 'uppercase' }}>{new Date(b.check_in + 'T12:00:00').toLocaleDateString('en-US', { month: 'short' })}</div>
+                                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--sr-text)', lineHeight: 1 }}>{new Date(b.check_in + 'T12:00:00').getDate()}</div>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--sr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.guest_name || '—'}</div>
+                                  <div style={{ fontSize: '0.68rem', color: 'var(--sr-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.listing_title || '—'}</div>
+                                </div>
+                                <span style={{ fontSize: '0.62rem', fontWeight: 700, background: 'rgba(34,197,94,0.1)', color: '#22c55e', borderRadius: 100, padding: '2px 7px', flexShrink: 0 }}>
+                                  {b.nights}n
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* ========== MESSAGES ========== */}
             {activeNav === 'messages' && (
@@ -1891,7 +2193,7 @@ export default function HostDashboard() {
                 {/* Earnings table — completed bookings */}
                 <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Bookings — Earnings Breakdown</div>
+                    <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Bookings — Earnings Breakdown</div>
                     <span style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>{hostBookingsMeta.total} total</span>
                   </div>
                   <div style={{ overflowX: 'auto' }}>
@@ -2110,220 +2412,720 @@ export default function HostDashboard() {
             )}
 
             {/* ========== TEAM MEMBERS ========== */}
-            {activeNav === 'team' && (
-              <div>
-                {/* Org banner */}
-                {teamData?.host_name && (
-                  <div style={{ background: 'linear-gradient(135deg, #F4601A 0%, #c0440e 100%)', borderRadius: 20, padding: '28px 32px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-                    <div>
-                      <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(255,255,255,0.65)', marginBottom: 4 }}>Organisation</div>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.9rem', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 14 }}>{teamData.host_name}</div>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 100, padding: '3px 12px', fontSize: '0.72rem', fontWeight: 600 }}>{listings.length} {listings.length === 1 ? 'Property' : 'Properties'}</span>
-                        <span style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 100, padding: '3px 12px', fontSize: '0.72rem', fontWeight: 600 }}>{teamData.members?.length || 0} Members</span>
-                        <span style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 100, padding: '3px 12px', fontSize: '0.72rem', fontWeight: 600 }}>✓ Verified</span>
-                      </div>
-                    </div>
-                    {teamData.caller_role === 'owner' && (
-                      <button onClick={() => setInviteModal(true)} style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 12, padding: '11px 22px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif', flexShrink: 0 }}>
-                        + Invite Member
-                      </button>
-                    )}
-                  </div>
-                )}
+            {activeNav === 'team' && (() => {
+              const TEAM_RS = {
+                owner:   { bg: 'rgba(244,96,26,0.12)',   text: '#F4601A',  icon: '👑' },
+                manager: { bg: 'rgba(59,130,246,0.12)',  text: '#60a5fa',  icon: '🔵' },
+                staff:   { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80',  icon: '🟢' },
+                finance: { bg: 'rgba(251,191,36,0.12)',  text: '#fcd34d',  icon: '💛' },
+                custom:  { bg: 'rgba(192,132,252,0.12)', text: '#c084fc',  icon: '🎨' },
+              }
+              const TASK_ST = {
+                urgent:      { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   label: 'Urgent' },
+                in_progress: { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', label: 'In Progress' },
+                scheduled:   { color: 'var(--sr-sub)', bg: 'var(--sr-surface)', label: 'Scheduled' },
+                done:        { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   label: 'Done' },
+              }
+              const activeMembers  = teamData?.members?.filter(m => m.status === 'active')  || []
+              const pendingMembers = teamData?.members?.filter(m => m.status === 'pending') || []
+              const todayStr       = new Date().toISOString().slice(0, 10)
+              const filteredTasks  = tasks
+                .filter(t => taskPropertyFilter === 'all' || t.listing_id === taskPropertyFilter)
+                .filter(t => taskFilter === 'all' || t.status === taskFilter)
+              return (
+                <div>
+                  <div className="hd-page-title">Team Management</div>
+                  <div className="hd-page-sub">Invite and manage team members, tasks, and property assignments.</div>
 
-                {/* Stats row */}
-                {teamData && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+                  {/* Sub-tab bar */}
+                  <div style={{ display: 'flex', gap: 4, background: 'var(--sr-surface)', borderRadius: 12, padding: 4, marginBottom: 24, width: 'fit-content' }}>
                     {[
-                      { label: 'Team Size',    val: teamData.members?.length || 0,                                                       hint: 'Total members' },
-                      { label: 'Properties',   val: listings.length,                                                                      hint: 'Active listings' },
-                      { label: 'Active',       val: teamData.members?.filter(m => m.status === 'active').length || 0,                     hint: 'Accepted invites' },
-                      { label: 'Pending',      val: teamData.members?.filter(m => m.status === 'pending').length || 0,                    hint: 'Awaiting acceptance' },
-                    ].map(({ label, val, hint }) => (
-                      <div key={label} className="hd-stat-card">
-                        <div className="hd-stat-label">{label}</div>
-                        <div className="hd-stat-val">{val}</div>
-                        <div className="hd-stat-hint">{hint}</div>
-                      </div>
+                      { key: 'overview',     label: 'Overview' },
+                      { key: 'members',      label: 'Team Members' },
+                      { key: 'tasks',        label: 'Tasks' },
+                      { key: 'properties',   label: 'Properties' },
+                      { key: 'permissions',  label: 'Permissions' },
+                    ].map(t => (
+                      <button key={t.key} onClick={() => setTeamSubTab(t.key)} style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: teamSubTab === t.key ? 'var(--sr-card)' : 'transparent', color: teamSubTab === t.key ? 'var(--sr-text)' : 'var(--sr-muted)', fontWeight: teamSubTab === t.key ? 700 : 600, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', boxShadow: teamSubTab === t.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                        {t.label}
+                      </button>
                     ))}
                   </div>
-                )}
 
-                {teamLoading && !teamData && (
-                  <div style={{ color: 'var(--sr-sub)', fontSize: '0.88rem', padding: '40px 0' }}>Loading team…</div>
-                )}
+                  {teamLoading && !teamData && (
+                    <div style={{ color: 'var(--sr-sub)', fontSize: '0.88rem', padding: '40px 0' }}>Loading team…</div>
+                  )}
 
-                {teamData && (
-                  <>
-                    {/* Generated invite link */}
-                    {inviteLink && (
-                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 14, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '1rem' }}>🔗</span>
-                        <span style={{ flex: 1, fontSize: '0.78rem', color: 'var(--sr-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inviteLink}</span>
-                        <button onClick={() => { navigator.clipboard.writeText(inviteLink); showToast('Copied!', 'success') }} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Copy Link</button>
-                        <button onClick={() => setInviteLink(null)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>✕</button>
+                  {/* ── OVERVIEW sub-tab ── */}
+                  {teamSubTab === 'overview' && (
+                    <div>
+                      {/* Stats row */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+                        {[
+                          { label: 'Team Members', val: teamData?.members?.length || 0,               hint: 'Total invited',   icon: '👥', onClick: () => setTeamSubTab('members') },
+                          { label: 'Tasks Today',  val: tasks.filter(t => t.due_date === todayStr).length, hint: 'Due today',   icon: '✓',  onClick: () => { setTeamSubTab('tasks'); setTaskFilter('all') } },
+                          { label: 'Properties',   val: listings.length,                              hint: 'Active listings', icon: '🏨', onClick: () => setTeamSubTab('properties') },
+                          { label: 'Urgent',       val: tasks.filter(t => t.status === 'urgent').length, hint: 'Need attention', icon: '⚠️', onClick: () => { setTeamSubTab('tasks'); setTaskFilter('urgent') } },
+                        ].map(({ label, val, hint, icon, onClick }) => (
+                          <button key={label} className="hd-stat-card" onClick={onClick} style={{ textAlign: 'left', cursor: 'pointer', border: '1px solid var(--sr-border)', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit', width: '100%' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sr-orange)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--sr-ol)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sr-border)'; e.currentTarget.style.boxShadow = 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                              <div className="hd-stat-label" style={{ margin: 0 }}>{label}</div>
+                              <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+                            </div>
+                            <div className="hd-stat-val" style={{ marginBottom: 4 }}>{val}</div>
+                            <div className="hd-stat-hint">{hint}</div>
+                          </button>
+                        ))}
                       </div>
-                    )}
 
-                    {/* Members table */}
-                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
-                      <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Team Members</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--sr-sub)' }}>
-                            {teamData.members.filter(m => m.status === 'active').length} active · {teamData.members.filter(m => m.status === 'pending').length} pending
-                          </span>
-                          {teamData.caller_role === 'owner' && (
-                            <button onClick={() => setInviteModal(true)} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 16px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                              + Invite
-                            </button>
+                      {/* Quick Actions */}
+                      <div className="hd-section-title" style={{ marginBottom: 14 }}>Quick Actions</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+                        {[
+                          { icon: '➕', label: 'Invite Member',    sub: 'Add a team member',    action: () => setInviteModal(true) },
+                          { icon: '📋', label: 'View Tasks',       sub: 'Manage all tasks',      action: () => setTeamSubTab('tasks') },
+                          { icon: '🏨', label: 'Assign Property',  sub: 'Manage access',         action: () => setTeamSubTab('properties') },
+                          { icon: '🔐', label: 'Role Permissions', sub: 'View role access',      action: () => setTeamSubTab('permissions') },
+                        ].map(qa => (
+                          <button key={qa.label} onClick={qa.action} className="hd-qa-btn">
+                            <span className="hd-qa-icon">{qa.icon}</span>
+                            <div className="hd-qa-label">{qa.label}</div>
+                            <div className="hd-qa-sub">{qa.sub}</div>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Two-column: members + tasks */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        {/* Members list */}
+                        <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Team Members</div>
+                            {teamData?.caller_role === 'owner' && (
+                              <button onClick={() => setInviteModal(true)} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>+ Invite</button>
+                            )}
+                          </div>
+                          {activeMembers.slice(0, 5).map(m => {
+                            const rs = TEAM_RS[m.role] || TEAM_RS.staff
+                            const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
+                            return (
+                              <div key={m.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: '50%', background: rs.bg, border: `1px solid ${rs.text}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.76rem', fontWeight: 700, color: rs.text, flexShrink: 0 }}>{ini}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--sr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.full_name || m.email || '—'}</div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', textTransform: 'capitalize' }}>{m.role}</div>
+                                </div>
+                                <span style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', borderRadius: 100, padding: '2px 9px', fontSize: '0.65rem', fontWeight: 700 }}>Active</span>
+                              </div>
+                            )
+                          })}
+                          {activeMembers.length === 0 && (
+                            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>
+                              No active members yet.{' '}
+                              {teamData?.caller_role === 'owner' && <button onClick={() => setInviteModal(true)} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>Invite one →</button>}
+                            </div>
+                          )}
+                          {activeMembers.length > 5 && (
+                            <div style={{ padding: '10px 20px', textAlign: 'center' }}>
+                              <button onClick={() => setTeamSubTab('members')} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', fontSize: '0.8rem' }}>
+                                View all {activeMembers.length} members →
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Recent tasks */}
+                        <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Recent Tasks</div>
+                            <button onClick={() => setTeamSubTab('tasks')} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', fontSize: '0.78rem' }}>View all →</button>
+                          </div>
+                          {tasks.slice(0, 4).map(task => {
+                            const st = TASK_ST[task.status] || TASK_ST.scheduled
+                            return (
+                              <div key={task.id} style={{ padding: '12px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.84rem', fontWeight: 600, color: task.status === 'done' ? 'var(--sr-sub)' : 'var(--sr-text)', textDecoration: task.status === 'done' ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.title}</div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', marginTop: 2 }}>🏨 {task.listing_title}{task.due_date ? ` · ${fmtDue(task.due_date)}` : ''}</div>
+                                </div>
+                                <span style={{ background: st.bg, color: st.color, borderRadius: 100, padding: '2px 9px', fontSize: '0.65rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
+                              </div>
+                            )
+                          })}
+                          {tasks.length === 0 && (
+                            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>
+                              No tasks yet.{' '}
+                              <button onClick={() => setTeamSubTab('tasks')} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>Add one →</button>
+                            </div>
                           )}
                         </div>
                       </div>
-                      <div style={{ overflowX: 'auto' }}>
+                    </div>
+                  )}
+
+                  {/* ── MEMBERS sub-tab ── */}
+                  {teamSubTab === 'members' && (
+                    <div>
+                      {inviteLink && (
+                        <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 14, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <span>🔗</span>
+                          <span style={{ flex: 1, fontSize: '0.78rem', color: 'var(--sr-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inviteLink}</span>
+                          <button onClick={() => { navigator.clipboard.writeText(inviteLink); showToast('Copied!') }} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Copy Link</button>
+                          <button onClick={() => setInviteLink(null)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>✕</button>
+                        </div>
+                      )}
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+                        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Team Members</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--sr-sub)' }}>{activeMembers.length} active · {pendingMembers.length} pending</span>
+                            {teamData?.caller_role === 'owner' && (
+                              <button onClick={() => setInviteModal(true)} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 9, padding: '7px 16px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>+ Invite</button>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
+                                {['Member', 'Role', 'Property Access', 'Status', 'Actions'].map(h => (
+                                  <th key={h} style={{ padding: '11px 20px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(teamData?.members || []).filter(m => m.status !== 'pending').map((m) => {
+                                const rs = TEAM_RS[m.role] || TEAM_RS.staff
+                                const customRole = m.role === 'custom' ? customRoles.find(cr => cr.id === m.custom_role_id) : null
+                                const roleLabel = customRole ? customRole.name : m.role
+                                const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
+                                const isBusy = !!memberActions[m.id]
+                                const isOwner = m.role === 'owner'
+                                return (
+                                  <tr key={m.id} style={{ borderBottom: '1px solid var(--sr-border)' }}>
+                                    <td style={{ padding: '14px 20px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: rs.bg, border: `1px solid ${rs.text}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, color: rs.text, flexShrink: 0 }}>{ini}</div>
+                                        <div>
+                                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--sr-text)', lineHeight: 1.3 }}>{m.full_name || m.email || '—'}</div>
+                                          {m.full_name && m.email && <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>{m.email}</div>}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td style={{ padding: '14px 20px' }}>
+                                      <span style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.text}33`, borderRadius: 100, padding: '4px 12px', fontSize: '0.68rem', fontWeight: 700, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{rs.icon} {roleLabel}</span>
+                                    </td>
+                                    <td style={{ padding: '14px 20px' }}>
+                                      {!isOwner && teamData?.caller_role === 'owner' ? (
+                                        <button
+                                          onClick={() => setAccessEditMember(m)}
+                                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--sr-card2)', color: m.allowed_listing_ids ? 'var(--sr-orange)' : 'var(--sr-sub)', border: '1px solid var(--sr-border)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 0.15s' }}
+                                          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sr-orange)'}
+                                          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--sr-border)'}
+                                        >
+                                          {!m.allowed_listing_ids ? 'All Properties' : `${m.allowed_listing_ids.length} Propert${m.allowed_listing_ids.length !== 1 ? 'ies' : 'y'}`}
+                                          <span style={{ opacity: 0.6, fontSize: '0.6rem' }}>✏️</span>
+                                        </button>
+                                      ) : (
+                                        <span style={{ background: 'var(--sr-card2)', color: 'var(--sr-sub)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 600 }}>
+                                          {!m.allowed_listing_ids ? 'All Properties' : `${m.allowed_listing_ids.length} Propert${m.allowed_listing_ids.length !== 1 ? 'ies' : 'y'}`}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td style={{ padding: '14px 20px' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 600, color: '#4ade80' }}>
+                                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} /> Active
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '14px 20px' }}>
+                                      {!isOwner && teamData?.caller_role === 'owner' && (
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <select
+                                            value={m.role === 'custom' ? `custom:${m.custom_role_id}` : m.role}
+                                            disabled={isBusy}
+                                            onChange={e => {
+                                              const val = e.target.value
+                                              if (val.startsWith('custom:')) {
+                                                handleMemberAction(m.id, 'change_role', { role: 'custom', custom_role_id: val.split(':')[1] })
+                                              } else {
+                                                handleMemberAction(m.id, 'change_role', { role: val })
+                                              }
+                                            }}
+                                            style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 10px', fontSize: '0.72rem', color: 'var(--sr-muted)', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', outline: 'none' }}
+                                          >
+                                            <option value="manager">Manager</option>
+                                            <option value="staff">Staff</option>
+                                            <option value="finance">Finance</option>
+                                            {customRoles.map(cr => (
+                                              <option key={cr.id} value={`custom:${cr.id}`}>{cr.name}</option>
+                                            ))}
+                                          </select>
+                                          <button onClick={() => handleMemberAction(m.id, 'remove')} disabled={isBusy} style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: '#f87171', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)' }}>
+                                            {isBusy ? '…' : 'Remove'}
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              setViewingAs({ id: m.id, name: m.full_name || m.email || 'Team Member', role: m.role, email: m.email, allowed_listing_ids: m.allowed_listing_ids })
+                                              setActiveNav('overview')
+                                            }}
+                                            style={{ background: 'rgba(244,96,26,0.08)', border: '1px solid rgba(244,96,26,0.25)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: 'var(--sr-orange)', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', whiteSpace: 'nowrap' }}
+                                          >
+                                            View As
+                                          </button>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                              {activeMembers.length === 0 && (
+                                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No active team members yet. Invite someone to get started.</td></tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      {/* Pending invites */}
+                      {pendingMembers.length > 0 && (
+                        <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--sr-border)' }}>
+                            <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.05rem', fontWeight: 700, color: 'var(--sr-text)' }}>Pending Invites</div>
+                          </div>
+                          {pendingMembers.map(m => {
+                            const rs2 = TEAM_RS[m.role] || TEAM_RS.staff
+                            const pendingCustomRole = m.role === 'custom' ? customRoles.find(cr => cr.id === m.custom_role_id) : null
+                            const pendingRoleLabel = pendingCustomRole ? pendingCustomRole.name : m.role
+                            const isBusy = !!memberActions[m.id]
+                            return (
+                              <div key={m.id} style={{ padding: '14px 24px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--sr-text)' }}>{m.invite_email || m.email || '—'}</div>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 2 }}>Invited {m.invited_at ? new Date(m.invited_at).toLocaleDateString() : '—'}</div>
+                                </div>
+                                <span style={{ background: rs2.bg, color: rs2.text, border: `1px solid ${rs2.text}33`, borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700, textTransform: 'capitalize' }}>{pendingRoleLabel}</span>
+                                <span style={{ background: 'rgba(251,191,36,0.08)', color: '#fcd34d', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700 }}>Pending</span>
+                                {teamData?.caller_role === 'owner' && (
+                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    <button onClick={() => handleMemberAction(m.id, 'get_invite_link')} disabled={isBusy} title="Copy invite link to clipboard" style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: 'var(--sr-muted)', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)' }}>🔗 Copy Link</button>
+                                    <button onClick={() => handleMemberAction(m.id, 'resend_invite')} disabled={isBusy} title="Resend invite email with a new link" style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: 'var(--sr-muted)', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)' }}>↺ Resend Email</button>
+                                    <button onClick={() => handleMemberAction(m.id, 'remove')} disabled={isBusy} title="Cancel this invite" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: '#f87171', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)' }}>{isBusy ? '…' : 'Cancel'}</button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {!teamLoading && !teamData && (
+                        <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '40px', textAlign: 'center', maxWidth: 480 }}>
+                          <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>👥</div>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 8 }}>Team not available</div>
+                          <div style={{ fontSize: '0.84rem', color: 'var(--sr-sub)', lineHeight: 1.6 }}>Team management is available for host accounts. If you're a team member, your owner needs to send you a new invite.</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── TASKS sub-tab ── */}
+                  {teamSubTab === 'tasks' && (
+                    <div>
+                      {/* Header */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 16 }}>
+                        <div>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)' }}>Tasks</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)', marginTop: 2 }}>Assign and track tasks across your properties.</div>
+                        </div>
+                        <button
+                          onClick={() => { setTaskFormErr(''); setTaskModal(true) }}
+                          style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', flexShrink: 0 }}
+                        >+ Add Task</button>
+                      </div>
+
+                      {/* Property filter */}
+                      {listings.length > 1 && (
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--sr-sub)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>Property</span>
+                          {[{ key: 'all', label: 'All' }, ...listings.map(l => ({ key: l.id, label: l.title || 'Untitled' }))].map(f => (
+                            <button key={f.key} onClick={() => setTaskPropertyFilter(f.key)}
+                              style={{ padding: '5px 13px', borderRadius: 100, border: '1px solid var(--sr-border)', background: taskPropertyFilter === f.key ? 'var(--sr-text)' : 'var(--sr-card)', color: taskPropertyFilter === f.key ? 'var(--sr-bg)' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Status filters */}
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--sr-sub)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>Status</span>
+                        {[
+                          { key: 'all',         label: 'All' },
+                          { key: 'urgent',      label: '🔴 Urgent' },
+                          { key: 'in_progress', label: '🔵 In Progress' },
+                          { key: 'scheduled',   label: '⚪ Scheduled' },
+                          { key: 'done',        label: '✓ Done' },
+                        ].map(f => (
+                          <button key={f.key} onClick={() => setTaskFilter(f.key)}
+                            style={{ padding: '5px 13px', borderRadius: 100, border: '1px solid var(--sr-border)', background: taskFilter === f.key ? 'var(--sr-orange)' : 'var(--sr-card)', color: taskFilter === f.key ? 'white' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Task cards */}
+                      {!tasksLoaded ? (
+                        <div style={{ color: 'var(--sr-sub)', fontSize: '0.88rem', padding: '40px 0', textAlign: 'center' }}>Loading tasks…</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {filteredTasks.map(task => {
+                            const st       = TASK_ST[task.status] || TASK_ST.scheduled
+                            const assignee = task.assigned_to ? (teamData?.members || []).find(m => m.id === task.assigned_to) : null
+                            const isDueToday = task.due_date === todayStr
+                            return (
+                              <div key={task.id} style={{ background: 'var(--sr-card)', border: `1px solid ${task.status === 'urgent' ? 'rgba(239,68,68,0.25)' : 'var(--sr-border)'}`, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                {/* Checkbox */}
+                                <div
+                                  onClick={() => handleTaskStatus(task.id, task.status === 'done' ? 'scheduled' : 'done')}
+                                  style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${task.status === 'done' ? '#22c55e' : 'var(--sr-border)'}`, background: task.status === 'done' ? 'rgba(34,197,94,0.15)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: '#22c55e', fontSize: '0.7rem', fontWeight: 700, marginTop: 2 }}
+                                >{task.status === 'done' ? '✓' : ''}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: task.status === 'done' ? 'var(--sr-sub)' : 'var(--sr-text)', textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</div>
+                                  {task.description && <div style={{ fontSize: '0.75rem', color: 'var(--sr-sub)', marginTop: 2, lineHeight: 1.5 }}>{task.description}</div>}
+                                  <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: 'var(--sr-sub)', background: 'var(--sr-surface)', borderRadius: 6, padding: '2px 8px', border: '1px solid var(--sr-border)' }}>
+                                      🏨 {task.listing_title}{task.listing_city ? ` · ${task.listing_city}` : ''}
+                                    </span>
+                                    {task.due_date && (
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: isDueToday ? '#f59e0b' : 'var(--sr-sub)', background: isDueToday ? 'rgba(245,158,11,0.08)' : 'var(--sr-surface)', borderRadius: 6, padding: '2px 8px', border: `1px solid ${isDueToday ? 'rgba(245,158,11,0.3)' : 'var(--sr-border)'}` }}>
+                                        🕐 {fmtDue(task.due_date)}
+                                      </span>
+                                    )}
+                                    {assignee && (
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: 'var(--sr-sub)', background: 'var(--sr-surface)', borderRadius: 6, padding: '2px 8px', border: '1px solid var(--sr-border)' }}>
+                                        👤 {assignee.full_name || assignee.email || 'Team member'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                  <span style={{ background: st.bg, color: st.color, borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{st.label}</span>
+                                  <button onClick={() => handleDeleteTask(task.id)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem', padding: '4px', lineHeight: 1, opacity: 0.6 }} title="Delete task">✕</button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                          {filteredTasks.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>
+                              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>✓</div>
+                              {tasks.length === 0
+                                ? 'No tasks yet. Click "+ Add Task" to get started.'
+                                : 'No tasks match these filters.'}
+                              {(taskFilter !== 'all' || taskPropertyFilter !== 'all') && (
+                                <button onClick={() => { setTaskFilter('all'); setTaskPropertyFilter('all') }}
+                                  style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', display: 'block', margin: '8px auto 0' }}>
+                                  Clear filters
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── PROPERTIES sub-tab ── */}
+                  {teamSubTab === 'properties' && (
+                    <div>
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 4 }}>Properties & Team Access</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)' }}>Click any property to manage which team members have access.</div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+                        {listings.map(l => {
+                          const assigned = (teamData?.members || []).filter(m => m.status === 'active' && m.role !== 'owner' && (!m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id)))
+                          const img = Array.isArray(l.images) && l.images[0]
+                          return (
+                            <button
+                              key={l.id}
+                              onClick={() => setPropAccessModal(l)}
+                              style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 14, overflow: 'hidden', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 0.15s, box-shadow 0.15s', width: '100%' }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sr-orange)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--sr-ol)' }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sr-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                            >
+                              {/* Property image */}
+                              <div style={{ height: 120, position: 'relative', overflow: 'hidden', background: 'var(--sr-card2)' }}>
+                                {img
+                                  ? <img src={img} alt={l.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                  : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', opacity: 0.25 }}>🏠</div>
+                                }
+                                <span style={{ position: 'absolute', top: 10, right: 10, background: l.status === 'approved' ? 'rgba(34,197,94,0.85)' : 'rgba(0,0,0,0.55)', color: l.status === 'approved' ? '#fff' : '#ccc', borderRadius: 100, padding: '2px 9px', fontSize: '0.62rem', fontWeight: 700, textTransform: 'capitalize', backdropFilter: 'blur(4px)' }}>{l.status || 'draft'}</span>
+                              </div>
+                              <div style={{ padding: '14px 16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--sr-text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title || 'Untitled'}</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>📍 {l.city}{l.state ? `, ${l.state}` : ''}</div>
+                                  </div>
+                                  <span style={{ background: 'rgba(244,96,26,0.08)', color: 'var(--sr-orange)', border: '1px solid rgba(244,96,26,0.2)', borderRadius: 8, padding: '4px 10px', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 10 }}>
+                                    Manage Access
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  {assigned.slice(0, 5).map((m, i) => {
+                                    const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
+                                    return (
+                                      <div key={m.id} title={m.full_name || m.email} style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--sr-orange)', border: '2px solid var(--sr-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'white', marginLeft: i > 0 ? -6 : 0, position: 'relative', zIndex: 5 - i }}>
+                                        {ini}
+                                      </div>
+                                    )
+                                  })}
+                                  {assigned.length > 5 && <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--sr-surface)', border: '2px solid var(--sr-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.58rem', fontWeight: 700, color: 'var(--sr-sub)', marginLeft: -6 }}>+{assigned.length - 5}</div>}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginLeft: assigned.length > 0 ? 6 : 0 }}>
+                                    {assigned.length === 0 ? 'No members assigned' : `${assigned.length} member${assigned.length !== 1 ? 's' : ''} with access`}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                        {listings.length === 0 && (
+                          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🏨</div>No properties yet.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── PERMISSIONS sub-tab ── */}
+                  {teamSubTab === 'permissions' && (
+                    <div>
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 4 }}>Role Permissions</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)' }}>What each role can access and manage within your team workspace.</div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+                        {[
+                          { role: 'Owner',   color: '#F4601A', icon: '👑', desc: 'Full access to all features, settings, and team management' },
+                          { role: 'Manager', color: '#60a5fa', icon: '🔵', desc: 'Manage listings, bookings, guests, and team activity' },
+                          { role: 'Staff',   color: '#4ade80', icon: '🟢', desc: 'Handle bookings and guest communication only' },
+                          { role: 'Finance', color: '#fcd34d', icon: '💛', desc: 'View and manage earnings, payouts, and expenses' },
+                        ].map(({ role, color, icon, desc }) => (
+                          <div key={role} style={{ background: 'var(--sr-card)', border: `1px solid ${color}22`, borderRadius: 14, padding: '18px' }}>
+                            <div style={{ fontSize: '1.4rem', marginBottom: 8 }}>{icon}</div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{role}</div>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--sr-sub)', lineHeight: 1.5 }}>{desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                           <thead>
-                            <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
-                              {['Member', 'Role', 'Property Access', 'Status', 'Actions'].map(h => (
-                                <th key={h} style={{ padding: '11px 20px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
+                            <tr style={{ borderBottom: '1px solid var(--sr-border)', background: 'var(--sr-surface)' }}>
+                              <th style={{ padding: '14px 20px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)' }}>Permission</th>
+                              {['Owner','Manager','Staff','Finance'].map(r => (
+                                <th key={r} style={{ padding: '14px 16px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)' }}>{r}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {teamData.members.filter(m => m.status !== 'pending').map((m) => {
-                              const RS = {
-                                owner:   { bg: 'rgba(244,96,26,0.12)',   text: '#F4601A',  icon: '👑' },
-                                manager: { bg: 'rgba(59,130,246,0.12)',  text: '#60a5fa',  icon: '🔵' },
-                                staff:   { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80',  icon: '🟢' },
-                                finance: { bg: 'rgba(251,191,36,0.12)',  text: '#fcd34d',  icon: '💛' },
-                                custom:  { bg: 'rgba(192,132,252,0.12)', text: '#c084fc',  icon: '🎨' },
-                              }
-                              const rs = RS[m.role] || RS.staff
-                              const customRole = m.role === 'custom' ? customRoles.find(cr => cr.id === m.custom_role_id) : null
-                              const roleLabel = customRole ? customRole.name : m.role
-                              const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
-                              const isBusy = !!memberActions[m.id]
-                              const isOwner = m.role === 'owner'
-                              return (
-                                <tr key={m.id} style={{ borderBottom: '1px solid var(--sr-border)' }}>
-                                  <td style={{ padding: '14px 20px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: rs.bg, border: `1px solid ${rs.text}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, color: rs.text, flexShrink: 0 }}>{ini}</div>
-                                      <div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--sr-text)', lineHeight: 1.3 }}>{m.full_name || m.email || '—'}</div>
-                                        {m.full_name && m.email && <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>{m.email}</div>}
-                                      </div>
-                                    </div>
+                            {[
+                              { perm: 'View overview',            owner: true,  manager: true,  staff: true,  finance: true  },
+                              { perm: 'View & manage bookings',   owner: true,  manager: true,  staff: true,  finance: false },
+                              { perm: 'Manage properties',        owner: true,  manager: true,  staff: false, finance: false },
+                              { perm: 'Guest messaging',          owner: true,  manager: true,  staff: true,  finance: false },
+                              { perm: 'View calendar',            owner: true,  manager: true,  staff: true,  finance: false },
+                              { perm: 'View earnings',            owner: true,  manager: false, staff: false, finance: true  },
+                              { perm: 'View payouts & expenses',  owner: true,  manager: false, staff: false, finance: true  },
+                              { perm: 'Manage team',              owner: true,  manager: false, staff: false, finance: false },
+                              { perm: 'Account settings',         owner: true,  manager: false, staff: false, finance: false },
+                              { perm: 'View & reply to reviews',  owner: true,  manager: true,  staff: false, finance: false },
+                              { perm: 'View activity log',        owner: true,  manager: true,  staff: false, finance: true  },
+                            ].map(({ perm, owner, manager, staff, finance }, i) => (
+                              <tr key={perm} style={{ borderBottom: '1px solid var(--sr-border)', background: i % 2 === 0 ? 'transparent' : 'var(--sr-surface)' }}>
+                                <td style={{ padding: '12px 20px', fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 500 }}>{perm}</td>
+                                {[owner, manager, staff, finance].map((has, j) => (
+                                  <td key={j} style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                    {has ? <span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span> : <span style={{ color: 'var(--sr-border)' }}>—</span>}
                                   </td>
-                                  <td style={{ padding: '14px 20px' }}>
-                                    <span style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.text}33`, borderRadius: 100, padding: '4px 12px', fontSize: '0.68rem', fontWeight: 700, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
-                                      {rs.icon} {roleLabel}
-                                    </span>
-                                  </td>
-                                  <td style={{ padding: '14px 20px' }}>
-                                    <span style={{ background: 'var(--sr-card2)', color: m.allowed_listing_ids ? 'var(--sr-orange)' : 'var(--sr-sub)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 600 }}>
-                                      {!m.allowed_listing_ids ? 'All Properties' : `${m.allowed_listing_ids.length} Propert${m.allowed_listing_ids.length !== 1 ? 'ies' : 'y'}`}
-                                    </span>
-                                  </td>
-                                  <td style={{ padding: '14px 20px' }}>
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', fontWeight: 600, color: '#4ade80' }}>
-                                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} /> Active
-                                    </span>
-                                  </td>
-                                  <td style={{ padding: '14px 20px' }}>
-                                    {!isOwner && teamData.caller_role === 'owner' && (
-                                      <div style={{ display: 'flex', gap: 6 }}>
-                                        <select
-                                          value={m.role === 'custom' ? `custom:${m.custom_role_id}` : m.role}
-                                          disabled={isBusy}
-                                          onChange={e => {
-                                            const val = e.target.value
-                                            if (val.startsWith('custom:')) {
-                                              handleMemberAction(m.id, 'change_role', { role: 'custom', custom_role_id: val.split(':')[1] })
-                                            } else {
-                                              handleMemberAction(m.id, 'change_role', { role: val })
-                                            }
-                                          }}
-                                          style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 10px', fontSize: '0.72rem', color: 'var(--sr-muted)', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif', outline: 'none' }}
-                                        >
-                                          <option value="manager">Manager</option>
-                                          <option value="staff">Staff</option>
-                                          <option value="finance">Finance</option>
-                                          {customRoles.map(cr => (
-                                            <option key={cr.id} value={`custom:${cr.id}`}>{cr.name}</option>
-                                          ))}
-                                        </select>
-                                        <button onClick={() => handleMemberAction(m.id, 'remove')} disabled={isBusy} style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: '#f87171', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif' }}>
-                                          {isBusy ? '…' : 'Remove'}
-                                        </button>
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                            {teamData.members.filter(m => m.status !== 'pending').length === 0 && (
-                              <tr>
-                                <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No active team members yet. Invite someone to get started.</td>
+                                ))}
                               </tr>
-                            )}
+                            ))}
                           </tbody>
                         </table>
                       </div>
                     </div>
+                  )}
+                </div>
+              )
+            })()}
 
-                    {/* Pending invites */}
-                    {teamData.members.filter(m => m.status === 'pending').length > 0 && (
-                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
-                        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--sr-border)' }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.05rem', fontWeight: 700, color: 'var(--sr-text)' }}>Pending Invites</div>
+            {/* ========== EXPENSES ========== */}
+            {activeNav === 'expenses' && (() => {
+              const EXP_CATS = ['Cleaning','Maintenance','Supplies','Insurance','Marketing','Other']
+              const filteredExp = expCatFilter === 'all' ? expenses : expenses.filter(e => e.category === expCatFilter)
+              const totalExp = expenses.reduce((s, e) => s + e.amount, 0)
+              const thisMonth = expenses.filter(e => e.date.startsWith('2026-03')).reduce((s, e) => s + e.amount, 0)
+              const avgMonth = Math.round(totalExp / 2) // 2 months of mock data
+              const byCat = EXP_CATS.map(c => ({ cat: c, total: expenses.filter(e => e.category === c).reduce((s, e) => s + e.amount, 0) })).filter(c => c.total > 0)
+              return (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div>
+                      <div className="hd-page-title">Expenses</div>
+                      <div className="hd-page-sub">Track property-related costs and keep your finances organised.</div>
+                    </div>
+                    <button onClick={() => setExpenseModal(true)} style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', flexShrink: 0 }}>
+                      + Add Expense
+                    </button>
+                  </div>
+
+                  {/* Stats row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+                    {[
+                      { label: 'Total Recorded',  val: `$${totalExp.toLocaleString()}`,  hint: 'All time',         icon: '🧾' },
+                      { label: 'This Month',       val: `$${thisMonth.toLocaleString()}`, hint: 'March 2026',       icon: '📅' },
+                      { label: 'Monthly Average',  val: `$${avgMonth.toLocaleString()}`,  hint: 'Last 2 months',    icon: '📊' },
+                      { label: 'Categories',       val: byCat.length,                     hint: 'Active categories', icon: '🏷️' },
+                    ].map(({ label, val, hint, icon }) => (
+                      <div key={label} className="hd-stat-card">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <div className="hd-stat-label" style={{ margin: 0 }}>{label}</div>
+                          <span style={{ fontSize: '1.1rem' }}>{icon}</span>
                         </div>
-                        {teamData.members.filter(m => m.status === 'pending').map(m => {
-                          const RS2 = {
-                            owner:   { bg: 'rgba(244,96,26,0.12)',   text: '#F4601A' },
-                            manager: { bg: 'rgba(59,130,246,0.12)',  text: '#60a5fa' },
-                            staff:   { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80' },
-                            finance: { bg: 'rgba(251,191,36,0.12)',  text: '#fcd34d' },
-                            custom:  { bg: 'rgba(192,132,252,0.12)', text: '#c084fc' },
-                          }
-                          const rs2 = RS2[m.role] || RS2.staff
-                          const pendingCustomRole = m.role === 'custom' ? customRoles.find(cr => cr.id === m.custom_role_id) : null
-                          const pendingRoleLabel = pendingCustomRole ? pendingCustomRole.name : m.role
-                          const isBusy = !!memberActions[m.id]
-                          return (
-                            <div key={m.id} style={{ padding: '14px 24px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--sr-text)' }}>{m.invite_email || m.email || '—'}</div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 2 }}>Invited {m.invited_at ? new Date(m.invited_at).toLocaleDateString() : '—'}</div>
-                              </div>
-                              <span style={{ background: rs2.bg, color: rs2.text, border: `1px solid ${rs2.text}33`, borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700, textTransform: 'capitalize' }}>{pendingRoleLabel}</span>
-                              <span style={{ background: 'rgba(251,191,36,0.08)', color: '#fcd34d', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700 }}>Pending</span>
-                              {teamData.caller_role === 'owner' && (
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  <button onClick={() => handleMemberAction(m.id, 'resend_invite')} disabled={isBusy} style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: 'var(--sr-muted)', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif' }}>↺ Resend</button>
-                                  <button onClick={() => handleMemberAction(m.id, 'remove')} disabled={isBusy} style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', color: '#f87171', cursor: isBusy ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif' }}>{isBusy ? '…' : 'Cancel'}</button>
-                                </div>
-                              )}
+                        <div className="hd-stat-val" style={{ marginBottom: 4, fontSize: '1.8rem' }}>{val}</div>
+                        <div className="hd-stat-hint">{hint}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Category breakdown */}
+                  {byCat.length > 0 && (
+                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
+                      <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 16 }}>By Category</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {byCat.sort((a, b) => b.total - a.total).map(({ cat, total }) => (
+                          <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 100, fontSize: '0.78rem', color: 'var(--sr-text)', fontWeight: 600, flexShrink: 0 }}>{cat}</div>
+                            <div style={{ flex: 1, height: 8, background: 'var(--sr-surface)', borderRadius: 100, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${(total / totalExp * 100).toFixed(1)}%`, background: 'var(--sr-orange)', borderRadius: 100 }} />
                             </div>
-                          )
-                        })}
+                            <div style={{ width: 70, textAlign: 'right', fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-text)', flexShrink: 0 }}>${total.toLocaleString()}</div>
+                            <div style={{ width: 44, textAlign: 'right', fontSize: '0.72rem', color: 'var(--sr-sub)', flexShrink: 0 }}>{(total / totalExp * 100).toFixed(0)}%</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category filter + table */}
+                  <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                      <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Expenses</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['all', ...EXP_CATS].map(cat => (
+                          <button key={cat} onClick={() => setExpCatFilter(cat)} style={{ padding: '5px 12px', borderRadius: 100, border: '1px solid var(--sr-border)', background: expCatFilter === cat ? 'var(--sr-orange)' : 'var(--sr-card2)', color: expCatFilter === cat ? 'white' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                            {cat === 'all' ? 'All' : cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
+                            {['Date','Description','Category','Property','Amount',''].map(h => (
+                              <th key={h} style={{ padding: '11px 20px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredExp.map((e, i) => (
+                            <tr key={e.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i % 2 === 1 ? 'var(--sr-surface)' : 'transparent' }}>
+                              <td style={{ padding: '13px 20px', fontSize: '0.82rem', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+                              <td style={{ padding: '13px 20px', fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 500 }}>{e.desc}</td>
+                              <td style={{ padding: '13px 20px' }}>
+                                <span style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', color: 'var(--sr-muted)', fontWeight: 600 }}>{e.category}</span>
+                              </td>
+                              <td style={{ padding: '13px 20px', fontSize: '0.82rem', color: 'var(--sr-sub)' }}>{e.property}</td>
+                              <td style={{ padding: '13px 20px', fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)', whiteSpace: 'nowrap' }}>${e.amount.toLocaleString()}</td>
+                              <td style={{ padding: '13px 20px' }}>
+                                <button onClick={() => setExpenses(prev => prev.filter(x => x.id !== e.id))} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px 6px' }} title="Remove">✕</button>
+                              </td>
+                            </tr>
+                          ))}
+                          {filteredExp.length === 0 && (
+                            <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No expenses found. <button onClick={() => setExpenseModal(true)} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>Add one →</button></td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {filteredExp.length > 0 && (
+                      <div style={{ padding: '14px 20px', borderTop: '1px solid var(--sr-border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--sr-sub)' }}>Total:</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)' }}>${filteredExp.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
                       </div>
                     )}
-                  </>
-                )}
-
-                {!teamLoading && !teamData && (
-                  <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '40px', textAlign: 'center', maxWidth: 480 }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>👥</div>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 8 }}>Team not available</div>
-                    <div style={{ fontSize: '0.84rem', color: 'var(--sr-sub)', lineHeight: 1.6 }}>
-                      Team management is available for host accounts. If you're a team member, your owner needs to send you a new invite.
-                    </div>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* Add Expense Modal */}
+                  {expenseModal && (
+                    <div onClick={e => e.target === e.currentTarget && setExpenseModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: 32, width: '100%', maxWidth: 460 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.3rem', fontWeight: 700, color: 'var(--sr-text)' }}>Add Expense</div>
+                          <button onClick={() => setExpenseModal(false)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Date</label>
+                            <input type="date" value={newExp.date} onChange={e => setNewExp(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Description</label>
+                            <input type="text" placeholder="e.g. Professional cleaning service" value={newExp.desc} onChange={e => setNewExp(p => ({ ...p, desc: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Category</label>
+                              <select value={newExp.category} onChange={e => setNewExp(p => ({ ...p, category: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }}>
+                                {EXP_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Amount ($)</label>
+                              <input type="number" min="0" step="0.01" placeholder="0.00" value={newExp.amount} onChange={e => setNewExp(p => ({ ...p, amount: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
+                            </div>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Property</label>
+                            <select value={newExp.property} onChange={e => setNewExp(p => ({ ...p, property: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }}>
+                              <option value="All Properties">All Properties</option>
+                              {listings.map(l => <option key={l.id} value={l.title || l.id}>{l.title || 'Untitled'}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                          <button onClick={() => setExpenseModal(false)} style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: 10, padding: 12, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Cancel</button>
+                          <button
+                            disabled={!newExp.date || !newExp.desc.trim() || !newExp.amount}
+                            onClick={() => {
+                              if (!newExp.date || !newExp.desc.trim() || !newExp.amount) return
+                              setExpenses(prev => [{ id: Date.now(), date: newExp.date, desc: newExp.desc.trim(), category: newExp.category, property: newExp.property || 'All Properties', amount: parseFloat(newExp.amount) }, ...prev])
+                              setNewExp({ date: '', desc: '', category: 'Cleaning', property: '', amount: '' })
+                              setExpenseModal(false)
+                              showToast('Expense added.')
+                            }}
+                            style={{ flex: 2, background: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'var(--sr-card2)' : 'var(--sr-orange)', color: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'var(--sr-sub)' : 'white', border: 'none', borderRadius: 10, padding: 12, fontWeight: 700, fontSize: '0.88rem', cursor: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}
+                          >
+                            Add Expense
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* ========== ROLES & PERMISSIONS ========== */}
             {activeNav === 'permissions' && (
@@ -2348,7 +3150,7 @@ export default function HostDashboard() {
 
                 <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--sr-border)' }}>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Permission Matrix</div>
+                    <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Permission Matrix</div>
                   </div>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -2399,7 +3201,7 @@ export default function HostDashboard() {
                   const ALL_PERMS = Object.keys(PERM_LABELS)
                   return (
                     <div style={{ marginTop: 28 }}>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.15rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 6 }}>Custom Roles</div>
+                      <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.15rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 6 }}>Custom Roles</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--sr-sub)', marginBottom: 20 }}>Create roles with a specific set of permissions for your organisation.</div>
 
                       {/* Existing custom roles */}
@@ -2418,7 +3220,7 @@ export default function HostDashboard() {
                                   {!cr.permissions?.length && <span style={{ fontSize: '0.74rem', color: 'var(--sr-muted)' }}>No permissions assigned</span>}
                                 </div>
                               </div>
-                              <button onClick={() => deleteCustomRole(cr.id)} style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '6px 12px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, fontFamily: 'Syne, sans-serif' }}>
+                              <button onClick={() => deleteCustomRole(cr.id)} style={{ background: 'rgba(248,113,113,0.1)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '6px 12px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0, fontFamily: 'var(--sr-font-sans)' }}>
                                 Delete
                               </button>
                             </div>
@@ -2431,7 +3233,7 @@ export default function HostDashboard() {
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 14 }}>Create New Role</div>
                         <div style={{ marginBottom: 14 }}>
                           <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Role Name</label>
-                          <input type="text" placeholder="e.g. Concierge, Cleaner, Supervisor…" value={newRoleName} onChange={e => setNewRoleName(e.target.value)} maxLength={40} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'Syne, sans-serif', outline: 'none' }} />
+                          <input type="text" placeholder="e.g. Concierge, Cleaner, Supervisor…" value={newRoleName} onChange={e => setNewRoleName(e.target.value)} maxLength={40} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
                         </div>
                         <div style={{ marginBottom: 18 }}>
                           <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 10 }}>Permissions</label>
@@ -2447,7 +3249,7 @@ export default function HostDashboard() {
                             })}
                           </div>
                         </div>
-                        <button onClick={createCustomRole} disabled={!newRoleName.trim() || newRoleSaving} style={{ background: !newRoleName.trim() || newRoleSaving ? 'var(--sr-card2)' : '#c084fc', color: !newRoleName.trim() || newRoleSaving ? 'var(--sr-sub)' : '#0a0507', border: 'none', borderRadius: 10, padding: '10px 24px', fontWeight: 700, fontSize: '0.84rem', cursor: !newRoleName.trim() || newRoleSaving ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif', transition: 'all 0.15s' }}>
+                        <button onClick={createCustomRole} disabled={!newRoleName.trim() || newRoleSaving} style={{ background: !newRoleName.trim() || newRoleSaving ? 'var(--sr-card2)' : '#c084fc', color: !newRoleName.trim() || newRoleSaving ? 'var(--sr-sub)' : '#0a0507', border: 'none', borderRadius: 10, padding: '10px 24px', fontWeight: 700, fontSize: '0.84rem', cursor: !newRoleName.trim() || newRoleSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>
                           {newRoleSaving ? 'Creating…' : 'Create Role'}
                         </button>
                       </div>
@@ -2458,129 +3260,225 @@ export default function HostDashboard() {
             )}
 
             {/* ========== PROPERTY ACCESS ========== */}
-            {activeNav === 'access' && (
-              <div>
-                <div className="hd-page-title">Property Access</div>
-                <div className="hd-page-sub">Control which team members can access and manage each property.</div>
+            {activeNav === 'access' && (() => {
+              const nonOwners = (teamData?.members || []).filter(m => m.status === 'active' && m.role !== 'owner')
+              const totalMembers = nonOwners.length
+              const pendingAccess = listings.filter(l => nonOwners.every(m => m.allowed_listing_ids && !m.allowed_listing_ids.includes(l.id))).length
+              const accessConfigured = listings.filter(l => nonOwners.some(m => !m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id))).length
 
+              // Per-listing access helpers
+              const getMembersWithAccess = (l) => nonOwners.filter(m => !m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id))
+              const getAccessTier = (l) => {
+                const n = getMembersWithAccess(l).length
+                if (n === 0 || totalMembers === 0) return 'none'
+                if (n === totalMembers) return 'full'
+                return 'partial'
+              }
+
+              const filteredListings = listings.filter(l => accessFilter === 'all' || getAccessTier(l) === accessFilter)
+
+              // Avatar colours cycle
+              const AV_COLORS = ['#5B8FD8','#D4612A','#3D7A5E','#8B5D8B','#8B7355','#C05525','#2D6B9E']
+              const getAvatarStyle = (i) => ({ background: AV_COLORS[i % AV_COLORS.length] })
+
+              return (
+              <div>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+                  <div>
+                    <div className="hd-page-title">Property Access</div>
+                    <div className="hd-page-sub">Control which team members can access and manage each property.</div>
+                  </div>
+                  {myRole === 'owner' && (
+                    <button onClick={() => setInviteModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 18px', fontFamily: 'var(--sr-font-sans)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', flexShrink: 0 }}>
+                      + Add Member
+                    </button>
+                  )}
+                </div>
+
+                {/* Loading */}
                 {teamLoading && !teamData && (
                   <div style={{ color: 'var(--sr-sub)', fontSize: '0.88rem', padding: '40px 0' }}>Loading…</div>
                 )}
 
-                {teamData && (
-                  <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
-                      {listings.map(l => (
-                        <div key={l.id} style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 14, overflow: 'hidden' }}>
-                          <div style={{ height: 110, background: l.images?.[0] ? `url(${l.images[0]}) center/cover no-repeat` : 'var(--sr-card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
-                            {!l.images?.[0] && '🏨'}
-                          </div>
-                          <div style={{ padding: '14px 16px' }}>
-                            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.title || 'Untitled'}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginBottom: 8 }}>{l.city}, {l.country || 'United States'}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>
-                              {(() => { const n = teamData.members.filter(m => m.status === 'active' && m.role !== 'owner' && (!m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id))).length; return `${n} member${n !== 1 ? 's' : ''} with access` })()}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {listings.length === 0 && (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No properties yet.</div>
-                      )}
-                    </div>
-
-                    {listings.length > 0 && (
-                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
-                        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--sr-border)' }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Member Access Matrix</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--sr-sub)', marginTop: 4 }}>
-                            {teamData.members.filter(m => m.status === 'active' && m.role !== 'owner').every(m => !m.allowed_listing_ids)
-                              ? 'All active members currently have access to all properties.'
-                              : 'Some members have restricted property access. Click cells to toggle.'}
-                          </div>
-                        </div>
-                        <div style={{ overflowX: 'auto' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
-                                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', width: '25%' }}>Member</th>
-                                {listings.map(l => (
-                                  <th key={l.id} style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>{l.title?.split(' ').slice(0, 2).join(' ') || 'Property'}</div>
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {teamData.members.filter(m => m.status === 'active').map((m, i) => (
-                                <tr key={m.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i % 2 === 1 ? 'var(--sr-overlay-xs)' : 'transparent' }}>
-                                  <td style={{ padding: '12px 24px' }}>
-                                    <div style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--sr-text)' }}>{m.full_name || m.email || '—'}</div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', textTransform: 'capitalize', marginTop: 2 }}>{m.role}</div>
-                                  </td>
-                                  {listings.map(l => {
-                                    const hasAccess = m.role === 'owner' || !m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id)
-                                    const cellKey = `${m.id}:${l.id}`
-                                    const busy = !!accessLoading[cellKey]
-                                    const isOwnerRow = m.role === 'owner'
-                                    return (
-                                      <td key={l.id} style={{ padding: '10px 16px', textAlign: 'center' }}>
-                                        {isOwnerRow ? (
-                                          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.85rem' }}>✓</span>
-                                        ) : hasAccess ? (
-                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                                            <span style={{ color: '#4ade80', fontWeight: 700, fontSize: '0.85rem' }}>✓</span>
-                                            {teamData.caller_role === 'owner' && (
-                                              <button
-                                                onClick={() => togglePropertyAccess(m.id, l.id, true)}
-                                                disabled={busy}
-                                                style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 6, padding: '2px 8px', fontSize: '0.58rem', color: '#f87171', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', lineHeight: 1.5 }}
-                                              >
-                                                {busy ? '…' : 'Remove'}
-                                              </button>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                                            <span style={{ color: 'var(--sr-sub)', fontSize: '0.85rem' }}>—</span>
-                                            {teamData.caller_role === 'owner' && (
-                                              <button
-                                                onClick={() => togglePropertyAccess(m.id, l.id, false)}
-                                                disabled={busy}
-                                                style={{ background: 'rgba(110,164,244,0.08)', border: '1px solid rgba(110,164,244,0.2)', borderRadius: 6, padding: '2px 8px', fontSize: '0.58rem', color: '#6ea4f4', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', lineHeight: 1.5 }}
-                                              >
-                                                {busy ? '…' : 'Add'}
-                                              </button>
-                                            )}
-                                          </div>
-                                        )}
-                                      </td>
-                                    )
-                                  })}
-                                </tr>
-                              ))}
-                              {teamData.members.filter(m => m.status === 'active').length === 0 && (
-                                <tr>
-                                  <td colSpan={listings.length + 1} style={{ padding: '32px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No active team members.</td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
+                {/* Stats pills */}
+                {(teamData || !teamLoading) && (
+                  <div style={{ display: 'flex', gap: 14, marginBottom: 24 }}>
+                    {[
+                      { icon: '🏠', num: listings.length, lbl: 'Total Properties', color: 'var(--sr-orange)' },
+                      { icon: '✅', num: accessConfigured, lbl: 'Access Configured', color: '#3D7A5E' },
+                      { icon: '👥', num: totalMembers, lbl: 'Team Members', color: '#5B8FD8' },
+                      { icon: '🔑', num: pendingAccess, lbl: 'No Access Set', color: '#8B5D8B' },
+                    ].map(s => (
+                      <div key={s.lbl} style={{ flex: 1, background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'default', transition: 'all 0.15s' }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--sr-card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>{s.icon}</div>
+                        <div>
+                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.4rem', fontWeight: 600, lineHeight: 1, color: 'var(--sr-text)' }}>{s.num}</div>
+                          <div style={{ fontSize: '0.68rem', color: 'var(--sr-sub)', marginTop: 2 }}>{s.lbl}</div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Filters + view toggle */}
+                {(teamData || !teamLoading) && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', gap: 3, background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: 4 }}>
+                      {[['all','All Properties'],['full','Full Access'],['partial','Partial Access'],['none','No Access']].map(([v,l]) => (
+                        <button key={v} onClick={() => setAccessFilter(v)}
+                          style={{ padding: '6px 14px', borderRadius: 7, fontSize: '0.75rem', fontWeight: 600, color: accessFilter === v ? '#fff' : 'var(--sr-sub)', background: accessFilter === v ? 'var(--sr-text)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.12s' }}>
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 3, background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: 4 }}>
+                      {[['grid','⊞'],['list','≡']].map(([v,icon]) => (
+                        <button key={v} onClick={() => setAccessView(v)}
+                          style={{ width: 32, height: 32, borderRadius: 7, border: 'none', background: accessView === v ? 'var(--sr-text)' : 'transparent', color: accessView === v ? '#fff' : 'var(--sr-sub)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}>
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Property Cards Grid */}
+                {teamData && (
+                  <div style={{ display: accessView === 'grid' ? 'grid' : 'flex', gridTemplateColumns: accessView === 'grid' ? 'repeat(3, 1fr)' : undefined, flexDirection: accessView === 'list' ? 'column' : undefined, gap: 18 }}>
+                    {filteredListings.map((l, idx) => {
+                      const withAccess = getMembersWithAccess(l)
+                      const tier = getAccessTier(l)
+                      const img = Array.isArray(l.images) && l.images[0]
+                      const visible = withAccess.slice(0, 3)
+                      const extra = withAccess.length - visible.length
+
+                      const badgeStyle = tier === 'full'
+                        ? { background: 'rgba(244,96,26,0.92)', color: '#fff' }
+                        : tier === 'partial'
+                        ? { background: 'rgba(61,122,94,0.92)', color: '#fff' }
+                        : { background: 'rgba(255,255,255,0.88)', color: 'var(--sr-sub)' }
+
+                      const badgeLabel = tier === 'full' ? 'Full Access' : tier === 'partial' ? `${withAccess.length} Member${withAccess.length !== 1 ? 's' : ''}` : 'No Access'
+
+                      // Gradient backgrounds when no image
+                      const gradients = ['linear-gradient(135deg,#D8C9B5,#C5B29D)','linear-gradient(135deg,#B8C9BE,#99B5A2)','linear-gradient(135deg,#C9C1D4,#B0A7C5)','linear-gradient(135deg,#D4BEB8,#C2A89D)','linear-gradient(135deg,#C5C9B5,#AEB59A)','linear-gradient(135deg,#C9BDB4,#B8A89C)']
+
+                      return (
+                        <div key={l.id}
+                          style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s', display: accessView === 'list' ? 'flex' : 'block', alignItems: accessView === 'list' ? 'center' : undefined }}
+                          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(244,96,26,0.25)' }}
+                          onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; e.currentTarget.style.borderColor = 'var(--sr-border)' }}
+                          onClick={() => myRole === 'owner' && setPropAccessModal(l)}
+                        >
+                          {/* Image */}
+                          <div style={{ position: 'relative', height: accessView === 'list' ? 72 : 148, width: accessView === 'list' ? 100 : '100%', flexShrink: 0, overflow: 'hidden', background: img ? `url(${img}) center/cover no-repeat` : gradients[idx % gradients.length], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {!img && <span style={{ fontSize: '2rem' }}>{l.type === 'hotel' ? '🏨' : l.city?.includes('Beach') || l.city?.includes('Miami') ? '🏖️' : l.city?.includes('Vegas') ? '🎰' : '🏠'}</span>}
+                            {/* Access badge */}
+                            <div style={{ position: 'absolute', top: 8, right: 8, ...badgeStyle, backdropFilter: 'blur(8px)', borderRadius: 20, padding: '4px 10px', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', opacity: 0.7 }} />
+                              {badgeLabel}
+                            </div>
+                          </div>
+
+                          {/* Body */}
+                          <div style={{ padding: accessView === 'list' ? '0 16px' : '15px 16px 16px', flex: 1 }}>
+                            <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '0.95rem', fontWeight: 600, color: 'var(--sr-text)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>{l.title || 'Untitled'}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--sr-muted)', marginBottom: accessView === 'list' ? 0 : 12, display: 'flex', alignItems: 'center', gap: 3 }}>📍 {l.city}{l.state ? `, ${l.state}` : ''}</div>
+
+                            {accessView === 'grid' && (
+                              <>
+                                <div style={{ height: 1, background: 'var(--sr-border)', marginBottom: 12 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  {/* Member avatars */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {withAccess.length > 0 ? (
+                                      <>
+                                        <div style={{ display: 'flex' }}>
+                                          {visible.map((m, i) => {
+                                            const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) || '?'
+                                            return (
+                                              <div key={m.id} title={m.full_name || m.email} style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid var(--sr-card)', ...getAvatarStyle(i), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.58rem', fontWeight: 700, color: '#fff', marginLeft: i > 0 ? -5 : 0 }}>
+                                                {ini}
+                                              </div>
+                                            )
+                                          })}
+                                          {extra > 0 && (
+                                            <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid var(--sr-card)', background: 'var(--sr-card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.52rem', fontWeight: 700, color: 'var(--sr-sub)', marginLeft: -5 }}>+{extra}</div>
+                                          )}
+                                        </div>
+                                        <span style={{ fontSize: '0.68rem', color: 'var(--sr-sub)' }}>{withAccess.length} member{withAccess.length !== 1 ? 's' : ''}</span>
+                                      </>
+                                    ) : (
+                                      <span style={{ fontSize: '0.68rem', color: 'var(--sr-muted)' }}>No members assigned</span>
+                                    )}
+                                  </div>
+                                  {/* Actions */}
+                                  {myRole === 'owner' && (
+                                    <div style={{ display: 'flex', gap: 5 }} onClick={e => e.stopPropagation()}>
+                                      <button
+                                        onClick={() => setPropAccessModal(l)}
+                                        style={{ background: 'var(--sr-text)', border: '1px solid var(--sr-text)', borderRadius: 7, padding: '5px 12px', fontSize: '0.68rem', fontWeight: 600, color: 'var(--sr-bg)', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.12s' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--sr-orange)'; e.currentTarget.style.borderColor = 'var(--sr-orange)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--sr-text)'; e.currentTarget.style.borderColor = 'var(--sr-text)' }}
+                                      >
+                                        Manage
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          {/* List view actions */}
+                          {accessView === 'list' && myRole === 'owner' && (
+                            <div style={{ padding: '0 16px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                              <button
+                                onClick={() => setPropAccessModal(l)}
+                                style={{ background: 'var(--sr-text)', border: '1px solid var(--sr-text)', borderRadius: 7, padding: '6px 14px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--sr-bg)', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}
+                              >
+                                Manage
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    {/* Empty filtered state */}
+                    {filteredListings.length === 0 && listings.length > 0 && (
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No properties match this filter.</div>
                     )}
-                  </>
+
+                    {/* Add property card — owner + grid view */}
+                    {myRole === 'owner' && accessView === 'grid' && accessFilter === 'all' && (
+                      <a href="/list-property" style={{ border: '2px dashed var(--sr-border)', background: 'transparent', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 230, textAlign: 'center', padding: 32, cursor: 'pointer', textDecoration: 'none', transition: 'all 0.2s' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sr-orange)'; e.currentTarget.style.background = 'rgba(244,96,26,0.04)' }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--sr-border)'; e.currentTarget.style.background = 'transparent' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--sr-card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', marginBottom: 10, color: 'var(--sr-sub)', transition: 'all 0.2s' }}>＋</div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--sr-sub)', marginBottom: 3 }}>Add New Property</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--sr-muted)' }}>List your space on SnapReserve™</div>
+                      </a>
+                    )}
+
+                    {/* No properties at all */}
+                    {listings.length === 0 && (
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No properties yet.</div>
+                    )}
+                  </div>
                 )}
 
                 {!teamLoading && !teamData && (
                   <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '40px', textAlign: 'center', maxWidth: 480 }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🏢</div>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 8 }}>No organisation</div>
+                    <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 8 }}>No organisation</div>
                     <div style={{ fontSize: '0.84rem', color: 'var(--sr-sub)', lineHeight: 1.6 }}>Property access control is only available for host organisations.</div>
                   </div>
                 )}
               </div>
-            )}
+              )
+            })()}
 
             {/* ========== ACTIVITY LOG ========== */}
             {activeNav === 'activity' && (
@@ -2610,7 +3508,7 @@ export default function HostDashboard() {
 
                 <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--sr-border)' }}>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Recent Activity</div>
+                    <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Recent Activity</div>
                   </div>
                   <div style={{ padding: '0 24px' }}>
                     {teamData?.members?.length > 0 ? (
@@ -2648,6 +3546,302 @@ export default function HostDashboard() {
               </div>
             )}
 
+            {/* ========== PROMOTIONS ========== */}
+            {activeNav === 'promotions' && (() => {
+              const activePromos   = promotions.filter(p => p.is_active)
+              const totalUses      = promotions.reduce((s, p) => s + (p.total_uses || 0), 0)
+              const totalDiscount  = promotions.reduce((s, p) => s + (p.total_discount_given || 0), 0)
+
+              function openCreate() {
+                setEditingPromo(null)
+                setPromoForm({ code: '', name: '', description: '', discount_type: 'percentage', discount_value: '', min_nights: 1, min_booking_amount: 0, max_uses: '', is_active: true, auto_apply: false, starts_at: '', ends_at: '', listing_scope: 'all', listing_ids: [] })
+                setPromoModal(true)
+              }
+              function openEdit(p) {
+                setEditingPromo(p)
+                setPromoForm({
+                  code: p.code, name: p.name, description: p.description || '', discount_type: p.discount_type,
+                  discount_value: p.discount_value, min_nights: p.min_nights || 1,
+                  min_booking_amount: p.min_booking_amount || 0, max_uses: p.max_uses || '',
+                  is_active: p.is_active, auto_apply: p.auto_apply,
+                  starts_at: p.starts_at ? p.starts_at.slice(0, 10) : '',
+                  ends_at:   p.ends_at   ? p.ends_at.slice(0, 10)   : '',
+                  listing_scope: !p.listing_ids?.length ? 'all' : p.listing_ids.length === 1 ? 'specific' : 'multiple',
+                  listing_ids: p.listing_ids || [],
+                })
+                setPromoModal(true)
+              }
+              async function savePromo() {
+                if (!promoForm.code.trim() || !promoForm.name.trim() || !promoForm.discount_value) return
+                setPromoSaving(true)
+                try {
+                  const body = {
+                    ...promoForm,
+                    code:               promoForm.code.trim().toUpperCase(),
+                    discount_value:     Number(promoForm.discount_value),
+                    min_nights:         Number(promoForm.min_nights) || 1,
+                    min_booking_amount: Number(promoForm.min_booking_amount) || 0,
+                    max_uses:           promoForm.max_uses ? Number(promoForm.max_uses) : null,
+                    starts_at:          promoForm.starts_at || null,
+                    ends_at:            promoForm.ends_at   || null,
+                    listing_ids:        promoForm.listing_scope === 'all' ? null : promoForm.listing_ids.filter(Boolean),
+                  }
+                  const url    = editingPromo ? `/api/host/promotions/${editingPromo.id}` : '/api/host/promotions'
+                  const method = editingPromo ? 'PATCH' : 'POST'
+                  const res    = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                  const data   = await res.json()
+                  if (!res.ok) { setPromoToast({ msg: data.error || 'Failed to save', type: 'error' }); setTimeout(() => setPromoToast(null), 3000); return }
+                  await loadPromotions()
+                  setPromoModal(false)
+                  setPromoToast({ msg: editingPromo ? 'Promotion updated' : 'Promotion created', type: 'success' })
+                  setTimeout(() => setPromoToast(null), 3000)
+                } catch { setPromoToast({ msg: 'Error saving promotion', type: 'error' }); setTimeout(() => setPromoToast(null), 3000) }
+                finally { setPromoSaving(false) }
+              }
+              async function togglePromo(p) {
+                const res  = await fetch(`/api/host/promotions/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !p.is_active }) })
+                if (res.ok) loadPromotions()
+              }
+              async function deletePromo(p) {
+                if (!confirm(`Delete "${p.name}"?`)) return
+                const res  = await fetch(`/api/host/promotions/${p.id}`, { method: 'DELETE' })
+                const data = await res.json()
+                if (res.ok) { loadPromotions(); setPromoToast({ msg: data.message || 'Promotion removed', type: 'success' }); setTimeout(() => setPromoToast(null), 3000) }
+              }
+
+              return (
+                <div>
+                  {promoToast && (
+                    <div style={{ position: 'fixed', bottom: 24, right: 24, padding: '12px 20px', borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, zIndex: 9999, background: promoToast.type === 'error' ? '#EF4444' : '#16A34A', color: 'white' }}>
+                      {promoToast.msg}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div>
+                      <div className="hd-page-title">Promotions</div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--sr-sub)', marginBottom: 20 }}>Create discount codes and special offers for your listings</div>
+                    </div>
+                    <button onClick={openCreate} style={{ padding: '10px 20px', borderRadius: 10, background: 'var(--sr-orange)', border: 'none', color: 'white', fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>
+                      + New Promotion
+                    </button>
+                  </div>
+
+                  {/* Stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+                    {[
+                      { label: 'Total Promos',     value: promotions.length,              icon: '🏷️' },
+                      { label: 'Active',            value: activePromos.length,            icon: '✅' },
+                      { label: 'Total Uses',        value: totalUses,                      icon: '📊' },
+                      { label: 'Discounts Given',   value: `$${totalDiscount.toFixed(0)}`, icon: '💸' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 14, padding: '16px 18px' }}>
+                        <div style={{ fontSize: '1.3rem', marginBottom: 6 }}>{s.icon}</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--sr-text)', fontFamily: 'var(--sr-font-display)' }}>{s.value}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Table */}
+                  {!promoLoaded ? (
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sr-muted)', fontSize: '0.86rem' }}>Loading…</div>
+                  ) : promotions.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🏷️</div>
+                      <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>No promotions yet</div>
+                      <div style={{ fontSize: '0.84rem', color: 'var(--sr-muted)', marginBottom: 20 }}>Create discount codes to attract guests and boost bookings.</div>
+                      <button onClick={openCreate} style={{ padding: '10px 24px', borderRadius: 10, background: 'var(--sr-orange)', border: 'none', color: 'white', fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Create first promotion</button>
+                    </div>
+                  ) : (
+                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
+                            {['Code', 'Name', 'Discount', 'Applies To', 'Uses', 'Saved', 'Ends', 'Status', ''].map(h => (
+                              <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {promotions.map(p => {
+                            const isExpired = p.ends_at && new Date(p.ends_at) < new Date()
+                            const statusColor = !p.is_active ? '#6B7280' : isExpired ? '#EF4444' : '#16A34A'
+                            const statusLabel = !p.is_active ? 'Inactive' : isExpired ? 'Expired' : 'Active'
+                            return (
+                              <tr key={p.id} style={{ borderBottom: '1px solid var(--sr-border)', opacity: !p.is_active ? 0.6 : 1 }}>
+                                <td style={{ padding: '12px 16px' }}>
+                                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem', background: 'var(--sr-surface)', padding: '3px 8px', borderRadius: 6, color: 'var(--sr-orange)' }}>{p.code}</span>
+                                </td>
+                                <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--sr-text)' }}>{p.name}</td>
+                                <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--sr-orange)' }}>
+                                  {p.discount_type === 'percentage' ? `${p.discount_value}% off` : `$${p.discount_value} off`}
+                                </td>
+                                <td style={{ padding: '12px 16px', color: 'var(--sr-muted)', fontSize: '0.78rem' }}>
+                                  {!p.listing_ids?.length ? (
+                                    <span style={{ color: 'var(--sr-sub)' }}>All properties</span>
+                                  ) : p.listing_ids.length === 1 ? (
+                                    listings.find(l => l.id === p.listing_ids[0])?.title || '1 property'
+                                  ) : (
+                                    `${p.listing_ids.length} properties`
+                                  )}
+                                </td>
+                                <td style={{ padding: '12px 16px', color: 'var(--sr-muted)' }}>{p.total_uses || 0}{p.max_uses ? ` / ${p.max_uses}` : ''}</td>
+                                <td style={{ padding: '12px 16px', color: '#16A34A', fontWeight: 600 }}>${(p.total_discount_given || 0).toFixed(0)}</td>
+                                <td style={{ padding: '12px 16px', color: 'var(--sr-muted)', fontSize: '0.78rem' }}>
+                                  {p.ends_at ? new Date(p.ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                </td>
+                                <td style={{ padding: '12px 16px' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 100, fontSize: '0.72rem', fontWeight: 700, background: `${statusColor}15`, color: statusColor }}>
+                                    {statusLabel}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '12px 16px' }}>
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <button onClick={() => openEdit(p)} style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid var(--sr-border)', background: 'none', fontSize: '0.76rem', cursor: 'pointer', color: 'var(--sr-text)', fontFamily: 'var(--sr-font-sans)' }}>Edit</button>
+                                    <button onClick={() => togglePromo(p)} style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid var(--sr-border)', background: 'none', fontSize: '0.76rem', cursor: 'pointer', color: p.is_active ? '#EF4444' : '#16A34A', fontFamily: 'var(--sr-font-sans)' }}>
+                                      {p.is_active ? 'Pause' : 'Activate'}
+                                    </button>
+                                    <button onClick={() => deletePromo(p)} style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.25)', background: 'none', fontSize: '0.76rem', cursor: 'pointer', color: '#EF4444', fontFamily: 'var(--sr-font-sans)' }}>✕</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Create/Edit Modal */}
+                  {promoModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: 20 }}>
+                      <div style={{ background: 'var(--sr-card)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                          <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1.3rem', fontWeight: 700 }}>
+                            {editingPromo ? 'Edit Promotion' : 'New Promotion'}
+                          </div>
+                          <button onClick={() => setPromoModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--sr-muted)' }}>×</button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          {[
+                            { label: 'Promo Code *', key: 'code', type: 'text', placeholder: 'e.g. SUMMER20', hint: 'Guests enter this at checkout', disabled: !!editingPromo },
+                            { label: 'Name *', key: 'name', type: 'text', placeholder: 'e.g. Summer Sale' },
+                            { label: 'Description', key: 'description', type: 'text', placeholder: 'Optional' },
+                          ].map(f => (
+                            <div key={f.key}>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{f.label}</label>
+                              <input
+                                type={f.type}
+                                placeholder={f.placeholder}
+                                value={promoForm[f.key]}
+                                disabled={f.disabled}
+                                onChange={e => setPromoForm(p => ({ ...p, [f.key]: f.key === 'code' ? e.target.value.toUpperCase() : e.target.value }))}
+                                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)', opacity: f.disabled ? 0.6 : 1 }}
+                              />
+                              {f.hint && <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', marginTop: 3 }}>{f.hint}</div>}
+                            </div>
+                          ))}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discount Type *</label>
+                              <select value={promoForm.discount_type} onChange={e => setPromoForm(p => ({ ...p, discount_type: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }}>
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed ($)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                {promoForm.discount_type === 'percentage' ? 'Percent Off *' : 'Amount Off ($) *'}
+                              </label>
+                              <input type="number" min="1" max={promoForm.discount_type === 'percentage' ? 100 : undefined} placeholder={promoForm.discount_type === 'percentage' ? '10' : '25'} value={promoForm.discount_value} onChange={e => setPromoForm(p => ({ ...p, discount_value: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Min Nights</label>
+                              <input type="number" min="1" value={promoForm.min_nights} onChange={e => setPromoForm(p => ({ ...p, min_nights: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Max Uses</label>
+                              <input type="number" min="1" placeholder="Unlimited" value={promoForm.max_uses} onChange={e => setPromoForm(p => ({ ...p, max_uses: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }} />
+                            </div>
+                          </div>
+                          {/* Applies To */}
+                          <div>
+                            <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Applies To</label>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                              {[{ v: 'all', l: 'All Properties' }, { v: 'specific', l: 'Specific Property' }, { v: 'multiple', l: 'Multiple Properties' }].map(opt => (
+                                <button key={opt.v} type="button" onClick={() => setPromoForm(p => ({ ...p, listing_scope: opt.v, listing_ids: [] }))} style={{ flex: 1, padding: '8px 4px', borderRadius: 10, border: `1px solid ${promoForm.listing_scope === opt.v ? 'var(--sr-orange)' : 'var(--sr-border)'}`, background: promoForm.listing_scope === opt.v ? 'rgba(244,96,26,0.08)' : 'var(--sr-surface)', color: promoForm.listing_scope === opt.v ? 'var(--sr-orange)' : 'var(--sr-muted)', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.13s' }}>
+                                  {opt.l}
+                                </button>
+                              ))}
+                            </div>
+                            {promoForm.listing_scope === 'specific' && (
+                              <select value={promoForm.listing_ids[0] || ''} onChange={e => setPromoForm(p => ({ ...p, listing_ids: e.target.value ? [e.target.value] : [] }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }}>
+                                <option value="">Select a property…</option>
+                                {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                              </select>
+                            )}
+                            {promoForm.listing_scope === 'multiple' && (
+                              <div style={{ border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 12px', background: 'var(--sr-surface)', maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {listings.length === 0 && <div style={{ fontSize: '0.8rem', color: 'var(--sr-sub)' }}>No properties found.</div>}
+                                {listings.map(l => {
+                                  const checked = promoForm.listing_ids.includes(l.id)
+                                  return (
+                                    <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.84rem', color: 'var(--sr-text)' }}>
+                                      <input type="checkbox" checked={checked} onChange={() => setPromoForm(p => ({ ...p, listing_ids: checked ? p.listing_ids.filter(id => id !== l.id) : [...p.listing_ids, l.id] }))} />
+                                      {l.title}
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {promoForm.listing_scope === 'all' && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--sr-sub)', padding: '6px 0' }}>This code will work on any of your properties.</div>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Start Date</label>
+                              <input type="date" value={promoForm.starts_at} onChange={e => setPromoForm(p => ({ ...p, starts_at: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--sr-sub)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>End Date</label>
+                              <input type="date" value={promoForm.ends_at} onChange={e => setPromoForm(p => ({ ...p, ends_at: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--sr-border)', background: 'var(--sr-surface)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', color: 'var(--sr-text)' }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.84rem', color: 'var(--sr-text)' }}>
+                              <input type="checkbox" checked={promoForm.is_active} onChange={e => setPromoForm(p => ({ ...p, is_active: e.target.checked }))} />
+                              Active
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.84rem', color: 'var(--sr-text)' }}>
+                              <input type="checkbox" checked={promoForm.auto_apply} onChange={e => setPromoForm(p => ({ ...p, auto_apply: e.target.checked }))} />
+                              Auto-apply via URL
+                            </label>
+                          </div>
+                          {promoForm.auto_apply && promoForm.code && (
+                            <div style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', fontSize: '0.76rem' }}>
+                              <div style={{ fontWeight: 700, color: 'var(--sr-sub)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Auto-apply URL</div>
+                              <code style={{ color: 'var(--sr-orange)', wordBreak: 'break-all' }}>/listings/[id]?promo={promoForm.code}</code>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
+                            <button onClick={() => setPromoModal(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1px solid var(--sr-border)', background: 'none', color: 'var(--sr-text)', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Cancel</button>
+                            <button onClick={savePromo} disabled={promoSaving || !promoForm.code.trim() || !promoForm.name.trim() || !promoForm.discount_value} style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: promoSaving ? '#A89880' : 'var(--sr-orange)', color: 'white', fontWeight: 700, cursor: promoSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)' }}>
+                              {promoSaving ? 'Saving…' : editingPromo ? 'Save Changes' : 'Create Promotion'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {activeNav === 'settings' && (
               <div>
                 <div className="hd-page-title">Settings</div>
@@ -2655,7 +3849,7 @@ export default function HostDashboard() {
 
                 {/* Profile card */}
                 <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', padding: '24px', marginBottom: '16px', maxWidth: '560px' }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.05rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '16px' }}>Profile information</div>
+                  <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.05rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '16px' }}>Profile information</div>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
                     <div className="hd-avatar" style={{ width: '52px', height: '52px', fontSize: '1.1rem' }}>{initials}</div>
                     <div>
@@ -2678,8 +3872,8 @@ export default function HostDashboard() {
                   </div>
                 </div>
 
-                {/* Switch to guest */}
-                <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', padding: '24px', maxWidth: '560px' }}>
+                {/* Switch to guest — owner only */}
+                {myRole === 'owner' && <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '16px', padding: '24px', maxWidth: '560px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px' }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.96rem', marginBottom: '6px', color: 'var(--sr-text)' }}>
@@ -2691,12 +3885,12 @@ export default function HostDashboard() {
                     </div>
                     <button
                       onClick={() => setSwitchModal(true)}
-                      style={{ flexShrink: 0, background: 'var(--sr-redl)', color: 'var(--sr-red)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '9px 18px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif', whiteSpace: 'nowrap' }}
+                      style={{ flexShrink: 0, background: 'var(--sr-redl)', color: 'var(--sr-red)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '9px 18px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', whiteSpace: 'nowrap' }}
                     >
                       Switch account
                     </button>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
 
@@ -2709,14 +3903,14 @@ export default function HostDashboard() {
         <div onClick={e => e.target === e.currentTarget && !inviteSending && setInviteModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: '32px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', fontWeight: 700, color: 'var(--sr-text)' }}>Invite Team Member</div>
+              <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.4rem', fontWeight: 700, color: 'var(--sr-text)' }}>Invite Team Member</div>
               <button onClick={() => setInviteModal(false)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1.3rem', cursor: 'pointer', lineHeight: 1 }}>✕</button>
             </div>
 
             {/* Email */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 8 }}>Email Address</label>
-              <input type="email" placeholder="colleague@company.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '11px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'Syne, sans-serif', outline: 'none' }} />
+              <input type="email" placeholder="colleague@company.com" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '11px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
             </div>
 
             {/* Role selector */}
@@ -2728,7 +3922,7 @@ export default function HostDashboard() {
                   { value: 'staff',   label: 'Staff',   icon: '🟢', color: '#4ade80', desc: 'Handle bookings & guests' },
                   { value: 'finance', label: 'Finance', icon: '💛', color: '#fcd34d', desc: 'View earnings & payouts' },
                 ].map(({ value, label, icon, color, desc }) => (
-                  <button key={value} onClick={() => { setInviteRole(value); setInviteCustomRoleId(null) }} style={{ background: inviteRole === value ? `${color}18` : 'var(--sr-card2)', border: `1.5px solid ${inviteRole === value ? color : 'var(--sr-border)'}`, borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Syne, sans-serif' }}>
+                  <button key={value} onClick={() => { setInviteRole(value); setInviteCustomRoleId(null) }} style={{ background: inviteRole === value ? `${color}18` : 'var(--sr-card2)', border: `1.5px solid ${inviteRole === value ? color : 'var(--sr-border)'}`, borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--sr-font-sans)' }}>
                     <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>{icon}</div>
                     <div style={{ fontSize: '0.82rem', fontWeight: 700, color: inviteRole === value ? color : 'var(--sr-text)', marginBottom: 3 }}>{label}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', lineHeight: 1.4 }}>{desc}</div>
@@ -2736,7 +3930,7 @@ export default function HostDashboard() {
                 ))}
                 {/* Custom roles */}
                 {customRoles.map(cr => (
-                  <button key={cr.id} onClick={() => { setInviteRole('custom'); setInviteCustomRoleId(cr.id) }} style={{ background: inviteRole === 'custom' && inviteCustomRoleId === cr.id ? 'rgba(196,181,253,0.12)' : 'var(--sr-card2)', border: `1.5px solid ${inviteRole === 'custom' && inviteCustomRoleId === cr.id ? '#c084fc' : 'var(--sr-border)'}`, borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Syne, sans-serif' }}>
+                  <button key={cr.id} onClick={() => { setInviteRole('custom'); setInviteCustomRoleId(cr.id) }} style={{ background: inviteRole === 'custom' && inviteCustomRoleId === cr.id ? 'rgba(196,181,253,0.12)' : 'var(--sr-card2)', border: `1.5px solid ${inviteRole === 'custom' && inviteCustomRoleId === cr.id ? '#c084fc' : 'var(--sr-border)'}`, borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'var(--sr-font-sans)' }}>
                     <div style={{ fontSize: '1.1rem', marginBottom: 4 }}>🎨</div>
                     <div style={{ fontSize: '0.82rem', fontWeight: 700, color: inviteRole === 'custom' && inviteCustomRoleId === cr.id ? '#c084fc' : 'var(--sr-text)', marginBottom: 3 }}>{cr.name}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)', lineHeight: 1.4 }}>Custom · {cr.permissions?.length || 0} permissions</div>
@@ -2767,12 +3961,12 @@ export default function HostDashboard() {
               <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 8 }}>
                 Personal Note <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>(optional)</span>
               </label>
-              <textarea rows={3} placeholder="Add a personal message to the invite…" value={inviteNote} onChange={e => setInviteNote(e.target.value)} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '11px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'Syne, sans-serif', outline: 'none', resize: 'vertical' }} />
+              <textarea rows={3} placeholder="Add a personal message to the invite…" value={inviteNote} onChange={e => setInviteNote(e.target.value)} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '11px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none', resize: 'vertical' }} />
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setInviteModal(false)} disabled={inviteSending} style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: 10, padding: '12px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Cancel</button>
-              <button onClick={sendInvite} disabled={inviteSending || !inviteEmail.trim()} style={{ flex: 2, background: inviteSending || !inviteEmail.trim() ? 'var(--sr-card2)' : 'var(--sr-orange)', color: inviteSending || !inviteEmail.trim() ? 'var(--sr-sub)' : 'white', border: 'none', borderRadius: 10, padding: '12px', fontWeight: 700, fontSize: '0.88rem', cursor: inviteSending || !inviteEmail.trim() ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif', transition: 'all 0.15s' }}>
+              <button onClick={() => setInviteModal(false)} disabled={inviteSending} style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: 10, padding: '12px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Cancel</button>
+              <button onClick={sendInvite} disabled={inviteSending || !inviteEmail.trim()} style={{ flex: 2, background: inviteSending || !inviteEmail.trim() ? 'var(--sr-card2)' : 'var(--sr-orange)', color: inviteSending || !inviteEmail.trim() ? 'var(--sr-sub)' : 'white', border: 'none', borderRadius: 10, padding: '12px', fontWeight: 700, fontSize: '0.88rem', cursor: inviteSending || !inviteEmail.trim() ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>
                 {inviteSending ? 'Sending invite…' : 'Send Invite'}
               </button>
             </div>
@@ -2788,7 +3982,7 @@ export default function HostDashboard() {
         >
           <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '440px' }}>
             <div style={{ fontSize: '2rem', marginBottom: '14px', textAlign: 'center' }}>🧳</div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '12px', textAlign: 'center' }}>
+            <h2 style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.3rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: '12px', textAlign: 'center' }}>
               Switch to Guest View?
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--sr-sub)', lineHeight: 1.7, marginBottom: '24px', textAlign: 'center' }}>
@@ -2799,14 +3993,14 @@ export default function HostDashboard() {
               <button
                 onClick={() => setSwitchModal(false)}
                 disabled={switching}
-                style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}
+                style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSwitchToGuest}
                 disabled={switching}
-                style={{ flex: 2, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '0.88rem', cursor: switching ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif', opacity: switching ? 0.6 : 1 }}
+                style={{ flex: 2, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: '10px', padding: '12px', fontWeight: 700, fontSize: '0.88rem', cursor: switching ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', opacity: switching ? 0.6 : 1 }}
               >
                 {switching ? 'Switching…' : 'Switch to Guest View'}
               </button>
@@ -2837,11 +4031,11 @@ export default function HostDashboard() {
                     </p>
                   </>
                 )}
-                <button onClick={closeHostCancelModal} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Close</button>
+                <button onClick={closeHostCancelModal} style={{ background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Close</button>
               </div>
             ) : (
               <>
-                <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 6 }}>Cancel booking</div>
+                <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 6 }}>Cancel booking</div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--sr-muted)', marginBottom: 16 }}>
                   {hostCancelModal.listing_title} · Guest: {hostCancelModal.guest_name} · Check-in {hostCancelModal.check_in}
                 </div>
@@ -2853,14 +4047,14 @@ export default function HostDashboard() {
                 </label>
                 <textarea value={hostCancelReason} onChange={e => setHostCancelReason(e.target.value)} rows={3}
                   placeholder="Explain why you are cancelling this booking…"
-                  style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: 'var(--sr-text)', fontFamily: 'Syne, sans-serif', resize: 'vertical', outline: 'none', marginBottom: 18 }}
+                  style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: 'var(--sr-text)', fontFamily: 'var(--sr-font-sans)', resize: 'vertical', outline: 'none', marginBottom: 18 }}
                 />
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={closeHostCancelModal} style={{ flex: 1, background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'Syne, sans-serif' }}>
+                  <button onClick={closeHostCancelModal} style={{ flex: 1, background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'var(--sr-font-sans)' }}>
                     Keep booking
                   </button>
                   <button onClick={handleHostCancel} disabled={hostCancelling || !hostCancelReason.trim()}
-                    style={{ flex: 1, background: '#DC2626', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 700, cursor: hostCancelReason.trim() ? 'pointer' : 'not-allowed', fontFamily: 'Syne, sans-serif', opacity: (hostCancelling || !hostCancelReason.trim()) ? 0.6 : 1 }}>
+                    style={{ flex: 1, background: '#DC2626', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 700, cursor: hostCancelReason.trim() ? 'pointer' : 'not-allowed', fontFamily: 'var(--sr-font-sans)', opacity: (hostCancelling || !hostCancelReason.trim()) ? 0.6 : 1 }}>
                     {hostCancelling ? 'Cancelling…' : 'Cancel booking'}
                   </button>
                 </div>
@@ -2870,7 +4064,309 @@ export default function HostDashboard() {
         </div>
       )}
 
-      {/* ── Reply to Review Modal ──────────────────────────────────────── */}
+      {/* ── Create Task Modal ──────────────────────────────────────────── */}
+      {taskModal && (
+        <div onClick={e => e.target === e.currentTarget && setTaskModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 520 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>New Task</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--sr-sub)', marginTop: 2 }}>Assign a task to a property and team member.</div>
+              </div>
+              <button onClick={() => setTaskModal(false)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '1.1rem', padding: 4, lineHeight: 1 }}>✕</button>
+            </div>
+
+            {taskFormErr && (
+              <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: '0.82rem', color: '#ef4444' }}>
+                {taskFormErr}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateTask}>
+              {/* Task Title */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 6 }}>
+                  Task Title <span style={{ color: 'var(--sr-orange)' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={taskForm.title}
+                  onChange={e => setTaskForm(p => ({ ...p, title: e.target.value }))}
+                  placeholder="e.g. Clean and prepare unit for guest check-in"
+                  autoFocus
+                  required
+                  style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: 'var(--sr-text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 6 }}>
+                  Description <span style={{ color: 'var(--sr-sub)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+                </label>
+                <textarea
+                  value={taskForm.description}
+                  onChange={e => setTaskForm(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Add any notes or instructions…"
+                  rows={2}
+                  style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: 'var(--sr-text)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: 1.5 }}
+                />
+              </div>
+
+              {/* Property */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 6 }}>
+                  Property <span style={{ color: 'var(--sr-orange)' }}>*</span>
+                </label>
+                <select
+                  value={taskForm.listing_id}
+                  onChange={e => setTaskForm(p => ({ ...p, listing_id: e.target.value }))}
+                  required
+                  style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: taskForm.listing_id ? 'var(--sr-text)' : 'var(--sr-sub)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+                >
+                  <option value="">Select a property…</option>
+                  {listings.map(l => (
+                    <option key={l.id} value={l.id}>{l.title || 'Untitled'}{l.city ? ` — ${l.city}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assign to team member + Due date row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 6 }}>
+                    Assign To
+                  </label>
+                  <select
+                    value={taskForm.assigned_to}
+                    onChange={e => setTaskForm(p => ({ ...p, assigned_to: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: taskForm.assigned_to ? 'var(--sr-text)' : 'var(--sr-sub)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}
+                  >
+                    <option value="">Unassigned</option>
+                    {(teamData?.members || []).filter(m => m.status === 'active').map(m => (
+                      <option key={m.id} value={m.id}>{m.full_name || m.email || 'Team member'}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 6 }}>
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={taskForm.due_date}
+                    onChange={e => setTaskForm(p => ({ ...p, due_date: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 8, fontSize: '0.84rem', color: 'var(--sr-text)', outline: 'none', fontFamily: 'inherit', colorScheme: 'dark' }}
+                  />
+                </div>
+              </div>
+
+              {/* Priority / Status */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--sr-sub)', marginBottom: 8 }}>
+                  Priority
+                </label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'scheduled',   label: 'Normal',      color: 'var(--sr-sub)', bg: 'var(--sr-surface)' },
+                    { key: 'in_progress', label: 'In Progress', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+                    { key: 'urgent',      label: '🔴 Urgent',   color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+                  ].map(opt => (
+                    <button key={opt.key} type="button"
+                      onClick={() => setTaskForm(p => ({ ...p, status: opt.key }))}
+                      style={{ padding: '6px 14px', borderRadius: 100, border: `1.5px solid ${taskForm.status === opt.key ? opt.color : 'var(--sr-border)'}`, background: taskForm.status === opt.key ? opt.bg : 'transparent', color: taskForm.status === opt.key ? opt.color : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={() => setTaskModal(false)}
+                  style={{ flex: 1, background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'var(--sr-font-sans)' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={taskSaving}
+                  style={{ flex: 2, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 700, cursor: taskSaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', opacity: taskSaving ? 0.6 : 1 }}>
+                  {taskSaving ? 'Creating…' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Property Access Editor Modal ───────────────────────────────── */}
+      {accessEditMember && (() => {
+        const m = accessEditMember
+        const hasAll = m.allowed_listing_ids === null
+        return (
+          <div onClick={e => e.target === e.currentTarget && setAccessEditMember(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: '28px 28px 24px', width: '100%', maxWidth: 480 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div>
+                  <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Property Access</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--sr-sub)', marginTop: 2 }}>
+                    {m.full_name || m.email} · <span style={{ textTransform: 'capitalize' }}>{m.role}</span>
+                  </div>
+                </div>
+                <button onClick={() => setAccessEditMember(null)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '1.1rem', padding: 4, lineHeight: 1 }}>✕</button>
+              </div>
+
+              {/* Grant All toggle */}
+              <div style={{ background: hasAll ? 'rgba(34,197,94,0.06)' : 'var(--sr-card2)', border: `1px solid ${hasAll ? 'rgba(34,197,94,0.2)' : 'var(--sr-border)'}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Properties</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>Full access to every property</div>
+                </div>
+                {hasAll ? (
+                  <span style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700 }}>Active</span>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      const res = await fetch(`/api/host/team/${m.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'grant_all_access' }) })
+                      const data = await res.json()
+                      if (data.success) { loadTeam(); setAccessEditMember(null); showToast('Full access granted', 'success') }
+                      else showToast(data.error || 'Failed', 'error')
+                    }}
+                    style={{ background: 'rgba(244,96,26,0.08)', border: '1px solid rgba(244,96,26,0.25)', borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 700, color: 'var(--sr-orange)', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}
+                  >
+                    Grant All
+                  </button>
+                )}
+              </div>
+
+              {/* Per-listing toggles */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                {listings.map(l => {
+                  const cellKey = `${m.id}:${l.id}`
+                  const busy = !!accessLoading[cellKey]
+                  const hasAccess = hasAll || (m.allowed_listing_ids || []).includes(l.id)
+                  return (
+                    <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--sr-card2)', borderRadius: 10, border: '1px solid var(--sr-border)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.title}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>📍 {l.city}{l.state ? `, ${l.state}` : ''}</div>
+                      </div>
+                      <button
+                        disabled={busy}
+                        onClick={async () => {
+                          await togglePropertyAccess(m.id, l.id, hasAccess)
+                          // Refresh the modal member data from the updated teamData
+                          setAccessEditMember(prev => {
+                            if (!prev) return null
+                            const current = prev.allowed_listing_ids
+                            let next
+                            if (hasAccess) {
+                              next = current === null
+                                ? listings.filter(x => x.id !== l.id).map(x => x.id)
+                                : (current || []).filter(id => id !== l.id)
+                            } else {
+                              next = [...(current || []), l.id]
+                              if (next.length === listings.length) next = null
+                            }
+                            return { ...prev, allowed_listing_ids: next }
+                          })
+                        }}
+                        style={{ background: hasAccess ? 'rgba(34,197,94,0.1)' : 'var(--sr-card)', border: `1px solid ${hasAccess ? 'rgba(34,197,94,0.3)' : 'var(--sr-border)'}`, borderRadius: 8, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 700, color: hasAccess ? '#4ade80' : 'var(--sr-sub)', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                      >
+                        {busy ? '…' : hasAccess ? '✓ Access' : '+ Grant'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ marginTop: 18, textAlign: 'right' }}>
+                <button onClick={() => setAccessEditMember(null)} style={{ background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '9px 20px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'var(--sr-font-sans)' }}>
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Property Access Modal (per-property) ───────────────────────── */}
+      {propAccessModal && (() => {
+        const l = propAccessModal
+        const activeNonOwners = (teamData?.members || []).filter(m => m.status === 'active' && m.role !== 'owner')
+        return (
+          <div onClick={e => e.target === e.currentTarget && setPropAccessModal(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, width: '100%', maxWidth: 480, overflow: 'hidden' }}>
+              {/* Header image */}
+              <div style={{ height: 110, position: 'relative', background: 'var(--sr-card2)' }}>
+                {Array.isArray(l.images) && l.images[0]
+                  ? <img src={l.images[0]} alt={l.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', opacity: 0.25 }}>🏠</div>
+                }
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)' }} />
+                <button onClick={() => setPropAccessModal(null)} style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>✕</button>
+                <div style={{ position: 'absolute', bottom: 12, left: 16 }}>
+                  <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: 2 }}>{l.title}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>📍 {l.city}{l.state ? `, ${l.state}` : ''}</div>
+                </div>
+              </div>
+
+              <div style={{ padding: '20px 24px 24px' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--sr-sub)', marginBottom: 14 }}>
+                  Toggle access for each team member. Changes save instantly.
+                </div>
+
+                {activeNonOwners.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--sr-sub)', fontSize: '0.84rem' }}>
+                    No team members yet. Invite someone from the Team Members tab.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {activeNonOwners.map(m => {
+                      const cellKey = `${m.id}:${l.id}`
+                      const busy = !!accessLoading[cellKey]
+                      const hasAccess = !m.allowed_listing_ids || m.allowed_listing_ids.includes(l.id)
+                      const TEAM_RS = {
+                        manager: { bg: 'rgba(59,130,246,0.12)',  text: '#60a5fa' },
+                        staff:   { bg: 'rgba(34,197,94,0.12)',   text: '#4ade80' },
+                        finance: { bg: 'rgba(251,191,36,0.12)',  text: '#fcd34d' },
+                        custom:  { bg: 'rgba(192,132,252,0.12)', text: '#c084fc' },
+                      }
+                      const rs = TEAM_RS[m.role] || TEAM_RS.staff
+                      const ini = m.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || m.email?.[0]?.toUpperCase() || '?'
+                      return (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: hasAccess ? 'rgba(34,197,94,0.04)' : 'var(--sr-card2)', border: `1px solid ${hasAccess ? 'rgba(34,197,94,0.15)' : 'var(--sr-border)'}`, borderRadius: 10 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: rs.bg, border: `1px solid ${rs.text}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: rs.text, flexShrink: 0 }}>{ini}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--sr-text)' }}>{m.full_name || m.email || '—'}</div>
+                            <div style={{ fontSize: '0.7rem', color: rs.text, textTransform: 'capitalize' }}>{m.role}</div>
+                          </div>
+                          <button
+                            disabled={busy}
+                            onClick={() => togglePropertyAccess(m.id, l.id, hasAccess)}
+                            style={{ background: hasAccess ? 'rgba(34,197,94,0.1)' : 'var(--sr-card)', border: `1px solid ${hasAccess ? 'rgba(34,197,94,0.3)' : 'var(--sr-border)'}`, borderRadius: 8, padding: '6px 14px', fontSize: '0.74rem', fontWeight: 700, color: hasAccess ? '#4ade80' : 'var(--sr-sub)', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', opacity: busy ? 0.5 : 1, whiteSpace: 'nowrap', transition: 'all 0.15s' }}
+                          >
+                            {busy ? '…' : hasAccess ? '✓ Has Access' : '+ Grant Access'}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div style={{ marginTop: 18, textAlign: 'right' }}>
+                  <button onClick={() => setPropAccessModal(null)} style={{ background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '9px 20px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'var(--sr-font-sans)' }}>
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ── Reply to Review Modal ───────────────────────────────────────── */}
       {replyModal && (
         <div onClick={e => e.target === e.currentTarget && setReplyModal(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -2896,11 +4392,11 @@ export default function HostDashboard() {
             />
             <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
               <button onClick={() => setReplyModal(null)}
-                style={{ flex: 1, background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'Syne, sans-serif' }}>
+                style={{ flex: 1, background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', color: 'var(--sr-muted)', fontFamily: 'var(--sr-font-sans)' }}>
                 Cancel
               </button>
               <button onClick={submitReply} disabled={replySaving}
-                style={{ flex: 1, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 700, cursor: replySaving ? 'not-allowed' : 'pointer', fontFamily: 'Syne, sans-serif', opacity: replySaving ? 0.6 : 1 }}>
+                style={{ flex: 1, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', fontSize: '0.86rem', fontWeight: 700, cursor: replySaving ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', opacity: replySaving ? 0.6 : 1 }}>
                 {replySaving ? 'Saving…' : replyModal.host_reply ? 'Update response' : 'Post response'}
               </button>
             </div>

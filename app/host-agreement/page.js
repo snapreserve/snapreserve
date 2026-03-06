@@ -4,10 +4,10 @@ export default function HostAgreementPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', -apple-system, sans-serif; background: #FAF8F5; color: #1A1410; }
+        body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
 
-        .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: white; border-bottom: 1px solid #E8E2D9; position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: #1A1410; }
+        .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); position: sticky; top: 0; z-index: 100; }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
         .logo span { color: #F4601A; }
 
         .hero { background: #1A1410; padding: 56px 48px 48px; }
@@ -21,43 +21,43 @@ export default function HostAgreementPage() {
 
         /* TOC sidebar */
         .toc { position: sticky; top: 88px; }
-        .toc-title { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #A89880; margin-bottom: 12px; }
-        .toc a { display: block; font-size: 0.78rem; color: #6B5F54; text-decoration: none; padding: 5px 0; border-left: 2px solid #E8E2D9; padding-left: 12px; line-height: 1.4; transition: all 0.15s; }
+        .toc-title { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 12px; }
+        .toc a { display: block; font-size: 0.78rem; color: var(--sr-muted); text-decoration: none; padding: 5px 0; border-left: 2px solid var(--sr-border-solid,#E8E2D9); padding-left: 12px; line-height: 1.4; transition: all 0.15s; }
         .toc a:hover { color: #F4601A; border-left-color: #F4601A; }
 
         /* Content */
         .content { min-width: 0; }
-        .intro-box { background: white; border: 1px solid #E8E2D9; border-radius: 16px; padding: 22px 24px; margin-bottom: 40px; font-size: 0.9rem; color: #4A3F35; line-height: 1.8; }
+        .intro-box { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); border-radius: 16px; padding: 22px 24px; margin-bottom: 40px; font-size: 0.9rem; color: var(--sr-muted); line-height: 1.8; }
         .intro-box a { color: #F4601A; font-weight: 600; text-decoration: none; }
 
         .section { margin-bottom: 44px; scroll-margin-top: 88px; }
-        .section-num { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #A89880; margin-bottom: 6px; }
-        .section h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: #1A1410; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #E8E2D9; }
-        p { font-size: 0.9rem; color: #4A3F35; line-height: 1.85; margin-bottom: 12px; }
+        .section-num { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 6px; }
+        .section h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--sr-text); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
+        p { font-size: 0.9rem; color: var(--sr-muted); line-height: 1.85; margin-bottom: 12px; }
         p:last-child { margin-bottom: 0; }
 
-        h3 { font-size: 0.94rem; font-weight: 700; color: #1A1410; margin: 20px 0 8px; }
+        h3 { font-size: 0.94rem; font-weight: 700; color: var(--sr-text); margin: 20px 0 8px; }
 
         ul, ol { padding-left: 22px; margin-bottom: 14px; }
-        ul li, ol li { font-size: 0.9rem; color: #4A3F35; line-height: 1.85; margin-bottom: 5px; }
+        ul li, ol li { font-size: 0.9rem; color: var(--sr-muted); line-height: 1.85; margin-bottom: 5px; }
 
         .def-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-        .def-table tr { border-bottom: 1px solid #E8E2D9; }
+        .def-table tr { border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
         .def-table tr:last-child { border-bottom: none; }
-        .def-table td { padding: 11px 12px; font-size: 0.87rem; line-height: 1.7; color: #4A3F35; vertical-align: top; }
-        .def-table td:first-child { font-weight: 700; color: #1A1410; width: 140px; white-space: nowrap; }
+        .def-table td { padding: 11px 12px; font-size: 0.87rem; line-height: 1.7; color: var(--sr-muted); vertical-align: top; }
+        .def-table td:first-child { font-weight: 700; color: var(--sr-text); width: 140px; white-space: nowrap; }
 
         .fee-box { background: rgba(244,96,26,0.04); border: 1.5px solid rgba(244,96,26,0.18); border-radius: 14px; padding: 0; margin: 16px 0; overflow: hidden; }
         .fee-box-title { background: rgba(244,96,26,0.08); padding: 10px 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #F4601A; }
         .fee-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(244,96,26,0.1); }
         .fee-row:last-child { border-bottom: none; }
-        .fee-label { font-size: 0.87rem; color: #4A3F35; }
-        .fee-value { font-size: 0.87rem; font-weight: 700; color: #1A1410; text-align: right; }
+        .fee-label { font-size: 0.87rem; color: var(--sr-muted); }
+        .fee-value { font-size: 0.87rem; font-weight: 700; color: var(--sr-text); text-align: right; }
 
         .callout { border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 0.87rem; line-height: 1.75; }
         .callout-orange { background: rgba(244,96,26,0.06); border: 1px solid rgba(244,96,26,0.2); color: #7A3010; }
         .callout-blue { background: rgba(26,110,244,0.05); border: 1px solid rgba(26,110,244,0.18); color: #0A2F7A; }
-        .callout-gray { background: white; border: 1px solid #E8E2D9; color: #4A3F35; }
+        .callout-gray { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); color: var(--sr-muted); }
         .callout strong { color: inherit; }
 
         .contact-card { background: #1A1410; border-radius: 20px; padding: 32px 36px; margin-top: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -65,12 +65,12 @@ export default function HostAgreementPage() {
         .cc-text p { font-size: 0.84rem; color: rgba(255,255,255,0.45); margin: 0; }
         .cc-email { background: #F4601A; color: white; padding: 12px 26px; border-radius: 100px; font-weight: 700; font-size: 0.88rem; text-decoration: none; white-space: nowrap; }
 
-        .footer { background: #1A1410; color: #A89880; padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 80px; }
-        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: #F5EFE8; }
+        .footer { background: var(--sr-bg); color: var(--sr-muted); padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 80px; border-top: 1px solid var(--sr-border); }
+        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--sr-text); }
         .footer-logo span { color: #F4601A; }
         .footer-links { display: flex; gap: 24px; }
-        .footer-links a { font-size: 0.78rem; color: #A89880; text-decoration: none; }
-        .footer-links a:hover { color: white; }
+        .footer-links a { font-size: 0.78rem; color: var(--sr-muted); text-decoration: none; }
+        .footer-links a:hover { color: var(--sr-text); }
 
         @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .toc { display: none; } }
         @media (max-width: 640px) { .hero, .layout, .footer, .nav { padding-left: 20px; padding-right: 20px; } .hero h1 { font-size: 1.9rem; } .contact-card { flex-direction: column; } }
@@ -80,7 +80,7 @@ export default function HostAgreementPage() {
       <nav className="nav">
         <a href="/home" className="logo">Snap<span>Reserve™</span></a>
         <div style={{display:'flex',gap:'8px'}}>
-          <a href="/login" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',border:'1px solid #D4CEC5',color:'#1A1410',textDecoration:'none'}}>Log in</a>
+          <a href="/login" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',border:'1px solid var(--sr-border-solid,#D4CEC5)',color:'var(--sr-text)',textDecoration:'none'}}>Log in</a>
           <a href="/signup" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',background:'#F4601A',color:'white',textDecoration:'none'}}>Sign up</a>
         </div>
       </nav>
@@ -92,7 +92,7 @@ export default function HostAgreementPage() {
           <h1>Host Agreement</h1>
           <div className="hero-meta">
             <strong>Effective Date: March 1, 2026</strong> &nbsp;·&nbsp; Last Updated: March 1, 2026<br />
-            Applies to all individuals and entities listing properties on the SnapReserve™™ platform.
+            Applies to all individuals and entities listing properties on the SnapReserve™ platform.
           </div>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function HostAgreementPage() {
                 <li>Stripe fee (illustrative 2.9% + $0.30, Host's 50% share): <strong>≈$14.80</strong></li>
                 <li><strong>Approximate Host Payout: $953.20</strong></li>
               </ul>
-              <p style={{marginTop:'8px',marginBottom:0,fontSize:'0.82rem',color:'#A89880'}}>Actual Stripe fees vary by card type and location. This example is illustrative only.</p>
+              <p style={{marginTop:'8px',marginBottom:0,fontSize:'0.82rem',color:'var(--sr-sub)'}}>Actual Stripe fees vary by card type and location. This example is illustrative only.</p>
             </div>
 
             <h3>5.4 Taxes</h3>

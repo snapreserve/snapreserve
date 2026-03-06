@@ -4,3 +4,18 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# ── Function timeouts ─────────────────────────────────────────────
+# Default Netlify timeout is 10s. Admin export routes and bulk
+# operations need the 26s maximum allowed on Pro plan.
+[functions]
+  node_bundler = "nft"
+
+[functions."api-admin-exports"]
+  timeout = 26
+
+[functions."api-admin-waitlist-bulk"]
+  timeout = 26
+
+[functions."api-admin-bookings"]
+  timeout = 26

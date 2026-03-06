@@ -38,6 +38,9 @@ export async function POST(request) {
   if (!description?.trim() || description.trim().length < 20) {
     return NextResponse.json({ error: 'Description must be at least 20 characters.' }, { status: 400 })
   }
+  if (description.trim().length > 2000) {
+    return NextResponse.json({ error: 'Description must be 2000 characters or less.' }, { status: 400 })
+  }
 
   const adminClient = createAdminClient()
 

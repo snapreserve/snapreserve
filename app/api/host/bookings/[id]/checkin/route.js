@@ -17,14 +17,17 @@ export async function POST(request, { params }) {
 
   const admin = createAdminClient()
 
-  // Resolve host org user_id
+  // Resolve host org user_id (owner or manager/staff can check in)
   let hostUserId = null
   const { data: directHost } = await admin.from('hosts').select('id, user_id').eq('user_id', user.id).maybeSingle()
   if (directHost) {
     hostUserId = user.id
   } else {
-    const { data: mem } = await admin.from('host_team_members').select('host_id').eq('user_id', user.id).eq('status', 'active').maybeSingle()
+    const { data: mem } = await admin.from('host_team_members').select('host_id, role').eq('user_id', user.id).eq('status', 'active').maybeSingle()
     if (mem) {
+      if (!['owner', 'manager', 'staff'].includes(mem.role)) {
+        return NextResponse.json({ error: 'Only managers and staff can confirm check-ins' }, { status: 403 })
+      }
       const { data: orgHost } = await admin.from('hosts').select('user_id').eq('id', mem.host_id).maybeSingle()
       hostUserId = orgHost?.user_id ?? null
     }

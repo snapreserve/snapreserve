@@ -6,44 +6,48 @@
    ══════════════════════════════════════════ */
 
 :root {
+  /* Typography — set by next/font via layout.js */
+  --sr-font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
+  --sr-font-display: var(--font-cormorant), Georgia, serif;
+
   /* Core palette — dark (default) */
-  --sr-bg:       #0f0e0c;
-  --sr-surface:  #161410;
-  --sr-card:     #1c1a16;
-  --sr-card2:    #221f1a;
-  --sr-border:   rgba(255,255,255,0.07);
-  --sr-border2:  rgba(255,255,255,0.12);
-  --sr-text:     #f0ebe3;
-  --sr-muted:    #8a7f72;
-  --sr-sub:      #5a5248;
+  --sr-bg:       #0D0D0D;
+  --sr-surface:  #141414;
+  --sr-card:     #141414;
+  --sr-card2:    #1A1A1A;
+  --sr-border:   rgba(255,255,255,0.08);
+  --sr-border2:  rgba(255,255,255,0.14);
+  --sr-text:     #F0EBE3;
+  --sr-muted:    #888888;
+  --sr-sub:      #555555;
   --sr-overlay-xs: rgba(255,255,255,0.03);
   --sr-overlay-sm: rgba(255,255,255,0.06);
   --sr-overlay-md: rgba(255,255,255,0.10);
 
   /* Accent */
-  --sr-orange:  #e8622a;
-  --sr-orange2: #f0845a;
+  --sr-orange:  #E8622A;
+  --sr-orange2: #F07A4A;
   --sr-ol:      rgba(232,98,42,0.12);
   --sr-ob:      rgba(232,98,42,0.30);
 
   /* Status */
-  --sr-green:   #3db87a;
+  --sr-green:   #3DB87A;
   --sr-greenl:  rgba(61,184,122,0.12);
-  --sr-blue:    #5a9fd4;
+  --sr-blue:    #5A9FD4;
   --sr-bluel:   rgba(90,159,212,0.12);
-  --sr-red:     #e05a4a;
+  --sr-red:     #E05A4A;
   --sr-redl:    rgba(224,90,74,0.12);
-  --sr-yellow:  #d4aa4a;
+  --sr-yellow:  #D4AA4A;
   --sr-yellowl: rgba(212,170,74,0.12);
 
-  /* Solid borders (admin pages) */
-  --sr-border-solid: #2a2420;
-  --sr-border-mid:   #1f1b17;
-  --sr-darker:       #120e0a;
+  /* Borders (admin pages) */
+  --sr-border-solid: rgba(255,255,255,0.08);
+  --sr-border-mid:   rgba(255,255,255,0.05);
+  --sr-darker:       #080808;
 
-  /* Legacy compat (admin pages still use these) */
-  --background: #0F0D0A;
-  --foreground: #F5F0EB;
+  /* Legacy compat */
+  --background: #0D0D0D;
+  --foreground: #F0EBE3;
 }
 
 /* ── LIGHT THEME ── */
@@ -94,7 +98,7 @@ html[data-theme="light"] {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--sr-font-sans);
 }
 
 /* Smooth theme transitions */
@@ -104,4 +108,228 @@ body {
 /* Don't animate transforms or dimensions */
 button, a, input, textarea, select {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+/* ══════════════════════════════════════════
+   TYPOGRAPHY UTILITY CLASSES
+   ══════════════════════════════════════════ */
+
+.sr-display       { font-family: var(--sr-font-display); }
+.sr-page-title    { font-family: var(--sr-font-display); font-size: 1.8rem; font-weight: 700; color: var(--sr-text); }
+.sr-section-title { font-family: var(--sr-font-display); font-size: 1.2rem; font-weight: 700; color: var(--sr-text); }
+.sr-card-title    { font-size: 0.82rem; font-weight: 700; color: var(--sr-text); letter-spacing: 0.02em; }
+.sr-label         { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sr-sub); }
+.sr-body          { font-size: 0.86rem; color: var(--sr-text); line-height: 1.6; }
+.sr-muted-text    { font-size: 0.78rem; color: var(--sr-sub); }
+.sr-stat-val      { font-family: var(--sr-font-display); font-size: 2.2rem; font-weight: 700; color: var(--sr-text); line-height: 1; }
+
+/* ══════════════════════════════════════════
+   HOST SIDEBAR (shared .hs-* classes)
+   Used by HostSidebar.js across all host portal pages
+   ══════════════════════════════════════════ */
+
+.hs-sidebar {
+  width: 240px;
+  background: var(--sr-surface);
+  border-right: 1px solid var(--sr-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.hs-logo-wrap {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--sr-border);
+  flex-shrink: 0;
+}
+.hs-logo-text {
+  font-family: var(--sr-font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--sr-text);
+  text-decoration: none;
+  display: block;
+  letter-spacing: -0.01em;
+}
+.hs-logo-text span { color: var(--sr-orange); }
+.hs-logo-text sup  { font-size: 0.55em; vertical-align: super; opacity: 0.7; }
+.hs-logo-sub {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--sr-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-top: 4px;
+}
+.hs-org-name {
+  font-size: 0.62rem;
+  color: var(--sr-orange);
+  font-weight: 700;
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hs-nav-wrap { flex: 1; padding: 16px 12px; overflow-y: auto; }
+
+.hs-nav-section-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sr-sub);
+  padding: 0 10px;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+.hs-nav-section-title:first-child { margin-top: 0; }
+
+.hs-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--sr-muted);
+  font-size: 0.86rem;
+  font-weight: 500;
+  font-family: var(--sr-font-sans);
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+}
+.hs-nav-item:hover  { background: var(--sr-overlay-xs); color: var(--sr-text); }
+.hs-nav-item.active { background: var(--sr-orange); color: #fff; font-weight: 700; }
+
+.hs-nav-icon { font-size: 1rem; line-height: 1; flex-shrink: 0; }
+
+.hs-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sr-red);
+  color: #fff;
+  border-radius: 100px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: auto;
+}
+
+.hs-sidebar-footer {
+  padding: 14px 12px;
+  border-top: 1px solid var(--sr-border);
+  flex-shrink: 0;
+}
+
+.hs-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.hs-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--sr-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #fff;
+  flex-shrink: 0;
+  object-fit: cover; /* works for img variant */
+}
+.hs-avatar-img { background: var(--sr-card2); }
+
+.hs-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sr-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hs-user-role { font-size: 0.62rem; color: var(--sr-sub); margin-top: 1px; }
+.hs-founder-badge {
+  font-size: 0.7rem;
+  background: var(--sr-ol);
+  color: var(--sr-orange);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-weight: 700;
+}
+
+.hs-guest-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sr-muted);
+  background: var(--sr-overlay-xs);
+  border: 1px solid var(--sr-border);
+  font-family: var(--sr-font-sans);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 6px;
+  width: 100%;
+}
+.hs-guest-link:hover { color: var(--sr-text); background: var(--sr-overlay-sm); }
+
+.hs-team-note {
+  font-size: 0.68rem;
+  color: var(--sr-sub);
+  padding: 8px 10px;
+  background: var(--sr-overlay-xs);
+  border-radius: 8px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.hs-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sr-sub);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--sr-font-sans);
+  transition: color 0.15s, background 0.15s;
+}
+.hs-logout-btn:hover { color: var(--sr-red); background: var(--sr-redl); }
+
+/* Spacing helper for pages using HostSidebar */
+.hs-page-main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+@media (max-width: 768px) {
+  .hs-sidebar  { display: none; }
+  .hs-page-main { margin-left: 0; }
 }

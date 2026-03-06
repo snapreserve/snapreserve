@@ -94,25 +94,18 @@ const SOCIALS = [
   },
 ]
 
-export default function Footer({ darkBg = true }) {
-  const bg      = darkBg ? '#120E0A'      : '#faf6f0'
-  const text    = darkBg ? '#F5F0EB'      : '#1a1208'
-  const muted   = darkBg ? '#A89880'      : '#5a4a38'
-  const dim     = darkBg ? '#6B5E52'      : '#8a7a6a'
-  const border  = darkBg ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)'
-  const logoAcc = '#F4601A'
-
+export default function Footer() {
   return (
-    <footer style={{ background: bg, color: muted, paddingTop: 60, paddingBottom: 0, borderTop: `1px solid ${border}` }}>
+    <footer style={{ background: 'var(--sr-bg)', color: 'var(--sr-muted)', paddingTop: 60, paddingBottom: 0, borderTop: '1px solid var(--sr-border)' }}>
       {/* MAIN GRID */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 48px 40px', display: 'grid', gridTemplateColumns: '1fr repeat(5, auto)', gap: 40, alignItems: 'start' }}>
 
         {/* Brand column */}
         <div>
-          <div style={{ fontFamily: 'Playfair Display, Cormorant Garamond, serif', fontSize: '1.2rem', fontWeight: 700, color: text, marginBottom: 10 }}>
-            Snap<span style={{ color: logoAcc }}>Reserve™</span>
+          <div style={{ fontFamily: 'Playfair Display, Cormorant Garamond, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 10 }}>
+            Snap<span style={{ color: '#F4601A' }}>Reserve™</span>
           </div>
-          <p style={{ fontSize: '0.8rem', lineHeight: 1.75, maxWidth: 200, color: dim, marginBottom: 20 }}>
+          <p style={{ fontSize: '0.8rem', lineHeight: 1.75, maxWidth: 200, color: 'var(--sr-sub)', marginBottom: 20 }}>
             Book unique hotels and spaces, instantly. A next-generation booking platform built for modern travellers.
           </p>
           {/* Social icons */}
@@ -126,13 +119,13 @@ export default function Footer({ darkBg = true }) {
                 title={s.label}
                 style={{
                   width: 32, height: 32, borderRadius: 8,
-                  background: darkBg ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-                  border: `1px solid ${border}`,
+                  background: 'var(--sr-surface)',
+                  border: '1px solid var(--sr-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: dim, textDecoration: 'none', transition: 'all 0.18s',
+                  color: 'var(--sr-sub)', textDecoration: 'none', transition: 'all 0.18s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = logoAcc; e.currentTarget.style.borderColor = 'rgba(244,96,26,0.4)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = dim; e.currentTarget.style.borderColor = border }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#F4601A'; e.currentTarget.style.borderColor = 'rgba(244,96,26,0.4)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = ''; e.currentTarget.style.borderColor = '' }}
               >
                 {s.icon}
               </a>
@@ -143,7 +136,7 @@ export default function Footer({ darkBg = true }) {
         {/* Link sections */}
         {SECTIONS.map(sec => (
           <div key={sec.title}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: muted, marginBottom: 14 }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--sr-muted)', marginBottom: 14 }}>
               {sec.title}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -151,9 +144,9 @@ export default function Footer({ darkBg = true }) {
                 <a
                   key={l.label}
                   href={l.href}
-                  style={{ fontSize: '0.82rem', color: dim, textDecoration: 'none', transition: 'color 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = text }}
-                  onMouseLeave={e => { e.currentTarget.style.color = dim }}
+                  style={{ fontSize: '0.82rem', color: 'var(--sr-sub)', textDecoration: 'none', transition: 'color 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--sr-text)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '' }}
                 >
                   {l.label}
                 </a>
@@ -164,22 +157,22 @@ export default function Footer({ darkBg = true }) {
       </div>
 
       {/* POPULAR DESTINATIONS */}
-      <div style={{ borderTop: `1px solid ${border}`, maxWidth: 1280, margin: '0 auto', padding: '32px 48px' }}>
-        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: muted, marginBottom: 16 }}>
+      <div style={{ borderTop: '1px solid var(--sr-border)', maxWidth: 1280, margin: '0 auto', padding: '32px 48px' }}>
+        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--sr-muted)', marginBottom: 16 }}>
           Popular Destinations
         </div>
         <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'start' }}>
           {/* Live destinations */}
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: muted, marginBottom: 10 }}>United States</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--sr-muted)', marginBottom: 10 }}>United States</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 24px' }}>
               {US_DESTINATIONS.map(city => (
                 <a
                   key={city}
                   href={`/listings?country=United+States&city=${encodeURIComponent(city)}`}
-                  style={{ fontSize: '0.8rem', color: dim, textDecoration: 'none', transition: 'color 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = text }}
-                  onMouseLeave={e => { e.currentTarget.style.color = dim }}
+                  style={{ fontSize: '0.8rem', color: 'var(--sr-sub)', textDecoration: 'none', transition: 'color 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--sr-text)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '' }}
                 >
                   {city}
                 </a>
@@ -189,11 +182,11 @@ export default function Footer({ darkBg = true }) {
 
           {/* Coming soon */}
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: dim, marginBottom: 10 }}>Coming Soon</div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--sr-sub)', marginBottom: 10 }}>Coming Soon</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 24px' }}>
               {COMING_SOON.map(city => (
-                <span key={city} style={{ fontSize: '0.8rem', color: dim, opacity: 0.55 }}>
-                  {city} <span style={{ fontSize: '0.62rem', color: logoAcc, fontWeight: 700, opacity: 0.7 }}>Soon</span>
+                <span key={city} style={{ fontSize: '0.8rem', color: 'var(--sr-sub)', opacity: 0.55 }}>
+                  {city} <span style={{ fontSize: '0.62rem', color: '#F4601A', fontWeight: 700, opacity: 0.7 }}>Soon</span>
                 </span>
               ))}
             </div>
@@ -202,12 +195,12 @@ export default function Footer({ darkBg = true }) {
       </div>
 
       {/* BETA NOTICE + COPYRIGHT */}
-      <div style={{ borderTop: `1px solid ${border}`, maxWidth: 1280, margin: '0 auto', padding: '20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ fontSize: '0.72rem', color: dim }}>
-          <span style={{ background: darkBg ? 'rgba(244,96,26,0.1)' : 'rgba(244,96,26,0.08)', border: '1px solid rgba(244,96,26,0.2)', color: logoAcc, borderRadius: 100, padding: '2px 8px', fontSize: '0.62rem', fontWeight: 700, marginRight: 8 }}>BETA</span>
-          SnapReserve™™ is currently in beta. Features may change during early access.
+      <div style={{ borderTop: '1px solid var(--sr-border)', maxWidth: 1280, margin: '0 auto', padding: '20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>
+          <span style={{ background: 'rgba(244,96,26,0.1)', border: '1px solid rgba(244,96,26,0.2)', color: '#F4601A', borderRadius: 100, padding: '2px 8px', fontSize: '0.62rem', fontWeight: 700, marginRight: 8 }}>BETA</span>
+          SnapReserve™ is currently in beta. Features may change during early access.
         </div>
-        <div style={{ fontSize: '0.72rem', color: dim }}>© 2026 SnapReserve™™, Inc. All rights reserved.</div>
+        <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)' }}>© 2026 SnapReserve™, Inc. All rights reserved.</div>
       </div>
 
       {/* Bottom padding */}

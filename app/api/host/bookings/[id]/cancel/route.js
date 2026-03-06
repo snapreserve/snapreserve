@@ -45,6 +45,10 @@ export async function POST(request, { params }) {
       .maybeSingle()
 
     if (membership) {
+      // Only owner/manager roles can cancel bookings
+      if (!['owner', 'manager'].includes(membership.role)) {
+        return NextResponse.json({ error: 'Only managers and the owner can cancel bookings' }, { status: 403 })
+      }
       const { data: orgHost } = await admin
         .from('hosts')
         .select('id, user_id')
@@ -96,6 +100,11 @@ export async function POST(request, { params }) {
     .eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  // Restore room inventory if this was a hotel booking
+  if (booking.room_id) {
+    await admin.rpc('restore_room_units', { p_room_id: booking.room_id, p_amount: 1 })
+  }
 
   // Notify the host (owner) — they get an in-app message if a team member cancelled
   if (ownerHostRow?.user_id && ownerHostRow.user_id !== user.id) {
