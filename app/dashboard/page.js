@@ -210,7 +210,6 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="db-wb-right">
-            <div className="db-wb-badge">🛡️ SnapGuarantee™ Active</div>
             <button
               className="db-wb-btn"
               onClick={() => router.push(upcoming.length > 0 ? '/account/trips' : '/listings')}

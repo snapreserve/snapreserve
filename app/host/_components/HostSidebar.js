@@ -1,8 +1,32 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import {
+  LayoutGrid, Calendar, CalendarDays, Home, MessageCircle, Tag,
+  TrendingUp, Wallet, Receipt, Users, Shield, KeyRound, Activity,
+  Star, Settings, LogOut, UserRound,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { buildNavSections, ROLE_NAV } from './nav-config'
+import ThemeToggle from '@/app/components/ThemeToggle'
+
+const NAV_ICONS = {
+  overview:    LayoutGrid,
+  bookings:    Calendar,
+  properties:  Home,
+  calendar:    CalendarDays,
+  messages:    MessageCircle,
+  promotions:  Tag,
+  earnings:    TrendingUp,
+  payouts:     Wallet,
+  expenses:    Receipt,
+  team:        Users,
+  permissions: Shield,
+  access:      KeyRound,
+  activity:    Activity,
+  reviews:     Star,
+  settings:    Settings,
+}
 
 // Derive active nav id from current pathname (for sub-pages in link mode)
 function activeFromPath(pathname) {
@@ -70,9 +94,12 @@ export default function HostSidebar({
   function NavItem({ item }) {
     const isActive = currentActive === item.id
     const cls = `hs-nav-item${isActive ? ' active' : ''}`
+    const Icon = NAV_ICONS[item.id]
     const content = (
       <>
-        <span className="hs-nav-icon">{item.icon}</span>
+        <span className="hs-nav-icon">
+          {Icon ? <Icon size={17} strokeWidth={1.75} /> : null}
+        </span>
         <span>{item.label}</span>
         {item.badge > 0 && <span className="hs-nav-badge">{item.badge}</span>}
       </>
@@ -147,19 +174,23 @@ export default function HostSidebar({
 
         {myRole === 'owner' && onSwitchToGuest && (
           <button className="hs-guest-link" onClick={onSwitchToGuest}>
-            <span>🔄</span>
+            <UserRound size={14} strokeWidth={1.75} style={{ flexShrink: 0 }} />
             <span>Switch to Guest Mode</span>
+            <span style={{ opacity: 0.8, marginLeft: 'auto' }}>→</span>
           </button>
         )}
 
         {myRole && myRole !== 'owner' && (
           <div className="hs-team-note">
-            🔐 Team member account.
+            <Shield size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+            Team member account.
           </div>
         )}
 
+        <ThemeToggle style={{ width: '100%', justifyContent: 'center', marginBottom: '8px' }} />
+
         <button className="hs-logout-btn" onClick={handleLogout}>
-          <span>↪</span>
+          <LogOut size={14} strokeWidth={1.75} style={{ flexShrink: 0 }} />
           <span>Sign out</span>
         </button>
       </div>

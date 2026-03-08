@@ -444,6 +444,9 @@ function BookingPageContent() {
                       <span>Total</span>
                       <span>${displayBreakdown.total.toLocaleString()}</span>
                     </div>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      ✓ Price includes all fees. No hidden charges.
+                    </p>
 
                     {/* Promo code input */}
                     <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--sr-border-solid,#E8E2D9)' }}>

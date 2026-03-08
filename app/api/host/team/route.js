@@ -6,11 +6,23 @@ import { sendEmail, teamInviteEmailHtml, teamInviteEmailText } from '@/lib/send-
 // GET /api/host/team
 // Returns the org (host) team members for the current user.
 // Works for org owners AND org members (returns the org they belong to).
-export async function GET() {
-  const { user } = await getUserSession()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+// Supports both cookie-based auth (web) and Bearer token auth (mobile).
+export async function GET(request) {
   const admin = createAdminClient()
+
+  // Try Bearer token first (mobile), fall back to cookie session (web)
+  let user = null
+  const authHeader = request.headers.get('Authorization') || ''
+  const token = authHeader.replace('Bearer ', '').trim()
+  if (token) {
+    const { data: { user: u } } = await admin.auth.getUser(token)
+    user = u || null
+  }
+  if (!user) {
+    const session = await getUserSession()
+    user = session.user
+  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Is this user a host (owner)?
   const { data: hostRow } = await admin

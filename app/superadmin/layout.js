@@ -1,5 +1,6 @@
 import SignOutButton from '../admin/_components/SignOutButton'
 import SuperAdminNav from './_components/SuperAdminNav'
+import ThemeToggle from '../components/ThemeToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,33 +11,25 @@ export default function SuperAdminLayout({ children }) {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
-        .sa-shell   { display: flex; min-height: 100vh; }
-        .sa-sidebar { width: 240px; background: var(--sr-surface); border-right: 1px solid var(--sr-border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
-        .sa-main    { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-
-        /* Logo */
-        .sa-logo-wrap { padding: 22px 20px 18px; border-bottom: 1px solid var(--sr-border); flex-shrink: 0; }
-        .sa-logo-text { font-family: 'DM Sans', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--sr-text); letter-spacing: -0.02em; }
-        .sa-logo-text span { color: var(--sr-orange); }
-        .sa-logo-sub { font-size: 0.6rem; font-weight: 700; color: var(--sr-orange); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; opacity: 0.8; }
-
-        /* Footer */
-        .sa-footer { margin-top: auto; padding: 14px 12px; border-top: 1px solid var(--sr-border); flex-shrink: 0; }
-
+        .sa-shell { display: flex; min-height: 100vh; }
+        .sa-main  { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
         @media (max-width: 768px) {
-          .sa-sidebar { display: none; }
-          .sa-main { margin-left: 0; }
+          .hs-sidebar { display: none; }
+          .sa-main    { margin-left: 0; }
         }
       `}</style>
 
       <div className="sa-shell">
-        <aside className="sa-sidebar">
-          <div className="sa-logo-wrap">
-            <div className="sa-logo-text">Snap<span>Reserve</span></div>
-            <div className="sa-logo-sub">⚡ Super Admin</div>
+        <aside className="hs-sidebar">
+          <div className="hs-logo-wrap">
+            <a href="/" className="hs-logo-text">
+              Snap<span>Reserve</span><sup>™</sup>
+            </a>
+            <div className="hs-logo-sub">⚡ Super Admin</div>
           </div>
           <SuperAdminNav />
-          <div className="sa-footer">
+          <div className="hs-sidebar-footer">
+            <ThemeToggle style={{ width: '100%', justifyContent: 'center', marginBottom: '8px' }} />
             <SignOutButton />
           </div>
         </aside>

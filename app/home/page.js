@@ -45,7 +45,7 @@ const hotelSteps = [
 const privateSteps = [
   { icon: '🏠', num: '1', title: 'Discover unique spaces', desc: 'Browse homes listed by real hosts — from city apartments to countryside cabins and private villas.' },
   { icon: '💬', num: '2', title: 'Connect with your host', desc: 'Message hosts directly, ask questions, and get personalised local tips before you even pack your bags.' },
-  { icon: '🛡️', num: '3', title: 'Book with confidence', desc: 'Every stay is protected by SnapGuarantee™ — secure payment and free cancellation on most listings.' },
+  { icon: '🛡️', num: '3', title: 'Book with confidence', desc: 'Secure payment and free cancellation on most listings — book with peace of mind.' },
 ]
 
 export default function HomePage() {
@@ -63,6 +63,7 @@ export default function HomePage() {
   const [searchLoading, setSearchLoading] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [userRole, setUserRole] = useState(null)
+  const [searchError, setSearchError] = useState('')
   const { theme } = useTheme()
   const darkMode = theme === 'dark'
   const searchRef = useRef(null)
@@ -159,6 +160,33 @@ export default function HomePage() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  function handleSearch() {
+    setSearchError('')
+    if (!destination.trim()) { setSearchError('Please enter a destination.'); return }
+    if (!checkIn) { setSearchError('Please select a check-in date.'); return }
+    if (!checkOut) { setSearchError('Please select a check-out date.'); return }
+    if (checkOut <= checkIn) { setSearchError('Check-out date must be after check-in date.'); return }
+    const guestNum = parseInt(guests, 10)
+    if (guests && (isNaN(guestNum) || guestNum < 1)) { setSearchError('Guests must be at least 1.'); return }
+
+    const params = new URLSearchParams()
+    if (selectedPlace) {
+      if (selectedPlace.main_text) params.set('city', selectedPlace.main_text)
+      if (selectedPlace.secondary_text) {
+        const parts = selectedPlace.secondary_text.split(',').map(s => s.trim())
+        if (parts[0]) params.set('state', parts[0])
+        if (parts[1]) params.set('country', parts[1])
+      }
+    } else {
+      params.set('city', destination.trim())
+    }
+    params.set('checkIn', checkIn)
+    params.set('checkOut', checkOut)
+    if (guests) params.set('guests', guests)
+
+    router.push(`/listings?${params.toString()}`)
+  }
 
   const isHotel = mode === 'hotel'
   const accent = isHotel ? '#1A6EF4' : '#F4601A'
@@ -347,8 +375,15 @@ export default function HomePage() {
             <div className="sf-label">Guests</div>
             <input className="sf-input" placeholder={isHotel ? '2 adults' : '2 guests'} value={guests} onChange={e => setGuests(e.target.value)} />
           </div>
-          <button className="search-btn" style={{ background: accent }}>🔍 Search</button>
+          <button className="search-btn" style={{ background: accent }} onClick={handleSearch}>🔍 Search</button>
         </div>
+
+        {/* Search validation error */}
+        {searchError && (
+          <div style={{ maxWidth:780, margin:'-10px auto 12px', textAlign:'center' }}>
+            <span style={{ fontSize:'0.82rem', color:'#e53e3e', fontWeight:600 }}>⚠ {searchError}</span>
+          </div>
+        )}
 
         {/* FILTER CHIPS */}
         <div className="chips-row">
@@ -365,7 +400,7 @@ export default function HomePage() {
         <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', gap:60, flexWrap:'wrap' }}>
           {[
             { icon:'🔒', title:'Secure Booking', sub:'256-bit encryption, always' },
-            { icon:'🛡️', title:'SnapGuarantee™', sub:'Full protection on every stay' },
+            { icon:'🛡️', title:'Secure Protection', sub:'Full protection on every stay' },
             { icon:'💬', title:'24/7 Support', sub:'Real humans, real quick' },
             { icon:'🌍', title:'US Launch 🇺🇸', sub:'Global expansion coming soon' },
           ].map(item => (

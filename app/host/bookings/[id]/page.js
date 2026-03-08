@@ -68,7 +68,7 @@ export default async function HostBookingDetailPage({ params }) {
   const myRole = directHost ? 'owner' : (teamMem?.role || 'owner')
 
   const isFounder = hostRow?.is_founder_host === true
-  const feeRate   = Number(hostRow?.fee_rate ?? 0.07)
+  const feeRate   = Number(hostRow?.fee_rate ?? 0.08)
   const platformFee      = Number(booking.platform_fee || 0)
   const platformFixedFee = Number(booking.platform_fixed_fee || 0)
   const totalPlatformFee = Math.round((platformFee + platformFixedFee) * 100) / 100

@@ -2,20 +2,19 @@ export default function HostAgreementPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
+        body { font-family: var(--sr-font-sans, -apple-system, sans-serif); background: var(--sr-bg); color: var(--sr-text); }
 
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
+        .logo { font-family: var(--sr-font-display, Georgia, serif); font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
         .logo span { color: #F4601A; }
 
-        .hero { background: #1A1410; padding: 56px 48px 48px; }
+        .hero { background: var(--sr-card); padding: 56px 48px 48px; }
         .hero-inner { max-width: 760px; margin: 0 auto; }
         .hero-badge { display: inline-block; background: rgba(244,96,26,0.15); border: 1px solid rgba(244,96,26,0.3); border-radius: 100px; padding: 5px 14px; font-size: 0.7rem; font-weight: 700; color: #F4601A; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 18px; }
-        .hero h1 { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 700; color: white; line-height: 1.15; margin-bottom: 14px; }
-        .hero-meta { font-size: 0.82rem; color: rgba(255,255,255,0.4); line-height: 1.7; }
-        .hero-meta strong { color: rgba(255,255,255,0.65); }
+        .hero h1 { font-family: var(--sr-font-display, Georgia, serif); font-size: 2.6rem; font-weight: 700; color: var(--sr-text); line-height: 1.15; margin-bottom: 14px; }
+        .hero-meta { font-size: 0.82rem; color: var(--sr-sub); line-height: 1.7; }
+        .hero-meta strong { color: var(--sr-muted); }
 
         .layout { max-width: 1100px; margin: 0 auto; padding: 48px 48px 80px; display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: start; }
 
@@ -32,7 +31,7 @@ export default function HostAgreementPage() {
 
         .section { margin-bottom: 44px; scroll-margin-top: 88px; }
         .section-num { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--sr-sub); margin-bottom: 6px; }
-        .section h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--sr-text); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
+        .section h2 { font-family: var(--sr-font-display, Georgia, serif); font-size: 1.3rem; font-weight: 700; color: var(--sr-text); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
         p { font-size: 0.9rem; color: var(--sr-muted); line-height: 1.85; margin-bottom: 12px; }
         p:last-child { margin-bottom: 0; }
 
@@ -55,18 +54,18 @@ export default function HostAgreementPage() {
         .fee-value { font-size: 0.87rem; font-weight: 700; color: var(--sr-text); text-align: right; }
 
         .callout { border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 0.87rem; line-height: 1.75; }
-        .callout-orange { background: rgba(244,96,26,0.06); border: 1px solid rgba(244,96,26,0.2); color: #7A3010; }
-        .callout-blue { background: rgba(26,110,244,0.05); border: 1px solid rgba(26,110,244,0.18); color: #0A2F7A; }
+        .callout-orange { background: rgba(244,96,26,0.06); border: 1px solid rgba(244,96,26,0.2); color: var(--sr-text); }
+        .callout-blue { background: rgba(26,110,244,0.05); border: 1px solid rgba(26,110,244,0.18); color: var(--sr-text); }
         .callout-gray { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); color: var(--sr-muted); }
         .callout strong { color: inherit; }
 
-        .contact-card { background: #1A1410; border-radius: 20px; padding: 32px 36px; margin-top: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-        .cc-text h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: white; margin: 0 0 6px; }
-        .cc-text p { font-size: 0.84rem; color: rgba(255,255,255,0.45); margin: 0; }
+        .contact-card { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); border-radius: 20px; padding: 32px 36px; margin-top: 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+        .cc-text h3 { font-family: var(--sr-font-display, Georgia, serif); font-size: 1.2rem; font-weight: 700; color: var(--sr-text); margin: 0 0 6px; }
+        .cc-text p { font-size: 0.84rem; color: var(--sr-sub); margin: 0; }
         .cc-email { background: #F4601A; color: white; padding: 12px 26px; border-radius: 100px; font-weight: 700; font-size: 0.88rem; text-decoration: none; white-space: nowrap; }
 
         .footer { background: var(--sr-bg); color: var(--sr-muted); padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 80px; border-top: 1px solid var(--sr-border); }
-        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--sr-text); }
+        .footer-logo { font-family: var(--sr-font-display, Georgia, serif); font-size: 1rem; font-weight: 700; color: var(--sr-text); }
         .footer-logo span { color: #F4601A; }
         .footer-links { display: flex; gap: 24px; }
         .footer-links a { font-size: 0.78rem; color: var(--sr-muted); text-decoration: none; }
@@ -81,7 +80,7 @@ export default function HostAgreementPage() {
         <a href="/home" className="logo">Snap<span>Reserve™</span></a>
         <div style={{display:'flex',gap:'8px'}}>
           <a href="/login" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',border:'1px solid var(--sr-border-solid,#D4CEC5)',color:'var(--sr-text)',textDecoration:'none'}}>Log in</a>
-          <a href="/signup" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',background:'#F4601A',color:'white',textDecoration:'none'}}>Sign up</a>
+          <a href="/home" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',background:'#F4601A',color:'white',textDecoration:'none'}}>Get Started</a>
         </div>
       </nav>
 
@@ -148,10 +147,9 @@ export default function HostAgreementPage() {
                 <tr><td>"Guest"</td><td>Any individual who books accommodation through the Platform.</td></tr>
                 <tr><td>"Listing"</td><td>A property, room, or accommodation offered for rent by a Host through the Platform, including all associated descriptions, photographs, pricing, and availability.</td></tr>
                 <tr><td>"Booking"</td><td>A confirmed reservation made by a Guest for a Listing, resulting in a binding agreement between the Host and Guest.</td></tr>
-                <tr><td>"Booking Subtotal"</td><td>The nightly rate multiplied by the number of nights, plus any Host-set additional fees such as cleaning fees, before the addition of Guest service fees, taxes, or third-party charges.</td></tr>
-                <tr><td>"Host Fee"</td><td>The platform service fee charged by SnapReserve™ to the Host, calculated as a percentage of the Booking Subtotal.</td></tr>
-                <tr><td>"Guest Service Fee"</td><td>A separate fee charged by SnapReserve™ directly to the Guest at the time of booking, which does not form part of the Host's payout calculation.</td></tr>
-                <tr><td>"Payout"</td><td>The net amount transferred to the Host following a completed stay, equal to the Booking Subtotal minus the Host Fee and any applicable deductions.</td></tr>
+                <tr><td>"Booking Subtotal"</td><td>The nightly rate multiplied by the number of nights, plus any Host-set additional fees such as cleaning fees, minus any applicable promotional discounts. SnapReserve™ does not add any guest-facing service fees to the booking total.</td></tr>
+                <tr><td>"Host Fee"</td><td>The platform service fee charged by SnapReserve™ to the Host, calculated as a percentage of the total booking amount plus a fixed component, deducted before Payout is disbursed.</td></tr>
+                <tr><td>"Payout"</td><td>The net amount transferred to the Host following a completed stay, equal to the total booking amount minus the Host Fee and any applicable deductions.</td></tr>
                 <tr><td>"Stripe"</td><td>Stripe, Inc., the third-party payment processor engaged by SnapReserve™ to facilitate payment collection and payout disbursement.</td></tr>
                 <tr><td>"Chargeback"</td><td>A reversal of a payment transaction initiated by a Guest's payment card issuer or financial institution.</td></tr>
                 <tr><td>"Dispute"</td><td>A formal challenge raised by a Guest or Host regarding the terms, quality, or fulfilment of a Booking.</td></tr>
@@ -202,21 +200,22 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 5</div>
             <h2>Platform Fees</h2>
             <h3>5.1 Host Service Fee</h3>
-            <p>SnapReserve™ charges a Host service fee on each completed Booking. This fee is automatically deducted from the Booking Subtotal before Payout is disbursed to the Host.</p>
+            <p>SnapReserve™ charges a Host service fee on each completed Booking. This fee — a percentage of the total booking amount plus a fixed component — is automatically deducted before Payout is disbursed to the Host. <strong>SnapReserve™ does not charge any service fee to Guests;</strong> the full booking amount paid by the Guest (minus any discounts) constitutes the Payout basis from which only the Host Fee is deducted.</p>
+            <p>Two fee tiers apply depending on Host status:</p>
 
             <div className="fee-box">
               <div className="fee-box-title">Fee Schedule — Effective March 1, 2026</div>
               <div className="fee-row">
-                <span className="fee-label">Host platform fee</span>
-                <span className="fee-value">3.2% of Booking Subtotal</span>
+                <span className="fee-label">Standard Host platform fee</span>
+                <span className="fee-value">8% + $1.00 per booking</span>
               </div>
               <div className="fee-row">
-                <span className="fee-label">Stripe payment processing fee (Host share)</span>
-                <span className="fee-value">50% of applicable Stripe fee</span>
+                <span className="fee-label">Founder Host platform fee</span>
+                <span className="fee-value">6.5% + $1.00 per booking</span>
               </div>
               <div className="fee-row">
                 <span className="fee-label">Guest service fee</span>
-                <span className="fee-value">Charged to Guest separately — does not affect Host Payout</span>
+                <span className="fee-value">None — guests pay no platform fees</span>
               </div>
               <div className="fee-row">
                 <span className="fee-label">Cancellation penalty (Host-initiated)</span>
@@ -224,21 +223,24 @@ export default function HostAgreementPage() {
               </div>
             </div>
 
-            <h3>5.2 Guest Service Fee</h3>
-            <p>In addition to the Host Fee, SnapReserve™ charges a separate Guest service fee to Guests at the time of booking. This fee is collected independently and does not reduce the Host's Payout or form part of the Booking Subtotal upon which the Host Fee is calculated.</p>
+            <p style={{fontSize:'0.84rem',color:'var(--sr-sub)',marginTop:'8px'}}>Founder Host status is granted to qualifying early hosts who join during SnapReserve™'s launch period. Founder Host fee rates are locked in for the life of the account as long as the account remains in good standing.</p>
 
-            <h3>5.3 Fee Calculation Example</h3>
+            <h3>5.2 Fee Calculation Example</h3>
             <div className="callout callout-gray">
-              <p style={{marginBottom:'6px'}}><strong>Example:</strong> A Booking Subtotal of $1,000.00</p>
-              <ul style={{marginBottom:0}}>
-                <li>Host platform fee (3.2%): <strong>$32.00</strong></li>
-                <li>Stripe fee (illustrative 2.9% + $0.30, Host's 50% share): <strong>≈$14.80</strong></li>
-                <li><strong>Approximate Host Payout: $953.20</strong></li>
+              <p style={{marginBottom:'6px'}}><strong>Standard Host — Booking total of $1,000.00</strong></p>
+              <ul style={{marginBottom:'10px'}}>
+                <li>Host platform fee (8% + $1.00): <strong>$81.00</strong></li>
+                <li><strong>Host Payout: $919.00</strong></li>
               </ul>
-              <p style={{marginTop:'8px',marginBottom:0,fontSize:'0.82rem',color:'var(--sr-sub)'}}>Actual Stripe fees vary by card type and location. This example is illustrative only.</p>
+              <p style={{marginBottom:'6px'}}><strong>Founder Host — Booking total of $1,000.00</strong></p>
+              <ul style={{marginBottom:0}}>
+                <li>Founder Host platform fee (6.5% + $1.00): <strong>$66.00</strong></li>
+                <li><strong>Founder Host Payout: $934.00</strong></li>
+              </ul>
+              <p style={{marginTop:'8px',marginBottom:0,fontSize:'0.82rem',color:'var(--sr-sub)'}}>These examples are illustrative. Payment processing fees charged by Stripe are absorbed by SnapReserve™ and are not passed through to the Host.</p>
             </div>
 
-            <h3>5.4 Taxes</h3>
+            <h3>5.3 Taxes</h3>
             <p>SnapReserve™ may be required by law to collect and remit certain taxes on bookings in applicable jurisdictions. Any taxes collected by SnapReserve™ on behalf of tax authorities are separate from and in addition to the Host Fee and do not form part of the Host's Payout. Hosts are independently responsible for all income taxes, occupancy taxes, VAT, GST, and any other taxes owed on their rental income. See Section 9 (Host Obligations) for further detail.</p>
           </div>
 
@@ -248,8 +250,8 @@ export default function HostAgreementPage() {
             <h2>Payment Processing</h2>
             <h3>6.1 Stripe as Payment Processor</h3>
             <p>All payment collection and Payout disbursement on the Platform is facilitated through Stripe, Inc. By listing on SnapReserve™, you agree to be bound by <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer" style={{color:'#F4601A',fontWeight:600}}>Stripe's Connected Account Agreement</a> and Stripe's applicable terms of service, which may be updated by Stripe from time to time. SnapReserve™ is not responsible for errors, delays, or failures caused by Stripe's systems.</p>
-            <h3>6.2 Processing Fee Sharing</h3>
-            <p>Stripe charges a payment processing fee on each transaction. This fee is shared equally between the Host and SnapReserve™, with each party bearing 50% of the applicable Stripe processing cost. The Host's share is deducted from the Payout prior to disbursement. SnapReserve™ will reflect the deducted processing amount in the Payout breakdown accessible via your host dashboard.</p>
+            <h3>6.2 Processing Fees</h3>
+            <p>Stripe charges a payment processing fee on each transaction. SnapReserve™ absorbs these processing fees as part of its platform service — they are not separately passed through to the Host. The Host Fee described in Section 5 is the only fee deducted from the Host's Payout by SnapReserve™.</p>
             <h3>6.3 Currency</h3>
             <p>All transactions on the Platform are processed in United States Dollars (USD) unless otherwise specified. If a Guest pays in a foreign currency, any currency conversion is handled by Stripe at their applicable exchange rate, and any resulting conversion fees are the responsibility of the Host's share of processing costs or passed through as noted in your Stripe Connected Account agreement.</p>
             <h3>6.4 Failed Payments</h3>
@@ -291,7 +293,7 @@ export default function HostAgreementPage() {
             <h3>8.2 Host-Initiated Cancellations</h3>
             <p>If a Host cancels a confirmed Booking:</p>
             <ul>
-              <li>The Guest will receive a full refund of all amounts paid, including any Guest service fees;</li>
+              <li>The Guest will receive a full refund of all amounts paid;</li>
               <li>SnapReserve™ may apply a cancellation penalty to the Host's account, including deduction from future Payouts;</li>
               <li>The Host's listing ranking and visibility may be negatively impacted; and</li>
               <li>Repeated Host-initiated cancellations may result in listing suspension or permanent account termination.</li>
@@ -385,7 +387,7 @@ export default function HostAgreementPage() {
             <div className="section-num">Section 12</div>
             <h2>Modifications to Fees &amp; Terms</h2>
             <h3>12.1 Fee Changes</h3>
-            <p>SnapReserve™ reserves the right to modify the Host Fee, Guest service fee, or any other fee charged through the Platform. SnapReserve™ will provide Hosts with not less than <strong>30 days' written notice</strong> prior to any fee modification taking effect. Notice will be delivered via the email address associated with your Host account and/or via a prominent notice within the host dashboard.</p>
+            <p>SnapReserve™ reserves the right to modify the Host Fee or any other fee charged through the Platform. SnapReserve™ will provide Hosts with not less than <strong>30 days' written notice</strong> prior to any fee modification taking effect. Notice will be delivered via the email address associated with your Host account and/or via a prominent notice within the host dashboard.</p>
             <p>Your continued use of the Platform to accept new Bookings after the effective date of a fee change constitutes your acceptance of the revised fee schedule. If you do not accept the revised fees, you must deactivate your Listing and cease accepting new Bookings prior to the effective date of the change. Fee changes do not apply retroactively to Bookings confirmed prior to the effective date.</p>
             <h3>12.2 Agreement Modifications</h3>
             <p>SnapReserve™ may update or modify this Agreement from time to time. We will notify you of material changes through the Platform or via email. The updated Agreement will specify the revised effective date. Continued use of the Platform following the effective date of any modification constitutes acceptance of the modified Agreement.</p>

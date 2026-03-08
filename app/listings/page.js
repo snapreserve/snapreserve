@@ -69,8 +69,8 @@ function ListingsInner() {
       const s = destination.trim().toLowerCase()
       r = r.filter(l => (l.title||'').toLowerCase().includes(s) || (l.city||'').toLowerCase().includes(s) || (l.state||'').toLowerCase().includes(s))
     }
-    if (activeFilters.includes('hotel'))     r = r.filter(l => l.type === 'hotel')
-    if (activeFilters.includes('private'))   r = r.filter(l => l.type === 'private_stay')
+    if (activeFilters.includes('hotel'))     r = r.filter(l => l.property_type === 'hotel')
+    if (activeFilters.includes('private'))   r = r.filter(l => l.property_type === 'private_stay')
     if (activeFilters.includes('under200'))  r = r.filter(l => (l.price_per_night||0) < 200)
     if (activeFilters.includes('instant'))   r = r.filter(l => l.is_instant_book)
     if (activeFilters.includes('toprated'))  r = r.filter(l => (l.rating||0) >= 4.5)

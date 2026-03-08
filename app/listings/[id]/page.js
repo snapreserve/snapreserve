@@ -378,9 +378,11 @@ export default async function PropertyPage({ params, searchParams }) {
             q += `&city=${encodeURIComponent(city)}`
             crumbs.push({ label: city, href: `/listings?${q}` })
           }
+          const typeLabel = listing.type === 'hotel' ? 'Hotels' : 'Private Stays'
+          const typeHref  = listing.type === 'hotel' ? '/listings?type=hotel' : '/listings?type=private_stay'
           return (
             <div className="breadcrumb">
-              <a href="/listings">Listings</a>
+              <a href={typeHref}>{typeLabel}</a>
               {crumbs.map(c => (
                 <span key={c.label} style={{ display: 'contents' }}>
                   {sep}

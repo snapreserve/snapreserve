@@ -209,9 +209,18 @@ button, a, input, textarea, select {
   text-decoration: none;
 }
 .hs-nav-item:hover  { background: var(--sr-overlay-xs); color: var(--sr-text); }
-.hs-nav-item.active { background: var(--sr-orange); color: #fff; font-weight: 700; }
+.hs-nav-item.active { background: rgba(244,96,26,0.12); color: var(--sr-orange); font-weight: 600; }
 
-.hs-nav-icon { font-size: 1rem; line-height: 1; flex-shrink: 0; }
+.hs-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  opacity: 0.85;
+}
+.hs-nav-item.active .hs-nav-icon { opacity: 1; }
 
 .hs-nav-badge {
   display: inline-flex;
@@ -283,23 +292,27 @@ button, a, input, textarea, select {
 .hs-guest-link {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 9px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--sr-muted);
-  background: var(--sr-overlay-xs);
-  border: 1px solid var(--sr-border);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--sr-orange);
+  border: 1px solid var(--sr-orange);
   font-family: var(--sr-font-sans);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: opacity 0.15s;
   margin-bottom: 6px;
   width: 100%;
 }
-.hs-guest-link:hover { color: var(--sr-text); background: var(--sr-overlay-sm); }
+.hs-guest-link:hover { opacity: 0.88; }
 
 .hs-team-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.68rem;
   color: var(--sr-sub);
   padding: 8px 10px;

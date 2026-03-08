@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import SignOutButton from './_components/SignOutButton'
 import AdminNav from './_components/AdminNav'
 import ViewAsExitButton from './_components/ViewAsExitButton'
+import ThemeToggle from '../components/ThemeToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,25 +61,10 @@ export default async function AdminLayout({ children }) {
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
 
-        /* ── Shell ── */
         .admin-shell { display: flex; min-height: 100vh; }
         .admin-main  { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
 
-        /* ── Sidebar ── */
-        .sidebar { width: 240px; background: var(--sr-surface); border-right: 1px solid var(--sr-border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
-
-        /* Logo */
-        .sidebar-logo-wrap { padding: 22px 20px 18px; border-bottom: 1px solid var(--sr-border); flex-shrink: 0; }
-        .sidebar-logo-text { font-family: 'DM Sans', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--sr-text); letter-spacing: -0.02em; display: block; }
-        .sidebar-logo-text span { color: var(--sr-orange); }
-        .sidebar-logo-sub { font-size: 0.6rem; font-weight: 700; color: var(--sr-sub); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 4px; }
-
-        /* Footer */
-        .sidebar-footer { margin-top: auto; padding: 14px 12px; border-top: 1px solid var(--sr-border); flex-shrink: 0; }
-        .sidebar-user-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
-        .sidebar-avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--sr-orange); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; color: white; flex-shrink: 0; }
-        .sidebar-user-name { font-size: 0.78rem; font-weight: 700; color: var(--sr-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sidebar-user-email { font-size: 0.62rem; color: var(--sr-sub); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Role badge */
         .role-badge { display: inline-block; font-size: 0.58rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 5px; }
         .role-super_admin  { background: rgba(232,98,42,0.15);  color: var(--sr-orange); }
         .role-admin        { background: rgba(90,159,212,0.15); color: var(--sr-blue); }
@@ -92,37 +78,40 @@ export default async function AdminLayout({ children }) {
         .view-as-banner form button:hover { background: rgba(255,255,255,0.3); }
 
         @media (max-width: 768px) {
-          .sidebar { display: none; }
-          .admin-main { margin-left: 0; }
+          .hs-sidebar  { display: none; }
+          .admin-main  { margin-left: 0; }
         }
       `}</style>
 
       <div className="admin-shell">
-        <aside className="sidebar">
-          <div className="sidebar-logo-wrap">
-            <div className="sidebar-logo-text">
-              Snap<span>Reserve</span>
-            </div>
-            <div className="sidebar-logo-sub">Admin Console</div>
+        <aside className="hs-sidebar">
+
+          {/* Logo — matches host portal exactly */}
+          <div className="hs-logo-wrap">
+            <a href="/" className="hs-logo-text">
+              Snap<span>Reserve</span><sup>™</sup>
+            </a>
+            <div className="hs-logo-sub">Admin Console</div>
           </div>
 
           <AdminNav isSuperAdmin={isSuperAdmin} effectiveRole={effectiveRole} />
 
-          <div className="sidebar-footer">
-            <div className="sidebar-user-row">
-              <div className="sidebar-avatar">{initials(name ?? email)}</div>
+          {/* Footer */}
+          <div className="hs-sidebar-footer">
+            <div className="hs-user-row">
+              <div className="hs-avatar">{initials(name ?? email)}</div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="sidebar-user-name">{name ?? email ?? 'Admin'}</div>
-                {name && <div className="sidebar-user-email">{email}</div>}
+                <div className="hs-user-name">{name ?? email ?? 'Admin'}</div>
+                {name && <div className="hs-user-role">{email}</div>}
                 {role && <span className={`role-badge role-${role}`}>{role.replace(/_/g, ' ')}</span>}
               </div>
             </div>
+            <ThemeToggle style={{ width: '100%', justifyContent: 'center', marginBottom: '8px' }} />
             <SignOutButton />
           </div>
         </aside>
 
         <div className="admin-main">
-          {/* View As banner */}
           {viewAs && (
             <div className="view-as-banner">
               <span>👁️ Previewing as <strong>{viewAs.replace(/_/g, ' ')}</strong> — nav is filtered as this role would see it</span>

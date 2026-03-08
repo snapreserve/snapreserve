@@ -1090,10 +1090,10 @@ function ListPropertyInner() {
                   const nights  = Math.max(1, form.minNights || 1)
                   // Sample calculation uses minimum stay — guests may book more nights
                   const total   = rate * nights + cFee
-                  const pf      = Math.round(total * 0.07 * 100) / 100
+                  const pf      = Math.round(total * 0.08 * 100) / 100
                   const payout  = Math.round((total - pf - 1) * 100) / 100
                   // Per-night payout (for longer bookings): no fixed fee applied per-night
-                  const payoutPerNight = Math.round((rate * (1 - 0.07)) * 100) / 100
+                  const payoutPerNight = Math.round((rate * (1 - 0.08)) * 100) / 100
                   return (
                     <div style={{ background: 'rgba(232,98,42,0.05)', border: '1px solid rgba(232,98,42,0.18)', borderRadius: '12px', padding: '16px 20px', marginTop: '18px' }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>

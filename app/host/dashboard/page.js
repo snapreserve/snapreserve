@@ -525,17 +525,27 @@ export default function HostDashboard() {
   const [taskForm,           setTaskForm]           = useState({ title: '', description: '', listing_id: '', assigned_to: '', due_date: '', status: 'scheduled' })
   const [taskFormErr,        setTaskFormErr]        = useState('')
   const [taskSaving,         setTaskSaving]         = useState(false)
-  // Expenses (UI-only with mock data)
-  const [expCatFilter,  setExpCatFilter]  = useState('all')
-  const [expenseModal,  setExpenseModal]  = useState(false)
-  const [expenses,      setExpenses]      = useState([
-    { id: 1, date: '2026-03-01', desc: 'Professional cleaning service',  category: 'Cleaning',     property: 'All Properties', amount: 280 },
-    { id: 2, date: '2026-02-28', desc: 'Plumbing repair — master bath',  category: 'Maintenance',  property: 'Beach Villa',    amount: 195 },
-    { id: 3, date: '2026-02-25', desc: 'Guest toiletries & supplies',    category: 'Supplies',     property: 'City Loft',      amount: 64  },
-    { id: 4, date: '2026-02-20', desc: 'Property insurance premium',     category: 'Insurance',    property: 'All Properties', amount: 420 },
-    { id: 5, date: '2026-02-15', desc: 'Photography for new listing',    category: 'Marketing',    property: 'Garden Studio',  amount: 350 },
+  // Expenses
+  const [expCatFilter,    setExpCatFilter]    = useState('all')
+  const [expPropFilter,   setExpPropFilter]   = useState('all')
+  const [expAnalyticsTab, setExpAnalyticsTab] = useState('category')
+  const [expenseModal,    setExpenseModal]    = useState(false)
+  const [customCats,      setCustomCats]      = useState([])
+  const [addCatModal,     setAddCatModal]     = useState(false)
+  const [newCatName,      setNewCatName]      = useState('')
+  const [expenses,        setExpenses]        = useState([
+    { id: 1,  date: '2026-03-01',  desc: 'Professional cleaning service', category: 'Cleaning',    property: 'All Properties', amount: 280, notes: '',                             recurring: 'monthly', receiptName: '' },
+    { id: 2,  date: '2026-02-28',  desc: 'Plumbing repair — master bath', category: 'Maintenance', property: 'Beach Villa',    amount: 195, notes: 'Emergency call-out',           recurring: 'none',    receiptName: 'plumbing-invoice.pdf' },
+    { id: 3,  date: '2026-02-25',  desc: 'Guest toiletries & supplies',   category: 'Supplies',    property: 'City Loft',      amount: 64,  notes: '',                             recurring: 'none',    receiptName: '' },
+    { id: 4,  date: '2026-02-20',  desc: 'Property insurance premium',    category: 'Insurance',   property: 'All Properties', amount: 420, notes: 'Annual policy · monthly split', recurring: 'monthly', receiptName: 'insurance-q1.pdf' },
+    { id: 5,  date: '2026-02-15',  desc: 'Photography for new listing',   category: 'Marketing',   property: 'Garden Studio',  amount: 350, notes: '',                             recurring: 'none',    receiptName: '' },
+    { id: 6,  date: '2026-01-31',  desc: 'HOA dues',                      category: 'HOA',         property: 'Beach Villa',    amount: 180, notes: '',                             recurring: 'monthly', receiptName: '' },
+    { id: 7,  date: '2026-01-20',  desc: 'Internet & utilities',          category: 'Utilities',   property: 'City Loft',      amount: 95,  notes: '',                             recurring: 'monthly', receiptName: '' },
+    { id: 8,  date: '2025-12-30',  desc: 'Year-end deep clean',           category: 'Cleaning',    property: 'All Properties', amount: 340, notes: '',                             recurring: 'none',    receiptName: '' },
+    { id: 9,  date: '2025-12-15',  desc: 'HVAC servicing',                category: 'Maintenance', property: 'Beach Villa',    amount: 220, notes: 'Annual service contract',      recurring: 'yearly',  receiptName: 'hvac-service.pdf' },
+    { id: 10, date: '2025-11-18',  desc: 'Property management fee',       category: 'Management',  property: 'Garden Studio',  amount: 290, notes: '',                             recurring: 'monthly', receiptName: '' },
   ])
-  const [newExp, setNewExp] = useState({ date: '', desc: '', category: 'Cleaning', property: '', amount: '' })
+  const [newExp, setNewExp] = useState({ date: '', desc: '', category: 'Cleaning', property: '', amount: '', notes: '', recurring: 'none', receiptName: '' })
   // Promotions
   const [promotions,    setPromotions]    = useState([])
   const [promoLoaded,   setPromoLoaded]   = useState(false)
@@ -2961,31 +2971,93 @@ export default function HostDashboard() {
 
             {/* ========== EXPENSES ========== */}
             {activeNav === 'expenses' && (() => {
-              const EXP_CATS = ['Cleaning','Maintenance','Supplies','Insurance','Marketing','Other']
-              const filteredExp = expCatFilter === 'all' ? expenses : expenses.filter(e => e.category === expCatFilter)
-              const totalExp = expenses.reduce((s, e) => s + e.amount, 0)
-              const thisMonth = expenses.filter(e => e.date.startsWith('2026-03')).reduce((s, e) => s + e.amount, 0)
-              const avgMonth = Math.round(totalExp / 2) // 2 months of mock data
-              const byCat = EXP_CATS.map(c => ({ cat: c, total: expenses.filter(e => e.category === c).reduce((s, e) => s + e.amount, 0) })).filter(c => c.total > 0)
+              const EXP_CATS = ['Cleaning', 'Maintenance', 'Supplies', 'Insurance', 'Marketing', 'HOA', 'Utilities', 'Management', 'Other', ...customCats]
+              const MOCK_REVENUE = 5400
+
+              // Filtered data
+              const propFiltered = expPropFilter === 'all' ? expenses : expenses.filter(e => e.property === expPropFilter || e.property === 'All Properties')
+              const catFiltered  = expCatFilter  === 'all' ? propFiltered : propFiltered.filter(e => e.category === expCatFilter)
+
+              // Totals
+              const totalExp    = expenses.reduce((s, e) => s + e.amount, 0)
+              const netProfit   = MOCK_REVENUE - totalExp
+              const curMonth    = new Date('2026-03-07').toISOString().slice(0, 7)
+              const thisMonthExp = expenses.filter(e => e.date.startsWith(curMonth)).reduce((s, e) => s + e.amount, 0)
+
+              // Analytics — by category
+              const byCat = EXP_CATS
+                .map(c => ({ cat: c, total: expenses.filter(e => e.category === c).reduce((s, e) => s + e.amount, 0) }))
+                .filter(c => c.total > 0).sort((a, b) => b.total - a.total)
+
+              // Analytics — by property
+              const byProp = [...new Set(expenses.map(e => e.property))]
+                .map(p => ({ prop: p, total: expenses.filter(e => e.property === p).reduce((s, e) => s + e.amount, 0) }))
+                .sort((a, b) => b.total - a.total)
+              const maxProp = Math.max(...byProp.map(p => p.total), 1)
+
+              // Analytics — monthly trend (last 6 months)
+              const anchor = new Date('2026-03-07')
+              const last6 = Array.from({ length: 6 }, (_, i) => {
+                const d   = new Date(anchor.getFullYear(), anchor.getMonth() - (5 - i), 1)
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                const lbl = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+                const tot = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + e.amount, 0)
+                return { key, lbl, tot }
+              })
+              const maxTrend = Math.max(...last6.map(m => m.tot), 1)
+
+              // Export CSV
+              function exportCSV() {
+                const header = 'Date,Description,Category,Property,Amount,Recurring,Notes,Receipt'
+                const rows   = expenses.map(e => [e.date, `"${e.desc}"`, e.category, `"${e.property}"`, e.amount, e.recurring, `"${e.notes}"`, e.receiptName].join(','))
+                const blob   = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' })
+                const a      = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'expenses.csv' })
+                a.click(); URL.revokeObjectURL(a.href)
+              }
+
+              const iStyle = { width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }
+              const lStyle = { display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }
+              const canAdd = newExp.date && newExp.desc.trim() && newExp.amount
+
               return (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  {/* ── Header ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
                     <div>
                       <div className="hd-page-title">Expenses</div>
-                      <div className="hd-page-sub">Track property-related costs and keep your finances organised.</div>
+                      <div className="hd-page-sub">Track costs, analyse spending trends, and export reports for tax time.</div>
                     </div>
-                    <button onClick={() => setExpenseModal(true)} style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', flexShrink: 0 }}>
-                      + Add Expense
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button onClick={exportCSV} style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', color: 'var(--sr-text)', borderRadius: 10, padding: '9px 16px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', display: 'flex', alignItems: 'center', gap: 6 }}>⬇ Export CSV</button>
+                      <button onClick={() => setExpenseModal(true)} style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: 10, padding: '9px 18px', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>+ Add Expense</button>
+                    </div>
                   </div>
 
-                  {/* Stats row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+                  {/* ── Profit Overview ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 14 }}>
                     {[
-                      { label: 'Total Recorded',  val: `$${totalExp.toLocaleString()}`,  hint: 'All time',         icon: '🧾' },
-                      { label: 'This Month',       val: `$${thisMonth.toLocaleString()}`, hint: 'March 2026',       icon: '📅' },
-                      { label: 'Monthly Average',  val: `$${avgMonth.toLocaleString()}`,  hint: 'Last 2 months',    icon: '📊' },
-                      { label: 'Categories',       val: byCat.length,                     hint: 'Active categories', icon: '🏷️' },
+                      { label: 'Total Revenue',  val: `$${MOCK_REVENUE.toLocaleString()}`,                                              hint: 'From earnings',                   icon: '📈', color: 'var(--sr-green)' },
+                      { label: 'Total Expenses', val: `$${totalExp.toLocaleString()}`,                                                  hint: 'All recorded',                    icon: '💸', color: '#EF4444'         },
+                      { label: 'Net Profit',     val: `${netProfit < 0 ? '-' : ''}$${Math.abs(netProfit).toLocaleString()}`,            hint: netProfit >= 0 ? 'Profit' : 'Loss', icon: netProfit >= 0 ? '✅' : '⚠️', color: netProfit >= 0 ? 'var(--sr-green)' : '#EF4444' },
+                    ].map(({ label, val, hint, icon, color }) => (
+                      <div key={label} className="hd-stat-card">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <div className="hd-stat-label" style={{ margin: 0 }}>{label}</div>
+                          <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+                        </div>
+                        <div className="hd-stat-val" style={{ marginBottom: 4, fontSize: '1.8rem', color }}>{val}</div>
+                        <div className="hd-stat-hint">{hint}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Stats row ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+                    {[
+                      { label: 'Total Recorded', val: `$${totalExp.toLocaleString()}`,                                  hint: 'All time',    icon: '🧾' },
+                      { label: 'This Month',     val: `$${thisMonthExp.toLocaleString()}`,                              hint: 'March 2026',  icon: '📅' },
+                      { label: 'Recurring',      val: expenses.filter(e => e.recurring !== 'none').length,              hint: 'Active items', icon: '🔄' },
+                      { label: 'Categories',     val: byCat.length,                                                     hint: 'In use',      icon: '🏷️' },
                     ].map(({ label, val, hint, icon }) => (
                       <div key={label} className="hd-stat-card">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -2998,128 +3070,207 @@ export default function HostDashboard() {
                     ))}
                   </div>
 
-                  {/* Category breakdown */}
-                  {byCat.length > 0 && (
-                    <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
-                      <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 16 }}>By Category</div>
+                  {/* ── Analytics ── */}
+                  <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: '20px 24px', marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                      <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Analytics</div>
+                      <div style={{ display: 'flex', background: 'var(--sr-surface)', borderRadius: 10, padding: 3, gap: 2 }}>
+                        {[['category', 'By Category'], ['property', 'By Property'], ['trend', 'Monthly Trend']].map(([tab, lbl]) => (
+                          <button key={tab} onClick={() => setExpAnalyticsTab(tab)} style={{ padding: '5px 14px', borderRadius: 8, border: 'none', background: expAnalyticsTab === tab ? 'var(--sr-orange)' : 'transparent', color: expAnalyticsTab === tab ? 'white' : 'var(--sr-muted)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {expAnalyticsTab === 'category' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {byCat.sort((a, b) => b.total - a.total).map(({ cat, total }) => (
+                        {byCat.length === 0 && <div style={{ color: 'var(--sr-sub)', fontSize: '0.84rem' }}>No expenses recorded yet.</div>}
+                        {byCat.map(({ cat, total }) => (
                           <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 100, fontSize: '0.78rem', color: 'var(--sr-text)', fontWeight: 600, flexShrink: 0 }}>{cat}</div>
+                            <div style={{ width: 110, fontSize: '0.78rem', color: 'var(--sr-text)', fontWeight: 600, flexShrink: 0 }}>{cat}</div>
                             <div style={{ flex: 1, height: 8, background: 'var(--sr-surface)', borderRadius: 100, overflow: 'hidden' }}>
                               <div style={{ height: '100%', width: `${(total / totalExp * 100).toFixed(1)}%`, background: 'var(--sr-orange)', borderRadius: 100 }} />
                             </div>
                             <div style={{ width: 70, textAlign: 'right', fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-text)', flexShrink: 0 }}>${total.toLocaleString()}</div>
-                            <div style={{ width: 44, textAlign: 'right', fontSize: '0.72rem', color: 'var(--sr-sub)', flexShrink: 0 }}>{(total / totalExp * 100).toFixed(0)}%</div>
+                            <div style={{ width: 38, textAlign: 'right', fontSize: '0.72rem', color: 'var(--sr-sub)', flexShrink: 0 }}>{(total / totalExp * 100).toFixed(0)}%</div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Category filter + table */}
-                  <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-                      <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Expenses</div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {['all', ...EXP_CATS].map(cat => (
-                          <button key={cat} onClick={() => setExpCatFilter(cat)} style={{ padding: '5px 12px', borderRadius: 100, border: '1px solid var(--sr-border)', background: expCatFilter === cat ? 'var(--sr-orange)' : 'var(--sr-card2)', color: expCatFilter === cat ? 'white' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                            {cat === 'all' ? 'All' : cat}
-                          </button>
+                    {expAnalyticsTab === 'property' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {byProp.map(({ prop, total }) => (
+                          <div key={prop} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 140, fontSize: '0.78rem', color: 'var(--sr-text)', fontWeight: 600, flexShrink: 0 }}>{prop}</div>
+                            <div style={{ flex: 1, height: 8, background: 'var(--sr-surface)', borderRadius: 100, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${(total / maxProp * 100).toFixed(1)}%`, background: '#5A9FD4', borderRadius: 100 }} />
+                            </div>
+                            <div style={{ width: 70, textAlign: 'right', fontSize: '0.82rem', fontWeight: 700, color: 'var(--sr-text)', flexShrink: 0 }}>${total.toLocaleString()}</div>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
-                            {['Date','Description','Category','Property','Amount',''].map(h => (
-                              <th key={h} style={{ padding: '11px 20px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredExp.map((e, i) => (
-                            <tr key={e.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i % 2 === 1 ? 'var(--sr-surface)' : 'transparent' }}>
-                              <td style={{ padding: '13px 20px', fontSize: '0.82rem', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
-                              <td style={{ padding: '13px 20px', fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 500 }}>{e.desc}</td>
-                              <td style={{ padding: '13px 20px' }}>
-                                <span style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', color: 'var(--sr-muted)', fontWeight: 600 }}>{e.category}</span>
-                              </td>
-                              <td style={{ padding: '13px 20px', fontSize: '0.82rem', color: 'var(--sr-sub)' }}>{e.property}</td>
-                              <td style={{ padding: '13px 20px', fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)', whiteSpace: 'nowrap' }}>${e.amount.toLocaleString()}</td>
-                              <td style={{ padding: '13px 20px' }}>
-                                <button onClick={() => setExpenses(prev => prev.filter(x => x.id !== e.id))} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px 6px' }} title="Remove">✕</button>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredExp.length === 0 && (
-                            <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No expenses found. <button onClick={() => setExpenseModal(true)} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>Add one →</button></td></tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                    {filteredExp.length > 0 && (
-                      <div style={{ padding: '14px 20px', borderTop: '1px solid var(--sr-border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <span style={{ fontSize: '0.82rem', color: 'var(--sr-sub)' }}>Total:</span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)' }}>${filteredExp.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
+                    )}
+
+                    {expAnalyticsTab === 'trend' && (
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 140, paddingBottom: 4 }}>
+                        {last6.map(({ key, lbl, tot }) => (
+                          <div key={key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                            <div style={{ fontSize: '0.64rem', fontWeight: 700, color: 'var(--sr-text)', minHeight: 14 }}>{tot > 0 ? `$${tot}` : ''}</div>
+                            <div style={{ width: '100%', background: tot > 0 ? 'var(--sr-orange)' : 'var(--sr-surface)', borderRadius: '5px 5px 0 0', height: `${Math.max(tot / maxTrend * 100, tot > 0 ? 4 : 2)}px`, transition: 'height 0.3s' }} />
+                            <div style={{ fontSize: '0.65rem', color: 'var(--sr-sub)', fontWeight: 600, whiteSpace: 'nowrap' }}>{lbl}</div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Add Expense Modal */}
+                  {/* ── Table + Filters ── */}
+                  <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, overflow: 'hidden' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--sr-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--sr-text)' }}>All Expenses</div>
+                        <select value={expPropFilter} onChange={ev => setExpPropFilter(ev.target.value)} style={{ background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 10px', color: 'var(--sr-text)', fontSize: '0.78rem', fontFamily: 'var(--sr-font-sans)', outline: 'none', cursor: 'pointer' }}>
+                          <option value="all">All Properties</option>
+                          {[...new Set([...expenses.map(e => e.property), ...listings.map(l => l.title || 'Untitled')].filter(Boolean))].map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {['all', ...EXP_CATS].map(cat => (
+                          <button key={cat} onClick={() => setExpCatFilter(cat)} style={{ padding: '4px 11px', borderRadius: 100, border: '1px solid var(--sr-border)', background: expCatFilter === cat ? 'var(--sr-orange)' : 'var(--sr-card2)', color: expCatFilter === cat ? 'white' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                            {cat === 'all' ? 'All' : cat}
+                          </button>
+                        ))}
+                        <button onClick={() => setAddCatModal(true)} style={{ padding: '4px 10px', borderRadius: 100, border: '1px dashed var(--sr-border)', background: 'transparent', color: 'var(--sr-sub)', fontWeight: 600, fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>+ Custom</button>
+                      </div>
+                    </div>
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--sr-border)' }}>
+                            {['Date', 'Description', 'Category', 'Property', 'Recurring', 'Amount', ''].map(h => (
+                              <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {catFiltered.map((e, i) => (
+                            <tr key={e.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i % 2 === 1 ? 'var(--sr-surface)' : 'transparent' }}>
+                              <td style={{ padding: '12px 16px', fontSize: '0.8rem', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                              <td style={{ padding: '12px 16px', fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 500, maxWidth: 260 }}>
+                                <div>{e.desc}</div>
+                                {e.notes      && <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 2 }}>{e.notes}</div>}
+                                {e.receiptName && <div style={{ fontSize: '0.7rem', color: 'var(--sr-blue)', marginTop: 2 }}>📎 {e.receiptName}</div>}
+                              </td>
+                              <td style={{ padding: '12px 16px' }}>
+                                <span style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border)', borderRadius: 100, padding: '3px 10px', fontSize: '0.68rem', color: 'var(--sr-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{e.category}</span>
+                              </td>
+                              <td style={{ padding: '12px 16px', fontSize: '0.8rem', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{e.property}</td>
+                              <td style={{ padding: '12px 16px' }}>
+                                {e.recurring !== 'none' && <span style={{ background: 'rgba(90,159,212,0.12)', border: '1px solid rgba(90,159,212,0.25)', borderRadius: 100, padding: '3px 9px', fontSize: '0.66rem', color: 'var(--sr-blue)', fontWeight: 700, whiteSpace: 'nowrap' }}>🔄 {e.recurring === 'monthly' ? 'Monthly' : 'Yearly'}</span>}
+                              </td>
+                              <td style={{ padding: '12px 16px', fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)', whiteSpace: 'nowrap' }}>${e.amount.toLocaleString()}</td>
+                              <td style={{ padding: '12px 16px' }}>
+                                <button onClick={() => setExpenses(prev => prev.filter(x => x.id !== e.id))} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px 6px' }} title="Delete">✕</button>
+                              </td>
+                            </tr>
+                          ))}
+                          {catFiltered.length === 0 && (
+                            <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No expenses match your filters. <button onClick={() => { setExpCatFilter('all'); setExpPropFilter('all') }} style={{ background: 'none', border: 'none', color: 'var(--sr-orange)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}>Clear filters</button></td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {catFiltered.length > 0 && (
+                      <div style={{ padding: '14px 20px', borderTop: '1px solid var(--sr-border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--sr-sub)' }}>Filtered total:</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--sr-text)' }}>${catFiltered.reduce((s, e) => s + e.amount, 0).toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Add Expense Modal ── */}
                   {expenseModal && (
-                    <div onClick={e => e.target === e.currentTarget && setExpenseModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: 32, width: '100%', maxWidth: 460 }}>
+                    <div onClick={ev => ev.target === ev.currentTarget && setExpenseModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: 32, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                          <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.3rem', fontWeight: 700, color: 'var(--sr-text)' }}>Add Expense</div>
+                          <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--sr-text)' }}>Add Expense</div>
                           <button onClick={() => setExpenseModal(false)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Date</label>
-                            <input type="date" value={newExp.date} onChange={e => setNewExp(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div><label style={lStyle}>Date *</label><input type="date" value={newExp.date} onChange={ev => setNewExp(p => ({ ...p, date: ev.target.value }))} style={iStyle} /></div>
+                            <div><label style={lStyle}>Amount ($) *</label><input type="number" min="0" step="0.01" placeholder="0.00" value={newExp.amount} onChange={ev => setNewExp(p => ({ ...p, amount: ev.target.value }))} style={iStyle} /></div>
                           </div>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Description</label>
-                            <input type="text" placeholder="e.g. Professional cleaning service" value={newExp.desc} onChange={e => setNewExp(p => ({ ...p, desc: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
-                          </div>
+                          <div><label style={lStyle}>Description *</label><input type="text" placeholder="e.g. Professional cleaning service" value={newExp.desc} onChange={ev => setNewExp(p => ({ ...p, desc: ev.target.value }))} style={iStyle} /></div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Category</label>
-                              <select value={newExp.category} onChange={e => setNewExp(p => ({ ...p, category: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }}>
+                              <label style={lStyle}>Category</label>
+                              <select value={newExp.category} onChange={ev => setNewExp(p => ({ ...p, category: ev.target.value }))} style={iStyle}>
                                 {EXP_CATS.map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Amount ($)</label>
-                              <input type="number" min="0" step="0.01" placeholder="0.00" value={newExp.amount} onChange={e => setNewExp(p => ({ ...p, amount: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }} />
+                              <label style={lStyle}>Property</label>
+                              <select value={newExp.property} onChange={ev => setNewExp(p => ({ ...p, property: ev.target.value }))} style={iStyle}>
+                                <option value="All Properties">All Properties</option>
+                                {listings.map(l => <option key={l.id} value={l.title || l.id}>{l.title || 'Untitled'}</option>)}
+                              </select>
                             </div>
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', marginBottom: 6 }}>Property</label>
-                            <select value={newExp.property} onChange={e => setNewExp(p => ({ ...p, property: e.target.value }))} style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.86rem', fontFamily: 'var(--sr-font-sans)', outline: 'none' }}>
-                              <option value="All Properties">All Properties</option>
-                              {listings.map(l => <option key={l.id} value={l.title || l.id}>{l.title || 'Untitled'}</option>)}
-                            </select>
+                            <label style={lStyle}>Recurring</label>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              {[['none', 'One-time'], ['monthly', '🔄 Monthly'], ['yearly', '🔄 Yearly']].map(([val, lbl]) => (
+                                <button key={val} onClick={() => setNewExp(p => ({ ...p, recurring: val }))} style={{ flex: 1, padding: '9px 6px', borderRadius: 9, border: `1.5px solid ${newExp.recurring === val ? 'var(--sr-orange)' : 'var(--sr-border)'}`, background: newExp.recurring === val ? 'rgba(244,96,26,0.1)' : 'var(--sr-card2)', color: newExp.recurring === val ? 'var(--sr-orange)' : 'var(--sr-muted)', fontWeight: 600, fontSize: '0.76rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>{lbl}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div><label style={lStyle}>Notes</label><textarea rows={2} placeholder="Optional notes..." value={newExp.notes} onChange={ev => setNewExp(p => ({ ...p, notes: ev.target.value }))} style={{ ...iStyle, resize: 'vertical', minHeight: 56 }} /></div>
+                          <div>
+                            <label style={lStyle}>Receipt (image or PDF)</label>
+                            <div onClick={() => document.getElementById('receipt-upload').click()} style={{ border: '1.5px dashed var(--sr-border)', borderRadius: 10, padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--sr-card2)' }}>
+                              <span style={{ fontSize: '1.3rem' }}>📎</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--sr-text)' }}>{newExp.receiptName || 'Click to upload receipt'}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--sr-sub)' }}>JPEG, PNG, or PDF</div>
+                              </div>
+                              {newExp.receiptName && <button onClick={ev => { ev.stopPropagation(); setNewExp(p => ({ ...p, receiptName: '' })) }} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>}
+                            </div>
+                            <input id="receipt-upload" type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={ev => { const f = ev.target.files?.[0]; if (f) setNewExp(p => ({ ...p, receiptName: f.name })) }} />
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
                           <button onClick={() => setExpenseModal(false)} style={{ flex: 1, background: 'var(--sr-card2)', color: 'var(--sr-muted)', border: 'none', borderRadius: 10, padding: 12, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Cancel</button>
-                          <button
-                            disabled={!newExp.date || !newExp.desc.trim() || !newExp.amount}
-                            onClick={() => {
-                              if (!newExp.date || !newExp.desc.trim() || !newExp.amount) return
-                              setExpenses(prev => [{ id: Date.now(), date: newExp.date, desc: newExp.desc.trim(), category: newExp.category, property: newExp.property || 'All Properties', amount: parseFloat(newExp.amount) }, ...prev])
-                              setNewExp({ date: '', desc: '', category: 'Cleaning', property: '', amount: '' })
-                              setExpenseModal(false)
-                              showToast('Expense added.')
-                            }}
-                            style={{ flex: 2, background: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'var(--sr-card2)' : 'var(--sr-orange)', color: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'var(--sr-sub)' : 'white', border: 'none', borderRadius: 10, padding: 12, fontWeight: 700, fontSize: '0.88rem', cursor: (!newExp.date || !newExp.desc.trim() || !newExp.amount) ? 'not-allowed' : 'pointer', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}
-                          >
-                            Add Expense
-                          </button>
+                          <button disabled={!canAdd} onClick={() => { if (!canAdd) return; setExpenses(prev => [{ id: Date.now(), date: newExp.date, desc: newExp.desc.trim(), category: newExp.category, property: newExp.property || 'All Properties', amount: parseFloat(newExp.amount), notes: newExp.notes, recurring: newExp.recurring, receiptName: newExp.receiptName }, ...prev]); setNewExp({ date: '', desc: '', category: 'Cleaning', property: '', amount: '', notes: '', recurring: 'none', receiptName: '' }); setExpenseModal(false); showToast('Expense added.') }} style={{ flex: 2, background: canAdd ? 'var(--sr-orange)' : 'var(--sr-card2)', color: canAdd ? 'white' : 'var(--sr-sub)', border: 'none', borderRadius: 10, padding: 12, fontWeight: 700, fontSize: '0.88rem', cursor: canAdd ? 'pointer' : 'not-allowed', fontFamily: 'var(--sr-font-sans)', transition: 'all 0.15s' }}>Add Expense</button>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Custom Category Modal ── */}
+                  {addCatModal && (
+                    <div onClick={ev => ev.target === ev.currentTarget && setAddCatModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                      <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 20, padding: 32, width: '100%', maxWidth: 400 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                          <div style={{ fontFamily: 'var(--sr-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)' }}>Custom Categories</div>
+                          <button onClick={() => setAddCatModal(false)} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                          <input type="text" placeholder="e.g. Property Management" value={newCatName} onChange={ev => setNewCatName(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter' && newCatName.trim()) { setCustomCats(p => [...p, newCatName.trim()]); setNewCatName('') }}} style={{ flex: 1, ...iStyle }} />
+                          <button onClick={() => { if (newCatName.trim()) { setCustomCats(p => [...p, newCatName.trim()]); setNewCatName('') }}} style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', fontFamily: 'var(--sr-font-sans)' }}>Add</button>
+                        </div>
+                        {customCats.length === 0
+                          ? <div style={{ color: 'var(--sr-sub)', fontSize: '0.82rem', textAlign: 'center', padding: '12px 0' }}>No custom categories yet.</div>
+                          : <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {customCats.map((cat, idx) => (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--sr-surface)', borderRadius: 8, padding: '8px 12px' }}>
+                                  <span style={{ fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 500 }}>{cat}</span>
+                                  <button onClick={() => setCustomCats(p => p.filter((_, i) => i !== idx))} style={{ background: 'none', border: 'none', color: 'var(--sr-sub)', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                        }
                       </div>
                     </div>
                   )}

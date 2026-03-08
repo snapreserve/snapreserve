@@ -30,10 +30,14 @@ const SECTIONS = [
   {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy',   href: '/privacy' },
-      { label: 'Cookie Policy',    href: '/coming-soon?page=cookies' },
-      { label: 'Host Terms',       href: '/host-agreement' },
+      { label: 'Terms of Service',      href: '/terms' },
+      { label: 'Privacy Policy',        href: '/privacy' },
+      { label: 'Host Agreement',        href: '/host-agreement' },
+      { label: 'Guest Booking Policy',  href: '/guest-policy' },
+      { label: 'Cancellation Policy',   href: '/refund-policy' },
+      { label: 'Payment Policy',        href: '/payment-policy' },
+      { label: 'Listing Policy',        href: '/listing-policy' },
+      { label: 'Community Standards',   href: '/community-standards' },
     ],
   },
 ]

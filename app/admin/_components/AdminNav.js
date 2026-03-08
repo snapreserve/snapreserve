@@ -1,9 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  LayoutDashboard, Building2, Users, UserRound, ClipboardList, Luggage,
+  CalendarDays, Flag, Star, Scale, Banknote, TrendingUp,
+  ListChecks, Globe2, CircleDot,
+  Zap, KeyRound, Shield, ScrollText, Mail, Settings, ShieldOff,
+} from 'lucide-react'
 import { getAllowedNavItems } from '@/lib/admin-permissions'
 
-// Map each nav item href to a "key" used by getAllowedNavItems
 const HREF_KEY_MAP = {
   '/admin':                    'overview',
   '/admin/listings':           'listings',
@@ -33,36 +38,36 @@ const NAV_SECTIONS = [
   {
     title: 'Overview',
     items: [
-      { href: '/admin', icon: '📊', label: 'Overview', exact: true },
+      { href: '/admin', Icon: LayoutDashboard, label: 'Overview', exact: true },
     ],
   },
   {
     title: 'Users & Content',
     items: [
-      { href: '/admin/listings',           icon: '🏨', label: 'Listings' },
-      { href: '/admin/users',              icon: '👥', label: 'All Users' },
-      { href: '/admin/hosts',              icon: '👤', label: 'Hosts' },
-      { href: '/admin/host-applications',  icon: '📝', label: 'Host Applications' },
-      { href: '/admin/guests',             icon: '🧳', label: 'Guests' },
+      { href: '/admin/listings',           Icon: Building2,     label: 'Listings' },
+      { href: '/admin/users',              Icon: Users,         label: 'All Users' },
+      { href: '/admin/hosts',              Icon: UserRound,     label: 'Hosts' },
+      { href: '/admin/host-applications',  Icon: ClipboardList, label: 'Host Applications' },
+      { href: '/admin/guests',             Icon: Luggage,       label: 'Guests' },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { href: '/admin/bookings',  icon: '📅', label: 'Bookings' },
-      { href: '/admin/reports',   icon: '🚩', label: 'Reports' },
-      { href: '/admin/reviews',   icon: '⭐', label: 'Reviews' },
-      { href: '/admin/appeals',   icon: '⚖️', label: 'Appeals' },
-      { href: '/admin/refunds',   icon: '💸', label: 'Refunds' },
+      { href: '/admin/bookings',  Icon: CalendarDays, label: 'Bookings' },
+      { href: '/admin/reports',   Icon: Flag,         label: 'Reports' },
+      { href: '/admin/reviews',   Icon: Star,         label: 'Reviews' },
+      { href: '/admin/appeals',   Icon: Scale,        label: 'Appeals' },
+      { href: '/admin/refunds',   Icon: Banknote,     label: 'Refunds' },
     ],
   },
   {
     title: 'Growth',
     items: [
-      { href: '/admin/finance',              icon: '📈', label: 'Finance' },
-      { href: '/admin/waitlist',             icon: '📩', label: 'Waitlist' },
-      { href: '/admin/international-leads',  icon: '🌍', label: 'Intl Leads' },
-      { href: '/admin/status',               icon: '🟢', label: 'Status' },
+      { href: '/admin/finance',             Icon: TrendingUp,  label: 'Finance' },
+      { href: '/admin/waitlist',            Icon: ListChecks,  label: 'Waitlist' },
+      { href: '/admin/international-leads', Icon: Globe2,      label: 'Intl Leads' },
+      { href: '/admin/status',              Icon: CircleDot,   label: 'Status' },
     ],
   },
 ]
@@ -71,13 +76,13 @@ const SUPER_SECTIONS = [
   {
     title: 'Super Admin',
     items: [
-      { href: '/superadmin',              icon: '⚡', label: 'Dashboard',    exact: true },
-      { href: '/superadmin/roles',        icon: '🔑', label: 'Roles' },
-      { href: '/superadmin/permissions',  icon: '🛡️', label: 'Permissions' },
-      { href: '/superadmin/audit',        icon: '📋', label: 'Audit Log' },
-      { href: '/superadmin/invites',      icon: '✉️', label: 'Invites' },
-      { href: '/superadmin/settings',     icon: '⚙️', label: 'Settings' },
-      { href: '/superadmin/override',     icon: '🔐', label: 'Override Mode' },
+      { href: '/superadmin',             Icon: Zap,       label: 'Dashboard',     exact: true },
+      { href: '/superadmin/roles',       Icon: KeyRound,  label: 'Roles' },
+      { href: '/superadmin/permissions', Icon: Shield,    label: 'Permissions' },
+      { href: '/superadmin/audit',       Icon: ScrollText,label: 'Audit Log' },
+      { href: '/superadmin/invites',     Icon: Mail,      label: 'Invites' },
+      { href: '/superadmin/settings',    Icon: Settings,  label: 'Settings' },
+      { href: '/superadmin/override',    Icon: ShieldOff, label: 'Override Mode' },
     ],
   },
 ]
@@ -85,8 +90,6 @@ const SUPER_SECTIONS = [
 export default function AdminNav({ isSuperAdmin, effectiveRole }) {
   const pathname = usePathname()
 
-  // Super admins in view-as mode use effectiveRole for nav filtering
-  // Real super admins (not in view-as) see everything
   const isViewingAs = isSuperAdmin && effectiveRole && effectiveRole !== 'super_admin'
   const allowedItems = isViewingAs ? getAllowedNavItems(effectiveRole) : null
 
@@ -96,50 +99,38 @@ export default function AdminNav({ isSuperAdmin, effectiveRole }) {
   }
 
   function isAllowed(item) {
-    if (!allowedItems) return true // not in view-as mode — show all
+    if (!allowedItems) return true
     const key = HREF_KEY_MAP[item.href]
     return key ? allowedItems.has(key) : false
   }
 
-  // Super admin sections only shown to real super admins (not while viewing as another role)
   const sections = isSuperAdmin && !isViewingAs
     ? [...NAV_SECTIONS, ...SUPER_SECTIONS]
     : NAV_SECTIONS
 
   return (
-    <>
-      <style>{`
-        .an-wrap  { flex: 1; padding: 16px 12px; overflow-y: auto; }
-        .an-sec-title { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sr-sub); padding: 0 10px; margin-bottom: 6px; margin-top: 18px; }
-        .an-sec-title:first-child { margin-top: 0; }
-        .an-link { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: var(--sr-muted); font-size: 0.82rem; font-weight: 500; text-decoration: none; transition: all 0.13s; margin-bottom: 1px; border: none; background: none; width: 100%; text-align: left; font-family: 'DM Sans', sans-serif; cursor: pointer; }
-        .an-link:hover { background: var(--sr-overlay-xs); color: var(--sr-text); }
-        .an-link.active { background: var(--sr-orange); color: white; font-weight: 700; }
-        .an-icon { font-size: 1rem; line-height: 1; flex-shrink: 0; width: 20px; text-align: center; }
-        .an-restricted { opacity: 0.35; pointer-events: none; }
-      `}</style>
-
-      <div className="an-wrap">
-        {sections.map((section, si) => {
-          const visibleItems = section.items.filter(item => isAllowed(item))
-          if (!visibleItems.length) return null
-          return (
-            <div key={section.title}>
-              <div className={`an-sec-title${si === 0 ? ' first' : ''}`}>{section.title}</div>
-              {visibleItems.map(item => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`an-link${isActive(item) ? ' active' : ''}`}
-                >
-                  <span className="an-icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </div>
-          )
-        })}
-      </div>
-    </>
+    <nav className="hs-nav-wrap">
+      {sections.map(section => {
+        const visibleItems = section.items.filter(item => isAllowed(item))
+        if (!visibleItems.length) return null
+        return (
+          <div key={section.title}>
+            <div className="hs-nav-section-title">{section.title}</div>
+            {visibleItems.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`hs-nav-item${isActive(item) ? ' active' : ''}`}
+              >
+                <span className="hs-nav-icon">
+                  <item.Icon size={17} strokeWidth={1.75} />
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        )
+      })}
+    </nav>
   )
 }

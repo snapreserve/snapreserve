@@ -10,10 +10,13 @@ function supabase() {
 }
 
 const STATUS_TABS = [
-  { key: 'pending',           label: 'Pending',          icon: '⏳' },
-  { key: 'changes_requested', label: 'Changes Requested', icon: '🔄' },
-  { key: 'approved',          label: 'Approved',          icon: '✅' },
-  { key: 'rejected',          label: 'Rejected',          icon: '❌' },
+  { key: 'all',                label: 'All',              icon: '📋' },
+  { key: 'pending',            label: 'Pending',          icon: '⏳' },
+  { key: 'changes_requested',  label: 'Changes Req.',     icon: '🔄' },
+  { key: 'pending_reapproval', label: 'Reapproval',       icon: '🔍' },
+  { key: 'approved',           label: 'Approved',         icon: '✅' },
+  { key: 'rejected',           label: 'Rejected',         icon: '❌' },
+  { key: 'suspended',          label: 'Suspended',        icon: '⛔' },
 ]
 
 export default function ListingApprovalsPage() {
@@ -30,6 +33,7 @@ export default function ListingApprovalsPage() {
   const [requestTarget, setRequestTarget]       = useState(null) // listing_id
   const [requestNotes, setRequestNotes]         = useState('')
 
+  const [search, setSearch]   = useState('')
   const [acting, setActing]   = useState(false)
   const [toast, setToast]     = useState(null)
 
@@ -47,16 +51,31 @@ export default function ListingApprovalsPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     const sb = supabase()
-    const [{ data: apps }, { data: crs }, { data: fus }] = await Promise.all([
-      sb.from('listing_approvals')
-        .select('*, listings(*)')
-        .order('submitted_at', { ascending: false }),
+    const [{ data: listings }, { data: crs }, { data: fus }] = await Promise.all([
+      sb.from('listings')
+        .select('*, hosts(id, user_id, users(full_name, email))')
+        .order('created_at', { ascending: false })
+        .limit(300),
       sb.from('listing_change_requests')
         .select('listing_id, notes, admin_email, created_at, status')
         .order('created_at', { ascending: false }),
       fetch('/api/admin/listings/followup-counts').then(r => r.ok ? r.json() : { counts: [] }).then(j => ({ data: j.counts || [] })),
     ])
-    setApprovals(apps || [])
+
+    // Normalise listings into the shape the UI expects
+    const normalised = (listings || []).map(l => ({
+      id:               l.id,
+      listing_id:       l.id,
+      status:           l.status || 'draft',
+      listing_title:    l.title || 'Untitled',
+      host_name:        l.hosts?.users?.full_name || '—',
+      host_email:       l.hosts?.users?.email || '—',
+      submitted_at:     l.created_at,
+      reviewed_at:      l.updated_at,
+      rejection_reason: l.rejection_reason || null,
+      listings:         l,
+    }))
+    setApprovals(normalised)
 
     const crMap = {}
     ;(crs || []).forEach(cr => {
@@ -138,18 +157,35 @@ export default function ListingApprovalsPage() {
   }
 
   const stats = {
-    pending:           approvals.filter(a => a.status === 'pending').length,
-    changes_requested: approvals.filter(a => a.status === 'changes_requested').length,
-    approved:          approvals.filter(a => a.status === 'approved').length,
-    rejected:          approvals.filter(a => a.status === 'rejected').length,
+    all:                 approvals.length,
+    pending:             approvals.filter(a => a.status === 'pending').length,
+    changes_requested:   approvals.filter(a => a.status === 'changes_requested').length,
+    pending_reapproval:  approvals.filter(a => a.status === 'pending_reapproval').length,
+    approved:            approvals.filter(a => a.status === 'approved').length,
+    rejected:            approvals.filter(a => a.status === 'rejected').length,
+    suspended:           approvals.filter(a => a.status === 'suspended').length,
   }
-  const filtered = approvals.filter(a => a.status === activeTab)
+  const filtered = approvals
+    .filter(a => activeTab === 'all' || a.status === activeTab)
+    .filter(a => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      return (
+        a.listing_title?.toLowerCase().includes(q) ||
+        a.host_name?.toLowerCase().includes(q) ||
+        a.host_email?.toLowerCase().includes(q) ||
+        a.listings?.city?.toLowerCase().includes(q) ||
+        a.listings?.state?.toLowerCase().includes(q)
+      )
+    })
 
   function ActionButtons({ a }) {
-    const isPending  = a.status === 'pending'
-    const isChanges  = a.status === 'changes_requested'
-    const isRejected = a.status === 'rejected'
-    const showActions = isPending || isChanges || isRejected
+    const isPending    = a.status === 'pending'
+    const isChanges    = a.status === 'changes_requested'
+    const isRejected   = a.status === 'rejected'
+    const isSuspended  = a.status === 'suspended'
+    const isReapproval = a.status === 'pending_reapproval'
+    const showActions  = isPending || isChanges || isRejected || isSuspended || isReapproval
     if (!showActions) return null
 
     const imgState   = imagesMap[a.listing_id]
@@ -167,11 +203,11 @@ export default function ListingApprovalsPage() {
           </div>
         )}
         <div className="action-row">
-          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting || (!isRejected && tooFewPhotos)}>
-            {acting ? 'Processing…' : isRejected ? '✅ Re-approve' : '✅ Approve'}
+          <button className="btn-approve" onClick={() => doAction(a.listing_id, 'approve')} disabled={acting || (!isRejected && !isSuspended && !isReapproval && tooFewPhotos)}>
+            {acting ? 'Processing…' : (isRejected || isSuspended || isReapproval) ? '✅ Approve' : '✅ Approve'}
           </button>
 
-          {!isRejected && (
+          {!isRejected && !isSuspended && (
             <button
               className="btn-changes"
               onClick={() => {
@@ -184,7 +220,7 @@ export default function ListingApprovalsPage() {
             </button>
           )}
 
-          {!isRejected && (
+          {!isRejected && !isSuspended && (
             <div className="reject-wrap">
               <input
                 className="reject-input"
@@ -248,7 +284,10 @@ export default function ListingApprovalsPage() {
         .stat { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:12px; padding:18px 20px; }
         .stat-num { font-size:1.7rem; font-weight:800; line-height:1; margin-bottom:4px; }
         .stat-label { font-size:0.72rem; color:var(--sr-muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
-        .tabs { display:flex; gap:4px; background:rgba(255,255,255,0.05); border-radius:10px; padding:4px; margin-bottom:20px; width:fit-content; }
+        .search-input { width:100%; background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:10px; padding:11px 16px; font-size:0.86rem; font-family:inherit; color:var(--sr-text); outline:none; margin-bottom:16px; }
+        .search-input:focus { border-color:var(--sr-orange); }
+        .search-input::placeholder { color:var(--sr-sub); }
+        .tabs { display:flex; gap:4px; background:rgba(255,255,255,0.05); border-radius:10px; padding:4px; margin-bottom:20px; flex-wrap:wrap; }
         .tab { padding:8px 20px; border-radius:7px; font-size:0.84rem; font-weight:600; border:none; cursor:pointer; font-family:inherit; color:var(--sr-muted); background:transparent; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
         .tab.active { background:var(--sr-orange); color:white; }
         .tab-badge { background:rgba(255,255,255,0.2); font-size:0.65rem; font-weight:800; padding:1px 7px; border-radius:100px; }
@@ -353,11 +392,18 @@ export default function ListingApprovalsPage() {
 
       <div className="content">
         <div className="stats-row">
-          <div className="stat"><div className="stat-num" style={{color:'#FCD34D'}}>{stats.pending}</div><div className="stat-label">Pending</div></div>
-          <div className="stat"><div className="stat-num" style={{color:'#93C5FD'}}>{stats.changes_requested}</div><div className="stat-label">Changes Requested</div></div>
+          <div className="stat"><div className="stat-num" style={{color:'var(--sr-text)'}}>{stats.all}</div><div className="stat-label">Total Listings</div></div>
+          <div className="stat"><div className="stat-num" style={{color:'#FCD34D'}}>{stats.pending}</div><div className="stat-label">Pending Review</div></div>
           <div className="stat"><div className="stat-num" style={{color:'#4ADE80'}}>{stats.approved}</div><div className="stat-label">Approved</div></div>
-          <div className="stat"><div className="stat-num" style={{color:'#F87171'}}>{stats.rejected}</div><div className="stat-label">Rejected</div></div>
+          <div className="stat"><div className="stat-num" style={{color:'#F87171'}}>{stats.rejected + stats.suspended}</div><div className="stat-label">Rejected / Suspended</div></div>
         </div>
+
+        <input
+          className="search-input"
+          placeholder="Search by title, host, city…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
 
         <div className="tabs">
           {STATUS_TABS.map(({ key, label, icon }) => (
@@ -367,7 +413,7 @@ export default function ListingApprovalsPage() {
               onClick={() => { setActiveTab(key); setSelected(null); setRequestTarget(null) }}
             >
               {icon} {label}
-              {(key === 'pending' || key === 'changes_requested') && stats[key] > 0 && (
+              {stats[key] > 0 && (
                 <span className="tab-badge">{stats[key]}</span>
               )}
             </button>
@@ -393,7 +439,7 @@ export default function ListingApprovalsPage() {
               return (
                 <div key={a.id} className={`card ${isOpen ? 'open' : ''}`}>
                   <div className="card-top" onClick={() => { const opening = !isOpen; setSelected(opening ? a : null); if (opening) { fetchImages(a.listing_id); fetchFollowups(a.listing_id) } }}>
-                    <div className="card-icon">{a.listings?.type === 'hotel' ? '🏨' : '🏠'}</div>
+                    <div className="card-icon">{['boutique_hotel','resort','bed_breakfast','serviced_apartment','hostel','motel'].includes(a.listings?.property_type) ? '🏨' : '🏠'}</div>
                     <div className="card-info">
                       <div className="card-title">{a.listing_title || 'Untitled'}</div>
                       <div className="card-meta">
@@ -429,7 +475,7 @@ export default function ListingApprovalsPage() {
                       {/* Detail grid */}
                       <div className="detail-grid">
                         <div className="di"><div className="di-label">Title</div><div className="di-val">{a.listings?.title || a.listing_title || '—'}</div></div>
-                        <div className="di"><div className="di-label">Type</div><div className="di-val">{a.listings?.type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
+                        <div className="di"><div className="di-label">Type</div><div className="di-val">{['boutique_hotel','resort','bed_breakfast','serviced_apartment','hostel','motel'].includes(a.listings?.property_type) ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
                         <div className="di"><div className="di-label">Property type</div><div className="di-val">{a.listings?.property_type || '—'}</div></div>
                         <div className="di"><div className="di-label">Location</div><div className="di-val">{a.listings?.city || '—'}{a.listings?.state ? `, ${a.listings.state}` : ''}{a.listings?.zip_code ? ` ${a.listings.zip_code}` : ''}</div></div>
                         <div className="di"><div className="di-label">Price / night</div><div className="di-val">{a.listings?.price_per_night ? `$${a.listings.price_per_night}` : '—'}</div></div>

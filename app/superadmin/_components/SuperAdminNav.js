@@ -1,33 +1,44 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  LayoutDashboard, Building2, Users, UserRound, ClipboardList, Luggage,
+  CalendarDays, Flag, Star, Scale, Banknote, TrendingUp,
+  ListChecks, Globe2, CircleDot,
+  Zap, KeyRound, Shield, ScrollText, Mail, Settings, ShieldOff,
+} from 'lucide-react'
 
 const SECTIONS = [
   {
     title: 'Admin Console',
     items: [
-      { href: '/admin',                     icon: '📊', label: 'Overview',           exact: true },
-      { href: '/admin/listings',            icon: '🏨', label: 'Listings' },
-      { href: '/admin/users',               icon: '👥', label: 'All Users' },
-      { href: '/admin/hosts',               icon: '👤', label: 'Hosts' },
-      { href: '/admin/host-applications',   icon: '📝', label: 'Host Applications' },
-      { href: '/admin/guests',              icon: '🧳', label: 'Guests' },
-      { href: '/admin/bookings',            icon: '📅', label: 'Bookings' },
-      { href: '/admin/reports',             icon: '🚩', label: 'Reports' },
-      { href: '/admin/refunds',             icon: '💸', label: 'Refunds' },
-      { href: '/admin/waitlist',            icon: '📩', label: 'Waitlist' },
+      { href: '/admin',                   Icon: LayoutDashboard, label: 'Overview',          exact: true },
+      { href: '/admin/listings',          Icon: Building2,       label: 'Listings' },
+      { href: '/admin/users',             Icon: Users,           label: 'All Users' },
+      { href: '/admin/hosts',             Icon: UserRound,       label: 'Hosts' },
+      { href: '/admin/host-applications', Icon: ClipboardList,   label: 'Host Applications' },
+      { href: '/admin/guests',            Icon: Luggage,         label: 'Guests' },
+      { href: '/admin/bookings',          Icon: CalendarDays,    label: 'Bookings' },
+      { href: '/admin/reports',           Icon: Flag,            label: 'Reports' },
+      { href: '/admin/refunds',           Icon: Banknote,        label: 'Refunds' },
+      { href: '/admin/reviews',           Icon: Star,            label: 'Reviews' },
+      { href: '/admin/appeals',           Icon: Scale,           label: 'Appeals' },
+      { href: '/admin/finance',           Icon: TrendingUp,      label: 'Finance' },
+      { href: '/admin/waitlist',          Icon: ListChecks,      label: 'Waitlist' },
+      { href: '/admin/international-leads', Icon: Globe2,        label: 'Intl Leads' },
+      { href: '/admin/status',            Icon: CircleDot,       label: 'Status' },
     ],
   },
   {
     title: 'Super Admin',
     items: [
-      { href: '/superadmin',          icon: '⚡', label: 'Dashboard',    exact: true },
-      { href: '/superadmin/roles',        icon: '🔑', label: 'Roles' },
-      { href: '/superadmin/permissions',  icon: '🛡️', label: 'Permissions' },
-      { href: '/superadmin/audit',        icon: '📋', label: 'Audit Log' },
-      { href: '/superadmin/invites',      icon: '✉️', label: 'Invites' },
-      { href: '/superadmin/settings',     icon: '⚙️', label: 'Settings' },
-      { href: '/superadmin/override',     icon: '🔐', label: 'Override Mode' },
+      { href: '/superadmin',             Icon: Zap,        label: 'Dashboard',    exact: true },
+      { href: '/superadmin/roles',       Icon: KeyRound,   label: 'Roles' },
+      { href: '/superadmin/permissions', Icon: Shield,     label: 'Permissions' },
+      { href: '/superadmin/audit',       Icon: ScrollText, label: 'Audit Log' },
+      { href: '/superadmin/invites',     Icon: Mail,       label: 'Invites' },
+      { href: '/superadmin/settings',    Icon: Settings,   label: 'Settings' },
+      { href: '/superadmin/override',    Icon: ShieldOff,  label: 'Override Mode' },
     ],
   },
 ]
@@ -41,34 +52,24 @@ export default function SuperAdminNav() {
   }
 
   return (
-    <>
-      <style>{`
-        .san-wrap { flex: 1; padding: 16px 12px; overflow-y: auto; }
-        .san-sec-title { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sr-sub); padding: 0 10px; margin-bottom: 6px; margin-top: 18px; }
-        .san-sec-title:first-child { margin-top: 0; }
-        .san-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; color: var(--sr-muted); font-size: 0.84rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
-        .san-link:hover { background: var(--sr-overlay-xs); color: var(--sr-text); }
-        .san-link.active { background: var(--sr-orange); color: white; font-weight: 700; }
-        .san-icon { font-size: 1rem; line-height: 1; flex-shrink: 0; width: 20px; text-align: center; }
-      `}</style>
-
-      <div className="san-wrap">
-        {SECTIONS.map(section => (
-          <div key={section.title}>
-            <div className="san-sec-title">{section.title}</div>
-            {section.items.map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`san-link${isActive(item) ? ' active' : ''}`}
-              >
-                <span className="san-icon">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        ))}
-      </div>
-    </>
+    <nav className="hs-nav-wrap">
+      {SECTIONS.map(section => (
+        <div key={section.title}>
+          <div className="hs-nav-section-title">{section.title}</div>
+          {section.items.map(item => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`hs-nav-item${isActive(item) ? ' active' : ''}`}
+            >
+              <span className="hs-nav-icon">
+                <item.Icon size={17} strokeWidth={1.75} />
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      ))}
+    </nav>
   )
 }

@@ -310,7 +310,7 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
   const serviceFee     = Number(booking.service_fee || 0)
   const discountAmt    = Number(booking.discount_amount || 0)
   const roomSubtotal   = Math.round(pricePerNight * nights * 100) / 100
-  const standardFee    = Math.round(total * 0.07 * 100) / 100
+  const standardFee    = Math.round(total * 0.08 * 100) / 100
   const founderSaving  = isFounder ? Math.round((standardFee - platFee) * 100) / 100 : 0
 
   // Check-in/out display times from listing
