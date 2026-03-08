@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase-admin'
+import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit'
 
 /**
  * GET /api/availability?listing_id=XXX
@@ -6,6 +7,11 @@ import { createAdminClient } from '@/lib/supabase-admin'
  * Only returns future/current bookings (check_out > today).
  */
 export async function GET(request) {
+  // Rate limit: 60 requests per IP per minute (prevents enumeration abuse)
+  const ip = getClientIp(request)
+  const rl = rateLimit(`availability:${ip}`, 60, 60 * 1000)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   const { searchParams } = new URL(request.url)
   const listing_id = searchParams.get('listing_id')
 

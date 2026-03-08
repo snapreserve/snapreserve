@@ -10,8 +10,8 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // finance role cannot approve/deny refunds
-  if (role === 'finance' || role === 'trust_safety') {
+  // trust_safety cannot approve/deny refunds (finance can, per admin-permissions)
+  if (role === 'trust_safety') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
