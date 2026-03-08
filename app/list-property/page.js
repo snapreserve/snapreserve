@@ -27,23 +27,36 @@ const HOTEL_STEPS = [
   { id: 9, label: 'Review & publish' },
 ]
 
-const PRIVATE_TYPES = [
-  { id: 'entire_home',   icon: '🏠', label: 'Entire home',      sub: 'Guests have the whole place' },
-  { id: 'private_room',  icon: '🛏️', label: 'Private room',     sub: 'Own room, shared areas' },
-  { id: 'cabin',         icon: '🌲', label: 'Cabin / Chalet',   sub: 'Woodland or mountain retreat' },
-  { id: 'beachfront',    icon: '🏖️', label: 'Beachfront',       sub: 'On or steps from the beach' },
-  { id: 'farm_ranch',    icon: '🌿', label: 'Farm / Ranch',     sub: 'Rural escape with outdoor space' },
-  { id: 'unique_stay',   icon: '✨', label: 'Unique stay',      sub: 'Treehouse, boat, yurt or special' },
+const PRIVATE_SUBCATEGORIES = [
+  { id: 'entire_home',  icon: '🏠', label: 'Entire Home',     sub: 'Guests have the whole place' },
+  { id: 'private_room', icon: '🛏️', label: 'Private Room',    sub: 'Own room, shared areas' },
+  { id: 'cabin',        icon: '🌲', label: 'Cabin / Chalet',  sub: 'Woodland or mountain retreat' },
+  { id: 'villa',        icon: '🏡', label: 'Villa',           sub: 'Spacious, upscale private home' },
+  { id: 'apartment',    icon: '🏢', label: 'Apartment',       sub: 'Self-contained city living' },
 ]
 
-const HOTEL_TYPES = [
-  { id: 'boutique_hotel',       icon: '🏨', label: 'Boutique Hotel',       sub: 'Small, stylish, independent' },
-  { id: 'resort',               icon: '🌴', label: 'Resort',               sub: 'Full amenities and activities' },
-  { id: 'bed_breakfast',        icon: '☕', label: 'Bed & Breakfast',      sub: 'Cosy with morning meals included' },
-  { id: 'serviced_apartment',   icon: '🏢', label: 'Serviced Apartment',   sub: 'Self-contained with hotel services' },
-  { id: 'hostel',               icon: '🎒', label: 'Hostel',               sub: 'Budget-friendly shared spaces' },
-  { id: 'motel',                icon: '🚗', label: 'Motel',                sub: 'Drive-up convenience' },
+const HOTEL_SUBCATEGORIES = [
+  { id: 'boutique_hotel',     icon: '🏨', label: 'Boutique Hotel',     sub: 'Small, stylish, independent' },
+  { id: 'resort',             icon: '🌴', label: 'Resort',             sub: 'Full amenities and activities' },
+  { id: 'bed_breakfast',      icon: '☕', label: 'Bed & Breakfast',    sub: 'Cosy with morning meals included' },
+  { id: 'serviced_apartment', icon: '🏢', label: 'Serviced Apartment', sub: 'Self-contained with hotel services' },
+  { id: 'hostel',             icon: '🎒', label: 'Hostel',             sub: 'Budget-friendly shared spaces' },
+  { id: 'motel',              icon: '🚗', label: 'Motel',              sub: 'Drive-up convenience' },
 ]
+
+const TAGS = [
+  { id: 'beachfront',        icon: '🏖️', label: 'Beachfront' },
+  { id: 'farm_stay',         icon: '🌿', label: 'Farm Stay' },
+  { id: 'mountain',          icon: '🏔️', label: 'Mountain' },
+  { id: 'luxury',            icon: '✨', label: 'Luxury' },
+  { id: 'family_friendly',   icon: '👨‍👩‍👧', label: 'Family Friendly' },
+  { id: 'business_friendly', icon: '💼', label: 'Business Friendly' },
+  { id: 'unique_stay',       icon: '🛸', label: 'Unique Stay' },
+]
+
+// Keep for backwards compat (used in review step label lookup)
+const PRIVATE_TYPES = PRIVATE_SUBCATEGORIES
+const HOTEL_TYPES   = HOTEL_SUBCATEGORIES
 
 const AMENITIES = [
   { id: 'wifi',        icon: '📶', label: 'WiFi' },
@@ -87,7 +100,8 @@ function ListPropertyInner() {
   const fileInputRef = useRef(null)
 
   const [form, setForm] = useState({
-    propertyType: '',
+    subcategory: '',
+    tags: [],
     title: '',
     description: '',
     address: '',
@@ -141,10 +155,11 @@ function ListPropertyInner() {
         ])
         if (!listing) return
         setInitialStatus(listing.status)
-        setHostType(listing.type || 'private_stay')
+        setHostType(listing.property_type || listing.type || 'private_stay')
         setForm(prev => ({
           ...prev,
-          propertyType:  listing.property_type || '',
+          subcategory:   listing.subcategory || '',
+          tags:          Array.isArray(listing.tags) ? listing.tags : [],
           title:         listing.title || '',
           description:   listing.description || '',
           address:       listing.address || '',
@@ -243,7 +258,9 @@ function ListPropertyInner() {
         host_id:         hostRow.id,
         status:          editMode ? (initialStatus || 'draft') : 'draft',
         type:            hostType,
-        property_type:   form.propertyType || null,
+        property_type:   hostType,
+        subcategory:     form.subcategory || null,
+        tags:            form.tags?.length > 0 ? form.tags : null,
         title:           form.title || null,
         description:     form.description || null,
         address:         form.address || null,
@@ -349,7 +366,9 @@ function ListPropertyInner() {
         title:           form.title,
         description:     form.description,
         type:            hostType,
-        property_type:   form.propertyType,
+        property_type:   hostType,
+        subcategory:     form.subcategory || null,
+        tags:            form.tags?.length > 0 ? form.tags : null,
         address:         form.address,
         city:            form.city,
         state:           form.state,
@@ -459,7 +478,8 @@ function ListPropertyInner() {
     setSubmitting(false)
   }
 
-  const types = hostType === 'private_stay' ? PRIVATE_TYPES : HOTEL_TYPES
+  const subcategories = hostType === 'private_stay' ? PRIVATE_SUBCATEGORIES : HOTEL_SUBCATEGORIES
+  const types = subcategories // backwards compat for review step label lookup
   const steps = hostType === 'hotel' ? HOTEL_STEPS : STEPS
   const totalSteps = steps.length
   const reviewStep    = totalSteps       // last step
@@ -752,20 +772,80 @@ function ListPropertyInner() {
             {/* ── STEP 1: Property Type ── */}
             {step === 1 && (
               <div>
-                <div className="section-title">What kind of space are you listing?</div>
-                <div className="section-sub">Choose the type that best describes your property.</div>
-                <div className="type-grid">
-                  {types.map(t => (
-                    <div key={t.id} className={`type-card ${form.propertyType === t.id ? 'selected' : ''}`} onClick={() => update('propertyType', t.id)}>
+                {/* ── Main type (required) ── */}
+                <div className="section-title">What kind of property is this?</div>
+                <div className="section-sub">Required — choose one main type.</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '28px' }}>
+                  {[
+                    { id: 'private_stay', icon: '🏠', label: 'Private Stay', sub: 'Home, cabin, villa, or private room' },
+                    { id: 'hotel',        icon: '🏨', label: 'Hotel',        sub: 'Hotel, resort, B&B, or serviced apt' },
+                  ].map(t => (
+                    <div
+                      key={t.id}
+                      className={`type-card ${hostType === t.id ? 'selected' : ''}`}
+                      onClick={() => { setHostType(t.id); update('subcategory', '') }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="type-icon" style={{ fontSize: '2rem' }}>{t.icon}</div>
+                      <div className="type-label">{t.label}</div>
+                      <div className="type-sub">{t.sub}</div>
+                      {hostType === t.id && <div style={{ marginTop: '6px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>✓ Selected</div>}
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Subcategory (optional) ── */}
+                <div className="section-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>
+                  Subcategory <span style={{ color: 'var(--mid)', fontWeight: 400, fontSize: '0.8rem' }}>— optional</span>
+                </div>
+                <div className="section-sub" style={{ marginBottom: '14px' }}>Helps guests find your property more easily.</div>
+                <div className="type-grid" style={{ marginBottom: '28px' }}>
+                  {subcategories.map(t => (
+                    <div
+                      key={t.id}
+                      className={`type-card ${form.subcategory === t.id ? 'selected' : ''}`}
+                      onClick={() => update('subcategory', form.subcategory === t.id ? '' : t.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="type-icon">{t.icon}</div>
                       <div className="type-label">{t.label}</div>
                       <div className="type-sub">{t.sub}</div>
                     </div>
                   ))}
                 </div>
+
+                {/* ── Tags / Features (optional) ── */}
+                <div className="section-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>
+                  Tags &amp; features <span style={{ color: 'var(--mid)', fontWeight: 400, fontSize: '0.8rem' }}>— optional, pick all that apply</span>
+                </div>
+                <div className="section-sub" style={{ marginBottom: '14px' }}>Highlights that attract the right guests.</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '24px' }}>
+                  {TAGS.map(tag => {
+                    const active = form.tags.includes(tag.id)
+                    return (
+                      <div
+                        key={tag.id}
+                        onClick={() => update('tags', active ? form.tags.filter(t => t !== tag.id) : [...form.tags, tag.id])}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '8px 16px', borderRadius: '100px', cursor: 'pointer',
+                          border: `1.5px solid ${active ? 'var(--orange)' : 'var(--border)'}`,
+                          background: active ? 'rgba(232,98,42,0.08)' : 'var(--card)',
+                          fontSize: '0.84rem', fontWeight: active ? 700 : 500,
+                          color: active ? 'var(--orange)' : 'var(--brown)',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <span>{tag.icon}</span> {tag.label}
+                        {active && <span style={{ fontSize: '0.7rem' }}>✓</span>}
+                      </div>
+                    )
+                  })}
+                </div>
+
                 <div className="hint">
                   <div className="hint-icon">💡</div>
-                  <div className="hint-text"><strong>Not sure?</strong> Pick the closest match — you can update it from your dashboard anytime.</div>
+                  <div className="hint-text"><strong>Subcategory and tags are optional.</strong> You can always update them from your dashboard.</div>
                 </div>
               </div>
             )}
@@ -1138,8 +1218,9 @@ function ListPropertyInner() {
 
                 <div className="review-section">
                   <h3>Property details</h3>
-                  <div className="review-row"><span className="review-key">Type</span><span className="review-val">{hostType === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</span></div>
-                  <div className="review-row"><span className="review-key">Space type</span><span className="review-val">{types.find(t => t.id === form.propertyType)?.label || '—'}</span></div>
+                  <div className="review-row"><span className="review-key">Property type</span><span className="review-val">{hostType === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</span></div>
+                  <div className="review-row"><span className="review-key">Subcategory</span><span className="review-val">{subcategories.find(t => t.id === form.subcategory)?.label || '— none —'}</span></div>
+                  <div className="review-row"><span className="review-key">Tags</span><span className="review-val">{form.tags?.length > 0 ? form.tags.map(id => TAGS.find(t => t.id === id)?.label).filter(Boolean).join(', ') : '— none —'}</span></div>
                   <div className="review-row"><span className="review-key">Title</span><span className="review-val">{form.title || '—'}</span></div>
                   <div className="review-row"><span className="review-key">Location</span><span className="review-val">{form.city && form.state ? `${form.city}, ${form.state}` : '—'}</span></div>
                   <div className="review-row"><span className="review-key">Capacity</span><span className="review-val">{form.guests} guests · {form.bedrooms} bed{form.bedrooms !== 1 ? 's' : ''} · {form.bathrooms} bath{form.bathrooms !== 1 ? 's' : ''}</span></div>
@@ -1228,7 +1309,7 @@ function ListPropertyInner() {
                 : <div />
               }
               {step < totalSteps
-                ? <button className="next-btn" onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.propertyType}>
+                ? <button className="next-btn" onClick={() => setStep(s => s + 1)}>
                     Continue →
                   </button>
                 : <button
