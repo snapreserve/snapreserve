@@ -95,7 +95,7 @@ export async function PATCH(request, { params }) {
     const EDITABLE = [
       'title', 'description', 'price_per_night', 'cleaning_fee',
       'max_guests', 'bedrooms', 'bathrooms', 'city', 'state', 'country',
-      'property_type', 'min_nights', 'house_rules', 'amenities',
+      'property_type', 'property_subcategory', 'min_nights', 'house_rules', 'amenities',
     ]
     const fields = body.fields ?? {}
     EDITABLE.forEach(f => {

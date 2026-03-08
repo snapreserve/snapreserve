@@ -164,24 +164,49 @@ export default function ListingApprovalsPage() {
     }
   }
 
+  const HOTEL_SUBCATS = [
+    { value: 'boutique_hotel',      label: 'Boutique Hotel' },
+    { value: 'chain_hotel',         label: 'Chain Hotel' },
+    { value: 'resort',              label: 'Resort' },
+    { value: 'business_hotel',      label: 'Business Hotel' },
+    { value: 'budget_hotel',        label: 'Budget Hotel' },
+    { value: 'luxury_hotel',        label: 'Luxury Hotel' },
+    { value: 'bed_breakfast',       label: 'Bed & Breakfast' },
+    { value: 'extended_stay_hotel', label: 'Extended Stay Hotel' },
+    { value: 'airport_hotel',       label: 'Airport Hotel' },
+    { value: 'hostel',              label: 'Hostel' },
+    { value: 'motel',               label: 'Motel' },
+    { value: 'themed_hotel',        label: 'Themed Hotel' },
+    { value: 'historic_hotel',      label: 'Historic Hotel' },
+    { value: 'spa_hotel',           label: 'Spa Hotel' },
+  ]
+  const PRIVATE_SUBCATS = [
+    { value: 'apartment',      label: 'Apartment' },
+    { value: 'house',          label: 'House' },
+    { value: 'secondary_unit', label: 'Secondary Unit' },
+    { value: 'unique_space',   label: 'Unique Space' },
+    { value: 'bed_breakfast',  label: 'Bed & Breakfast' },
+  ]
+
   function openEdit(a) {
     const l = a.listings
     setEditTarget(a.listing_id)
     setEditFields({
-      title:           l?.title          ?? '',
-      description:     l?.description    ?? '',
-      price_per_night: l?.price_per_night ?? '',
-      cleaning_fee:    l?.cleaning_fee    ?? '',
-      max_guests:      l?.max_guests      ?? '',
-      bedrooms:        l?.bedrooms        ?? '',
-      bathrooms:       l?.bathrooms       ?? '',
-      city:            l?.city            ?? '',
-      state:           l?.state           ?? '',
-      country:         l?.country         ?? '',
-      property_type:   l?.property_type   ?? '',
-      min_nights:      l?.min_nights      ?? '',
-      house_rules:     l?.house_rules     ?? '',
-      amenities:       l?.amenities       ?? '',
+      title:                l?.title                ?? '',
+      description:          l?.description          ?? '',
+      price_per_night:      l?.price_per_night      ?? '',
+      cleaning_fee:         l?.cleaning_fee         ?? '',
+      max_guests:           l?.max_guests           ?? '',
+      bedrooms:             l?.bedrooms             ?? '',
+      bathrooms:            l?.bathrooms            ?? '',
+      city:                 l?.city                 ?? '',
+      state:                l?.state                ?? '',
+      country:              l?.country              ?? '',
+      property_type:        l?.property_type        ?? '',
+      property_subcategory: l?.property_subcategory ?? '',
+      min_nights:           l?.min_nights           ?? '',
+      house_rules:          l?.house_rules          ?? '',
+      amenities:            l?.amenities            ?? '',
     })
   }
 
@@ -510,7 +535,7 @@ export default function ListingApprovalsPage() {
               return (
                 <div key={a.id} className={`card ${isOpen ? 'open' : ''}`}>
                   <div className="card-top" onClick={() => { const opening = !isOpen; setSelected(opening ? a : null); if (opening) { fetchImages(a.listing_id); fetchFollowups(a.listing_id) } }}>
-                    <div className="card-icon">{['boutique_hotel','resort','bed_breakfast','serviced_apartment','hostel','motel'].includes(a.listings?.property_type) ? '🏨' : '🏠'}</div>
+                    <div className="card-icon">{a.listings?.property_type === 'hotel' ? '🏨' : '🏠'}</div>
                     <div className="card-info">
                       <div className="card-title">{a.listing_title || 'Untitled'}</div>
                       <div className="card-meta">
@@ -546,8 +571,8 @@ export default function ListingApprovalsPage() {
                       {/* Detail grid */}
                       <div className="detail-grid">
                         <div className="di"><div className="di-label">Title</div><div className="di-val">{a.listings?.title || a.listing_title || '—'}</div></div>
-                        <div className="di"><div className="di-label">Type</div><div className="di-val">{['boutique_hotel','resort','bed_breakfast','serviced_apartment','hostel','motel'].includes(a.listings?.property_type) ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
-                        <div className="di"><div className="di-label">Property type</div><div className="di-val">{a.listings?.property_type || '—'}</div></div>
+                        <div className="di"><div className="di-label">Property Type</div><div className="di-val">{a.listings?.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
+                        <div className="di"><div className="di-label">Subcategory</div><div className="di-val">{a.listings?.property_subcategory || '—'}</div></div>
                         <div className="di"><div className="di-label">Location</div><div className="di-val">{a.listings?.city || '—'}{a.listings?.state ? `, ${a.listings.state}` : ''}{a.listings?.zip_code ? ` ${a.listings.zip_code}` : ''}</div></div>
                         <div className="di"><div className="di-label">Price / night</div><div className="di-val">{a.listings?.price_per_night ? `$${a.listings.price_per_night}` : '—'}</div></div>
                         <div className="di"><div className="di-label">Cleaning fee</div><div className="di-val">{a.listings?.cleaning_fee != null ? `$${a.listings.cleaning_fee}` : '—'}</div></div>
@@ -687,26 +712,30 @@ export default function ListingApprovalsPage() {
                                 />
                               </div>
                             ))}
-                            <div className="edit-field" style={{gridColumn:'1/-1'}}>
-                              <label className="edit-label">Property Type</label>
-                              <select className="edit-input" value={editFields.property_type ?? ''} onChange={e => setEditFields(p => ({ ...p, property_type: e.target.value }))}>
+                            <div className="edit-field">
+                              <label className="edit-label">Property Type <span style={{color:'#f87171'}}>*</span></label>
+                              <select
+                                className="edit-input"
+                                value={editFields.property_type ?? ''}
+                                onChange={e => setEditFields(p => ({ ...p, property_type: e.target.value, property_subcategory: '' }))}
+                              >
                                 <option value="">— select —</option>
-                                <optgroup label="Private Stay">
-                                  <option value="entire_home">Entire Home</option>
-                                  <option value="private_room">Private Room</option>
-                                  <option value="cabin">Cabin / Chalet</option>
-                                  <option value="beachfront">Beachfront</option>
-                                  <option value="farm_ranch">Farm / Ranch</option>
-                                  <option value="unique_stay">Unique Stay</option>
-                                </optgroup>
-                                <optgroup label="Hotel">
-                                  <option value="boutique_hotel">Boutique Hotel</option>
-                                  <option value="resort">Resort</option>
-                                  <option value="bed_breakfast">Bed &amp; Breakfast</option>
-                                  <option value="serviced_apartment">Serviced Apartment</option>
-                                  <option value="hostel">Hostel</option>
-                                  <option value="motel">Motel</option>
-                                </optgroup>
+                                <option value="hotel">🏨 Hotel</option>
+                                <option value="private_stay">🏠 Private Stay</option>
+                              </select>
+                            </div>
+                            <div className="edit-field">
+                              <label className="edit-label">Subcategory <span style={{color:'var(--sr-sub)',fontWeight:400}}>optional</span></label>
+                              <select
+                                className="edit-input"
+                                value={editFields.property_subcategory ?? ''}
+                                onChange={e => setEditFields(p => ({ ...p, property_subcategory: e.target.value }))}
+                                disabled={!editFields.property_type}
+                              >
+                                <option value="">— none —</option>
+                                {(editFields.property_type === 'hotel' ? HOTEL_SUBCATS : PRIVATE_SUBCATS).map(s => (
+                                  <option key={s.value} value={s.value}>{s.label}</option>
+                                ))}
                               </select>
                             </div>
                           </div>
