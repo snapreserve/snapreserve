@@ -23,16 +23,48 @@ const TYPE_LABELS = {
   cabin:       'Cabin',
 }
 
-const PILLS = [
-  { key: 'all',       label: 'All Stays' },
-  { key: 'hotel',     label: '🏨 Hotels' },
-  { key: 'private',   label: '🏡 Private Homes' },
-  { key: 'beach',     label: '🌴 Beach' },
-  { key: 'mountains', label: '🏔️ Mountains' },
-  { key: 'suites',    label: '👑 Suites' },
-  { key: 'under200',  label: '💰 Under $200/night' },
-  { key: 'toprated',  label: '⭐ Top Rated' },
-  { key: 'instant',   label: '✅ Instant Book' },
+// Row 1: Type filters (matches mobile)
+const TYPE_PILLS = [
+  { key: 'all',     label: 'All Stays' },
+  { key: 'hotel',   label: 'Hotels' },
+  { key: 'private', label: 'Private Stays' },
+]
+
+// Row 2: Location chips (matches mobile)
+const LOCATION_CHIPS = [
+  { key: 'all', label: 'All' },
+  { key: 'new_york', label: 'New York City' },
+  { key: 'los_angeles', label: 'Los Angeles' },
+  { key: 'miami', label: 'Miami' },
+  { key: 'chicago', label: 'Chicago' },
+  { key: 'las_vegas', label: 'Las Vegas' },
+  { key: 'san_francisco', label: 'San Francisco' },
+  { key: 'nashville', label: 'Nashville' },
+  { key: 'austin', label: 'Austin' },
+  { key: 'boston', label: 'Boston' },
+  { key: 'seattle', label: 'Seattle' },
+]
+
+// Row 3: Feature & price filters (matches mobile)
+const FEATURE_PILLS = [
+  { key: 'beach',     label: 'Beach' },
+  { key: 'mountain',  label: 'Mountains' },
+  { key: 'city',      label: 'City' },
+  { key: 'countryside', label: 'Countryside' },
+  { key: 'luxury',    label: 'Luxury' },
+  { key: 'unique',    label: 'Unique Stay' },
+  { key: 'under200',  label: 'Under $200' },
+  { key: '200to500',  label: '$200-$500' },
+  { key: '500plus',   label: '$500+' },
+  { key: 'toprated',  label: 'Top Rated' },
+  { key: 'instant',   label: 'Instant Book' },
+]
+
+const SORT_OPTIONS = [
+  { key: 'top_rated', label: 'Top Rated' },
+  { key: 'price_low',  label: 'Price: Low to High' },
+  { key: 'price_high', label: 'Price: High to Low' },
+  { key: 'newest',     label: 'Newest' },
 ]
 
 function ListingsInner() {
@@ -45,13 +77,29 @@ function ListingsInner() {
   const [filtered,     setFiltered]     = useState([])
   const [loading,      setLoading]      = useState(true)
   const [destination,  setDestination]  = useState(cityParam || '')
-  const [activeFilters,setActiveFilters]= useState(['all'])
+  const [typeFilter,   setTypeFilter]   = useState('all')       // all | hotel | private
+  const [locationChip, setLocationChip] = useState('all')      // all | new_york | miami | ...
+  const [featurePills, setFeaturePills] = useState([])         // beach, mountain, under200, etc.
+  const [sortBy,       setSortBy]       = useState('top_rated')
 
   useEffect(() => {
     fetchListings()
   }, [])
 
-  useEffect(() => { applyFilters() }, [listings, destination, activeFilters, cityParam, stateParam, countryParam])
+  const LOCATION_MAP = {
+    new_york:      ['new york', 'new york city', 'nyc'],
+    los_angeles:   ['los angeles', 'la'],
+    miami:         ['miami', 'miami beach'],
+    chicago:       ['chicago'],
+    las_vegas:     ['las vegas'],
+    san_francisco: ['san francisco', 'sf'],
+    nashville:     ['nashville'],
+    austin:        ['austin'],
+    boston:        ['boston'],
+    seattle:       ['seattle'],
+  }
+
+  useEffect(() => { applyFilters() }, [listings, destination, typeFilter, locationChip, featurePills, sortBy, cityParam, stateParam, countryParam])
 
   async function fetchListings() {
     setLoading(true)
@@ -69,31 +117,39 @@ function ListingsInner() {
       const s = destination.trim().toLowerCase()
       r = r.filter(l => (l.title||'').toLowerCase().includes(s) || (l.city||'').toLowerCase().includes(s) || (l.state||'').toLowerCase().includes(s))
     }
-    if (activeFilters.includes('hotel'))     r = r.filter(l => l.property_type === 'hotel')
-    if (activeFilters.includes('private'))   r = r.filter(l => l.property_type === 'private_stay')
-    if (activeFilters.includes('under200'))  r = r.filter(l => (l.price_per_night||0) < 200)
-    if (activeFilters.includes('instant'))   r = r.filter(l => l.is_instant_book)
-    if (activeFilters.includes('toprated'))  r = r.filter(l => (l.rating||0) >= 4.5)
-    if (activeFilters.includes('beach'))     r = r.filter(l => ['beach','miami','key biscayne','malibu','santa monica'].some(k => (l.city||'').toLowerCase().includes(k) || (l.title||'').toLowerCase().includes(k) || (l.description||'').toLowerCase().includes(k)))
-    if (activeFilters.includes('mountains')) r = r.filter(l => ['mountain','retreat','asheville','aspen','jackson','tahoe'].some(k => (l.city||'').toLowerCase().includes(k) || (l.title||'').toLowerCase().includes(k) || (l.state||'').toLowerCase().includes(k)))
-    if (activeFilters.includes('suites'))    r = r.filter(l => (l.title||'').toLowerCase().includes('suite') || (l.amenities||'').toLowerCase().includes('suite'))
-    r.sort((a, b) => (b.rating||0) - (a.rating||0))
+    // Type filter
+    if (typeFilter === 'hotel')      r = r.filter(l => l.property_type === 'hotel')
+    if (typeFilter === 'private')    r = r.filter(l => l.property_type === 'private_stay')
+    // Location chip
+    if (locationChip !== 'all' && LOCATION_MAP[locationChip]) {
+      const matches = LOCATION_MAP[locationChip]
+      r = r.filter(l => matches.some(m => (l.city||'').toLowerCase().includes(m) || (l.state||'').toLowerCase().includes(m)))
+    }
+    // Feature chips
+    featurePills.forEach(key => {
+      if (key === 'toprated')   r = r.filter(l => (l.rating||0) >= 4.5)
+      if (key === 'beach')      r = r.filter(l => Array.isArray(l.tags) && (l.tags.includes('beachfront') || l.tags.includes('beach')))
+      if (key === 'mountain')   r = r.filter(l => Array.isArray(l.tags) && l.tags.includes('mountain'))
+      if (key === 'city')       r = r.filter(l => Array.isArray(l.tags) && l.tags.includes('city'))
+      if (key === 'countryside') r = r.filter(l => Array.isArray(l.tags) && (l.tags.includes('countryside') || l.tags.includes('farm')))
+      if (key === 'luxury')     r = r.filter(l => Array.isArray(l.tags) && l.tags.includes('luxury'))
+      if (key === 'unique')     r = r.filter(l => Array.isArray(l.tags) && l.tags.includes('unique_stay'))
+      if (key === 'instant')    r = r.filter(l => l.is_instant_book)
+      if (key === 'under200')   r = r.filter(l => (l.price_per_night||0) < 200)
+      if (key === '200to500')   r = r.filter(l => { const p = l.price_per_night||0; return p >= 200 && p <= 500 })
+      if (key === '500plus')    r = r.filter(l => (l.price_per_night||0) > 500)
+    })
+    // Sort
+    if (sortBy === 'top_rated')  r.sort((a, b) => (b.rating||0) - (a.rating||0))
+    if (sortBy === 'price_low')  r.sort((a, b) => (a.price_per_night||0) - (b.price_per_night||0))
+    if (sortBy === 'price_high') r.sort((a, b) => (b.price_per_night||0) - (a.price_per_night||0))
+    if (sortBy === 'newest')     r.sort((a, b) => new Date(b.created_at||0) - new Date(a.created_at||0))
     setFiltered(r)
   }
 
-  function togglePill(key) {
-    if (key === 'all') { setActiveFilters(['all']); return }
-    setActiveFilters(prev => {
-      const without = prev.filter(f => f !== 'all')
-      if (without.includes(key)) {
-        const next = without.filter(f => f !== key)
-        return next.length === 0 ? ['all'] : next
-      }
-      return [...without, key]
-    })
+  function toggleFeaturePill(key) {
+    setFeaturePills(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
   }
-
-  const isActive = (key) => activeFilters.includes(key)
 
   return (
     <>
@@ -125,13 +181,23 @@ function ListingsInner() {
         /* ── FILTER PILLS ── */
         .pills-wrap { border-top:1px solid var(--sr-border-solid,#E8E2D9); border-bottom:1px solid var(--sr-border-solid,#E8E2D9); background:var(--sr-card); }
         .pills-row { max-width:1280px; margin:0 auto; padding:14px 40px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-        .pill { padding:9px 18px; border-radius:100px; font-size:0.82rem; font-weight:600; border:1.5px solid var(--sr-border-solid,#E8E2D9); background:var(--sr-card); color:var(--sr-text); cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
+        .pills-row-scroll { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; }
+        .pills-row-scroll::-webkit-scrollbar { height:4px; }
+        .pills-row-scroll::-webkit-scrollbar-thumb { background:var(--sr-border-solid,#E8E2D9); border-radius:4px; }
+        .pill { padding:9px 18px; border-radius:100px; font-size:0.82rem; font-weight:600; border:1.5px solid var(--sr-border-solid,#E8E2D9); background:var(--sr-card); color:var(--sr-text); cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
         .pill:hover { border-color:#F4601A; color:#F4601A; }
         .pill.active { background:#F4601A; color:white; border-color:#F4601A; }
+        .pill-count { margin-left:auto; font-size:0.82rem; font-weight:600; color:#F4601A; }
+
+        /* ── RESULTS ROW & SORT ── */
+        .results-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+        .results-info { font-size:0.82rem; color:var(--sr-muted); }
+        .sort-wrap { display:flex; align-items:center; gap:8px; }
+        .sort-wrap label { font-size:0.82rem; color:var(--sr-muted); }
+        .sort-select { padding:8px 12px; border-radius:8px; border:1px solid var(--sr-border-solid,#E8E2D9); background:var(--sr-card); color:var(--sr-text); font-size:0.82rem; font-family:inherit; cursor:pointer; }
 
         /* ── GRID ── */
         .main { max-width:1280px; margin:0 auto; padding:36px 40px 80px; }
-        .results-info { font-size:0.82rem; color:var(--sr-muted); margin-bottom:22px; }
         .cards-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
 
         /* ── CARD ── */
@@ -179,7 +245,7 @@ function ListingsInner() {
       {/* HERO */}
       <div className="hero">
         <div className="eyebrow">Explore Stays</div>
-        <h1 className="hero-title">Find your <em>perfect stay</em></h1>
+        <h1 className="hero-title">Find your <em>stay</em></h1>
         <p className="hero-sub">Browse hotels and private stays across the United States. Filter by type, price, location, and amenities to find exactly what you're looking for.</p>
 
         {/* Search bar */}
@@ -212,14 +278,40 @@ function ListingsInner() {
         </div>
       </div>
 
-      {/* FILTER PILLS */}
+      {/* FILTER PILLS — 3 rows matching mobile */}
       <div className="pills-wrap">
+        {/* Row 1: Type + count */}
         <div className="pills-row">
-          {PILLS.map(p => (
+          {TYPE_PILLS.map(p => (
             <button
               key={p.key}
-              className={`pill${isActive(p.key) ? ' active' : ''}`}
-              onClick={() => togglePill(p.key)}
+              className={`pill type-pill${typeFilter === p.key ? ' active' : ''}`}
+              onClick={() => setTypeFilter(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+          <span className="pill-count">{filtered.length} properties</span>
+        </div>
+        {/* Row 2: Location chips */}
+        <div className="pills-row pills-row-scroll">
+          {LOCATION_CHIPS.map(p => (
+            <button
+              key={p.key}
+              className={`pill location-pill${locationChip === p.key ? ' active' : ''}`}
+              onClick={() => setLocationChip(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {/* Row 3: Feature & price */}
+        <div className="pills-row pills-row-scroll">
+          {FEATURE_PILLS.map(p => (
+            <button
+              key={p.key}
+              className={`pill${featurePills.includes(p.key) ? ' active' : ''}`}
+              onClick={() => toggleFeaturePill(p.key)}
             >
               {p.label}
             </button>
@@ -230,9 +322,21 @@ function ListingsInner() {
       {/* GRID */}
       <div className="main">
         {!loading && (
-          <div className="results-info">
-            {filtered.length} {filtered.length === 1 ? 'property' : 'properties'} found
-            {(cityParam || stateParam) && ` in ${cityParam || stateParam}`}
+          <div className="results-row">
+            <span className="results-info">Showing {filtered.length} results</span>
+            <div className="sort-wrap">
+              <label htmlFor="sort-select">Sort:</label>
+              <select
+                id="sort-select"
+                className="sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+              >
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.key} value={o.key}>{o.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
         <div className="cards-grid">
@@ -249,8 +353,8 @@ function ListingsInner() {
           {!loading && filtered.map((listing, i) => {
             const theme     = CARD_THEMES[i % CARD_THEMES.length]
             const hasImg    = listing.images?.[0]
-            const typeLabel = TYPE_LABELS[listing.type] || 'Stay'
-            const roomInfo  = listing.type === 'hotel'
+            const typeLabel = TYPE_LABELS[listing.property_type] || 'Stay'
+            const roomInfo  = listing.property_type === 'hotel'
               ? (listing.room_count   ? `${listing.room_count} room types available` : null)
               : (listing.max_guests   ? `Up to ${listing.max_guests} guests`         : null)
 
