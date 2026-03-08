@@ -15,9 +15,12 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, rejection_reason, reason, notes } = body
 
-  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate', 'reject_permanently']
+  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate', 'reject_permanently', 'edit']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  }
+  if (action === 'edit' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Only super admins can edit listings directly' }, { status: 403 })
   }
   if (action === 'reject' && !rejection_reason?.trim()) {
     return NextResponse.json({ error: 'rejection_reason required' }, { status: 400 })
@@ -88,6 +91,16 @@ export async function PATCH(request, { params }) {
   } else if (action === 'reject_permanently') {
     updatePayload.is_active = false
     updatePayload.status = 'rejected'
+  } else if (action === 'edit') {
+    const EDITABLE = [
+      'title', 'description', 'price_per_night', 'cleaning_fee',
+      'max_guests', 'bedrooms', 'bathrooms', 'city', 'state', 'country',
+      'property_type', 'min_nights', 'house_rules', 'amenities',
+    ]
+    const fields = body.fields ?? {}
+    EDITABLE.forEach(f => {
+      if (f in fields) updatePayload[f] = fields[f]
+    })
   }
 
   const { error: updateError } = await adminClient

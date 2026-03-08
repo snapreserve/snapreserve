@@ -25,6 +25,7 @@ export default function ListingApprovalsPage() {
   const [loading, setLoading]                   = useState(true)
   const [activeTab, setActiveTab]               = useState('pending')
   const [selected, setSelected]                 = useState(null)
+  const [myRole, setMyRole]                     = useState(null)
 
   // Rejection
   const [rejectionReason, setRejectionReason]   = useState('')
@@ -32,6 +33,10 @@ export default function ListingApprovalsPage() {
   // Request-changes inline form
   const [requestTarget, setRequestTarget]       = useState(null) // listing_id
   const [requestNotes, setRequestNotes]         = useState('')
+
+  // Edit form
+  const [editTarget, setEditTarget]             = useState(null) // listing_id
+  const [editFields, setEditFields]             = useState({})
 
   const [search, setSearch]   = useState('')
   const [acting, setActing]   = useState(false)
@@ -51,6 +56,14 @@ export default function ListingApprovalsPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     const sb = supabase()
+
+    // Fetch current user's admin role
+    const { data: { user: me } } = await sb.auth.getUser()
+    if (me) {
+      const { data: roleRow } = await sb.from('admin_roles').select('role').eq('user_id', me.id).maybeSingle()
+      setMyRole(roleRow?.role ?? null)
+    }
+
     const [{ data: listings }, { data: crs }, { data: fus }] = await Promise.all([
       sb.from('listings')
         .select('*, hosts(id, user_id, users(full_name, email))')
@@ -143,6 +156,48 @@ export default function ListingApprovalsPage() {
       setRejectionReason('')
       setRequestTarget(null)
       setRequestNotes('')
+      await loadData()
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setActing(false)
+    }
+  }
+
+  function openEdit(a) {
+    const l = a.listings
+    setEditTarget(a.listing_id)
+    setEditFields({
+      title:           l?.title          ?? '',
+      description:     l?.description    ?? '',
+      price_per_night: l?.price_per_night ?? '',
+      cleaning_fee:    l?.cleaning_fee    ?? '',
+      max_guests:      l?.max_guests      ?? '',
+      bedrooms:        l?.bedrooms        ?? '',
+      bathrooms:       l?.bathrooms       ?? '',
+      city:            l?.city            ?? '',
+      state:           l?.state           ?? '',
+      country:         l?.country         ?? '',
+      property_type:   l?.property_type   ?? '',
+      min_nights:      l?.min_nights      ?? '',
+      house_rules:     l?.house_rules     ?? '',
+      amenities:       l?.amenities       ?? '',
+    })
+  }
+
+  async function doEdit(listingId) {
+    setActing(true)
+    try {
+      const res = await fetch(`/api/admin/listings/${listingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'edit', fields: editFields }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Edit failed')
+      showToast('Listing updated successfully.')
+      setEditTarget(null)
+      setEditFields({})
       await loadData()
     } catch (err) {
       showToast(err.message, 'error')
@@ -357,6 +412,22 @@ export default function ListingApprovalsPage() {
         .cr-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
         .cr-notes { font-size:0.84rem; color:var(--sr-text); line-height:1.65; margin-bottom:4px; }
         .cr-meta { font-size:0.72rem; color:var(--sr-sub); }
+
+        /* Edit form */
+        .btn-edit-listing { background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.25); color:#a78bfa; border-radius:9px; padding:10px 20px; font-size:0.85rem; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:14px; }
+        .btn-edit-listing:hover { background:rgba(167,139,250,0.2); }
+        .edit-form { background:rgba(167,139,250,0.05); border:1px solid rgba(167,139,250,0.2); border-radius:12px; padding:18px; margin-bottom:16px; }
+        .edit-form-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#a78bfa; margin-bottom:14px; }
+        .edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .edit-field { display:flex; flex-direction:column; gap:4px; }
+        .edit-label { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--sr-sub); }
+        .edit-input { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; padding:9px 12px; font-size:0.84rem; font-family:inherit; color:var(--sr-text); outline:none; }
+        .edit-input:focus { border-color:#a78bfa; }
+        .edit-textarea { background:var(--sr-bg); border:1px solid var(--sr-border-solid); border-radius:8px; padding:10px 12px; font-size:0.84rem; font-family:inherit; color:var(--sr-text); outline:none; resize:vertical; width:100%; }
+        .edit-textarea:focus { border-color:#a78bfa; }
+        .btn-save-edit { background:#a78bfa; color:#0f0d0a; border:none; border-radius:9px; padding:11px 22px; font-size:0.87rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        .btn-save-edit:disabled { opacity:0.5; cursor:not-allowed; }
+        .btn-cancel-edit { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:var(--sr-muted); border-radius:9px; padding:11px 16px; font-size:0.84rem; font-weight:600; cursor:pointer; font-family:inherit; }
 
         /* Status panels */
         .info-approved { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.15); border-radius:10px; padding:14px; display:flex; align-items:center; gap:10px; }
@@ -588,6 +659,75 @@ export default function ListingApprovalsPage() {
                           </div>
                         )
                       })()}
+
+                      {/* Super admin edit form */}
+                      {myRole === 'super_admin' && editTarget === a.listing_id ? (
+                        <div className="edit-form">
+                          <div className="edit-form-title">✏️ Edit Listing — Super Admin</div>
+                          <div className="edit-grid">
+                            {[
+                              { label: 'Title',           key: 'title',           type: 'text' },
+                              { label: 'City',            key: 'city',            type: 'text' },
+                              { label: 'State',           key: 'state',           type: 'text' },
+                              { label: 'Country',         key: 'country',         type: 'text' },
+                              { label: 'Price / night',   key: 'price_per_night', type: 'number' },
+                              { label: 'Cleaning fee',    key: 'cleaning_fee',    type: 'number' },
+                              { label: 'Max guests',      key: 'max_guests',      type: 'number' },
+                              { label: 'Bedrooms',        key: 'bedrooms',        type: 'number' },
+                              { label: 'Bathrooms',       key: 'bathrooms',       type: 'number' },
+                              { label: 'Min nights',      key: 'min_nights',      type: 'number' },
+                            ].map(({ label, key, type }) => (
+                              <div key={key} className="edit-field">
+                                <label className="edit-label">{label}</label>
+                                <input
+                                  className="edit-input"
+                                  type={type}
+                                  value={editFields[key] ?? ''}
+                                  onChange={e => setEditFields(p => ({ ...p, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))}
+                                />
+                              </div>
+                            ))}
+                            <div className="edit-field" style={{gridColumn:'1/-1'}}>
+                              <label className="edit-label">Property Type</label>
+                              <select className="edit-input" value={editFields.property_type ?? ''} onChange={e => setEditFields(p => ({ ...p, property_type: e.target.value }))}>
+                                <option value="">— select —</option>
+                                <optgroup label="Private Stay">
+                                  <option value="entire_home">Entire Home</option>
+                                  <option value="private_room">Private Room</option>
+                                  <option value="cabin">Cabin / Chalet</option>
+                                  <option value="beachfront">Beachfront</option>
+                                  <option value="farm_ranch">Farm / Ranch</option>
+                                  <option value="unique_stay">Unique Stay</option>
+                                </optgroup>
+                                <optgroup label="Hotel">
+                                  <option value="boutique_hotel">Boutique Hotel</option>
+                                  <option value="resort">Resort</option>
+                                  <option value="bed_breakfast">Bed &amp; Breakfast</option>
+                                  <option value="serviced_apartment">Serviced Apartment</option>
+                                  <option value="hostel">Hostel</option>
+                                  <option value="motel">Motel</option>
+                                </optgroup>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="edit-field" style={{marginTop:'10px'}}>
+                            <label className="edit-label">Description</label>
+                            <textarea className="edit-textarea" rows={4} value={editFields.description ?? ''} onChange={e => setEditFields(p => ({ ...p, description: e.target.value }))} />
+                          </div>
+                          <div className="edit-field" style={{marginTop:'10px'}}>
+                            <label className="edit-label">House Rules</label>
+                            <textarea className="edit-textarea" rows={3} value={editFields.house_rules ?? ''} onChange={e => setEditFields(p => ({ ...p, house_rules: e.target.value }))} />
+                          </div>
+                          <div style={{display:'flex',gap:'8px',marginTop:'14px'}}>
+                            <button className="btn-save-edit" onClick={() => doEdit(a.listing_id)} disabled={acting}>
+                              {acting ? 'Saving…' : '💾 Save Changes'}
+                            </button>
+                            <button className="btn-cancel-edit" onClick={() => { setEditTarget(null); setEditFields({}) }}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : myRole === 'super_admin' ? (
+                        <button className="btn-edit-listing" onClick={() => openEdit(a)}>✏️ Edit Listing</button>
+                      ) : null}
 
                       {/* Action buttons for pending + changes_requested */}
                       {ActionButtons({ a })}
