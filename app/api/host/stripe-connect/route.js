@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getConnectOnboardingUrl } from '@/lib/stripe-connect'
 import { APP_ENV } from '@/lib/env'
 
 // POST — initiate or resume Stripe Connect Express onboarding for a host
 export async function POST() {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()

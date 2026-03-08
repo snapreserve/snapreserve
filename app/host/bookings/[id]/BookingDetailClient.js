@@ -67,8 +67,8 @@ function GuestAvatar({ avatarUrl, name, size = 52 }) {
 function PropertyHero({ listing }) {
   const [err, setErr] = useState(false)
   const img = Array.isArray(listing.images) && listing.images.length > 0 ? listing.images[0] : null
-  const typeIcon = listing.type === 'hotel' ? '🏨' : '🏡'
-  const typeLabel = listing.type === 'hotel' ? 'Hotel' : 'Private Stay'
+  const typeIcon = listing.property_type === 'hotel' ? '🏨' : '🏡'
+  const typeLabel = listing.property_type === 'hotel' ? 'Hotel' : 'Private Stay'
 
   if (img && !err) {
     return (
@@ -170,6 +170,22 @@ function Timeline({ booking, total, ref: bookingRef }) {
         : `Cancelled by ${booking.cancelled_by_role || 'host'}`,
       color: 'red', done: true,
     })
+    // When host cancelled, show refund to guest — pending admin approval, or approved
+    const refundAmt = Number(booking.refund_amount) || 0
+    if (booking.cancelled_by_role === 'host' && refundAmt > 0) {
+      const approved = booking.payment_status === 'refund_pending' || booking.payment_status === 'refunded'
+      events.push({
+        id: 'refund_to_guest',
+        time: booking.cancelled_at,
+        icon: '↩',
+        label: 'Refund to guest',
+        sub: approved
+          ? `$${refundAmt.toFixed(2)} — approved; guest will receive refund`
+          : `$${refundAmt.toFixed(2)} — pending admin approval (Refunds → Pending)`,
+        color: approved ? 'green' : 'yellow',
+        done: approved,
+      })
+    }
   }
 
   const colorMap = {

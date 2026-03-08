@@ -123,7 +123,7 @@ function BookingPageContent() {
     }
     const fetchListing = supabase
       .from('listings')
-      .select('id, title, city, state, type, price_per_night, cleaning_fee, max_guests, rating, review_count, is_instant_book')
+      .select('id, title, city, state, property_type, price_per_night, cleaning_fee, max_guests, rating, review_count, is_instant_book')
       .eq('id', listingId)
       .single()
 
@@ -403,7 +403,7 @@ function BookingPageContent() {
             {listing && (
               <div className="card">
                 <div className="property-card" style={{ marginBottom: '20px' }}>
-                  <div className="prop-thumb">{listing.type === 'hotel' ? '🏨' : '🏠'}</div>
+                  <div className="prop-thumb">{listing.property_type === 'hotel' ? '🏨' : '🏠'}</div>
                   <div className="prop-info">
                     <div className="prop-name">{listing.title}</div>
                     <div className="prop-meta">{listing.city}, {listing.state}</div>

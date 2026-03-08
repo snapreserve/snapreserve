@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 const ROLE_PERMS = {
@@ -179,8 +179,8 @@ export async function POST(request) {
     return NextResponse.json({ success: true, role: invite.role, host_id: invite.host_id, created: true })
   }
 
-  // ── Flow B: existing user accepts using their session ───────────────────
-  const { user } = await getUserSession()
+  // ── Flow B: existing user accepts using their session (cookie or Bearer) ──
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'You must be logged in to accept this invite' }, { status: 401 })
 
   // Email match check

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 // GET /api/host/rooms?listing_id=XXX — list rooms for a listing
 export async function GET(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
@@ -39,7 +39,7 @@ export async function GET(request) {
 
 // POST /api/host/rooms — create a new room
 export async function POST(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()

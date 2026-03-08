@@ -316,7 +316,7 @@ function SnapBadge({ host }) {
 }
 
 function HostTypeBadge({ listings = [] }) {
-  const isHotel = listings.some(l => l.type === 'hotel')
+  const isHotel = listings.some(l => l.property_type === 'hotel')
   return (
     <span className={`h-host-type ${isHotel ? 'ht-hotel' : 'ht-private'}`}>
       {isHotel ? '🏨 Hotel' : '🏠 Private'}
@@ -400,7 +400,7 @@ function DetailPanel({ host, listings, stats, recentBookings, canManage, canRein
         </div>
         <div className="dp-row">
           <span className="dp-row-lbl">Type</span>
-          <span className="dp-row-val">{listings.some(l => l.type === 'hotel') ? 'Hotel' : 'Private Stay'}</span>
+          <span className="dp-row-val">{listings.some(l => l.property_type === 'hotel') ? 'Hotel' : 'Private Stay'}</span>
         </div>
         <div className="dp-row">
           <span className="dp-row-lbl">Location</span>
@@ -602,8 +602,8 @@ export default function HostsClient({ initialHosts, role }) {
     if (filter === 'verified')  data = data.filter(h => h.verification_status === 'verified')
     else if (filter === 'pending')   data = data.filter(h => h.verification_status === 'pending')
     else if (filter === 'suspended') data = data.filter(h => !!h.suspended_at)
-    else if (filter === 'hotel')     data = data.filter(h => (h.listings ?? []).some(l => l.type === 'hotel'))
-    else if (filter === 'private')   data = data.filter(h => !(h.listings ?? []).some(l => l.type === 'hotel'))
+    else if (filter === 'hotel')     data = data.filter(h => (h.listings ?? []).some(l => l.property_type === 'hotel'))
+    else if (filter === 'private')   data = data.filter(h => !(h.listings ?? []).some(l => l.property_type === 'hotel'))
     else if (filter === 'snap')      data = data.filter(h => h.is_snap_verified)
     if (search) {
       const q = search.toLowerCase()

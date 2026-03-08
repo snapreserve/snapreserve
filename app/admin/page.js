@@ -34,7 +34,7 @@ async function getStats() {
     supabase.from('users').select('*', { count: 'exact', head: true }).eq('user_role', 'host').is('deleted_at', null),
     supabase.from('host_team_members').select('*', { count: 'exact', head: true }).eq('status', 'active').neq('role', 'owner'),
     supabase.from('listing_approvals')
-      .select('id, listing_title, host_name, status, submitted_at, listings(type, city)')
+      .select('id, listing_title, host_name, status, submitted_at, listings(property_type, city)')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: false })
       .limit(6),
@@ -279,8 +279,8 @@ export default async function AdminOverview() {
                   <div className="ov-listing-sub">{a.host_name ?? '—'}{a.listings?.city ? ` · ${a.listings.city}` : ''}</div>
                 </div>
                 <div>
-                  <span className={`ov-badge ${a.listings?.type ?? ''}`}>
-                    {a.listings?.type === 'hotel' ? 'Hotel' : 'Private'}
+                  <span className={`ov-badge ${a.listings?.property_type ?? ''}`}>
+                    {a.listings?.property_type === 'hotel' ? 'Hotel' : 'Private'}
                   </span>
                 </div>
                 <div><span className="ov-badge pending">Pending</span></div>

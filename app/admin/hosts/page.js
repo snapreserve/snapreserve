@@ -8,7 +8,7 @@ async function getHosts() {
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('hosts')
-    .select('id, user_id, verification_status, suspended_at, suspension_reason, created_at, is_snap_verified, snap_verified_at, is_founder_host, users(id, email, full_name, is_active), listings(id, type, is_active, status, city, state, rating, review_count, price_per_night)')
+    .select('id, user_id, verification_status, suspended_at, suspension_reason, created_at, is_snap_verified, snap_verified_at, is_founder_host, users(id, email, full_name, is_active), listings(id, property_type, is_active, status, city, state, rating, review_count, price_per_night)')
     .order('created_at', { ascending: false })
   return data ?? []
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendEmail, teamInviteEmailHtml, teamInviteEmailText } from '@/lib/send-email'
 
@@ -11,7 +11,7 @@ async function getOrgOwner(admin, userId) {
 
 // PATCH /api/host/team/[memberId]  { action: 'change_role', role }  or  { action: 'remove' }
 export async function PATCH(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { memberId } = await params
@@ -174,7 +174,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE /api/host/team/[memberId]  — shorthand for remove
 export async function DELETE(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { memberId } = await params

@@ -15,8 +15,9 @@ async function getBookings() {
       payment_status, payment_provider, payment_intent_id,
       reference, created_at, cancellation_policy,
       special_requests, refund_amount, stripe_refund_id,
+      cancelled_at, cancelled_by_role, cancellation_reason,
       admin_cancelled_at, admin_cancel_reason, cancelled_by_admin_id,
-      listings(id, title, city, state, type),
+      listings(id, title, city, state, property_type),
       guest:users!bookings_guest_id_fkey(id, full_name, email),
       host:users!bookings_host_id_fkey(id, full_name, email)
     `)

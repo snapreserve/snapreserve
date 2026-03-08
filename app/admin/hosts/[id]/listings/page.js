@@ -21,7 +21,7 @@ export default async function HostListingsPage({ params }) {
 
   const { data: listings, count } = await admin
     .from('listings')
-    .select('id, title, city, state, status, is_active, price_per_night, rating, review_count, type, created_at', { count: 'exact' })
+    .select('id, title, city, state, status, is_active, price_per_night, rating, review_count, property_type, created_at', { count: 'exact' })
     .eq('host_id', hostId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })

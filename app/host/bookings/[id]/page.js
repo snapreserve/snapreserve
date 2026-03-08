@@ -37,7 +37,7 @@ export default async function HostBookingDetailPage({ params }) {
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('*, listings(id, title, city, state, country, type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy, images, checkin_start_time, checkin_end_time, checkout_time)')
+    .select('*, listings(id, title, city, state, country, property_type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy, images, checkin_start_time, checkin_end_time, checkout_time)')
     .eq('id', id)
     .eq('host_id', hostUserId)
     .maybeSingle()

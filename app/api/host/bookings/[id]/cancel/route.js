@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
 import { notifyHost } from '@/lib/notify-host'
@@ -8,7 +8,7 @@ import { headers } from 'next/headers'
 // POST /api/host/bookings/[id]/cancel
 // Hosts can cancel bookings for properties they own or manage
 export async function POST(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
@@ -100,6 +100,22 @@ export async function POST(request, { params }) {
     .eq('id', id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  // Create a refund_request as pending so admin sees it in Pending and can approve/process
+  const { error: refundReqErr } = await admin
+    .from('refund_requests')
+    .insert({
+      booking_id:   id,
+      requested_by: user.id,
+      reason:       reason || 'Host cancelled booking',
+      amount:       refundAmount,
+      status:       'pending',
+      approved_by:  null,
+      approved_at:  null,
+      notes:        'Host-initiated cancellation',
+    })
+
+  if (refundReqErr) console.error('[host-cancel] refund_requests insert:', refundReqErr.message)
 
   // Restore room inventory if this was a hotel booking
   if (booking.room_id) {

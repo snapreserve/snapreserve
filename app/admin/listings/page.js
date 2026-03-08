@@ -188,6 +188,12 @@ export default function ListingApprovalsPage() {
     { value: 'bed_breakfast',  label: 'Bed & Breakfast' },
   ]
 
+  const ALL_SUBCATS = [...HOTEL_SUBCATS, ...PRIVATE_SUBCATS]
+  function subcatLabel(val) {
+    if (!val) return '—'
+    return ALL_SUBCATS.find(s => s.value === val)?.label ?? val.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  }
+
   function openEdit(a) {
     const l = a.listings
     setEditTarget(a.listing_id)
@@ -572,7 +578,7 @@ export default function ListingApprovalsPage() {
                       <div className="detail-grid">
                         <div className="di"><div className="di-label">Title</div><div className="di-val">{a.listings?.title || a.listing_title || '—'}</div></div>
                         <div className="di"><div className="di-label">Property Type</div><div className="di-val">{a.listings?.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}</div></div>
-                        <div className="di"><div className="di-label">Subcategory</div><div className="di-val">{a.listings?.property_subcategory || '—'}</div></div>
+                        <div className="di"><div className="di-label">Subcategory</div><div className="di-val">{subcatLabel(a.listings?.property_subcategory)}</div></div>
                         <div className="di"><div className="di-label">Location</div><div className="di-val">{a.listings?.city || '—'}{a.listings?.state ? `, ${a.listings.state}` : ''}{a.listings?.zip_code ? ` ${a.listings.zip_code}` : ''}</div></div>
                         <div className="di"><div className="di-label">Price / night</div><div className="di-val">{a.listings?.price_per_night ? `$${a.listings.price_per_night}` : '—'}</div></div>
                         <div className="di"><div className="di-label">Cleaning fee</div><div className="di-val">{a.listings?.cleaning_fee != null ? `$${a.listings.cleaning_fee}` : '—'}</div></div>

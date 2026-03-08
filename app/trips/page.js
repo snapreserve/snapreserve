@@ -47,7 +47,7 @@ export default function TripsPage() {
       setUser(user)
 
       sb.from('bookings')
-        .select('*, listings(id, title, city, state, type)')
+        .select('*, listings(id, title, city, state, property_type)')
         .eq('guest_id', user.id)
         .order('created_at', { ascending: false })
         .then(({ data, error }) => {

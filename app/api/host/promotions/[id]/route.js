@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 async function resolveHostContext(admin, userId) {
@@ -24,7 +24,7 @@ async function getOwnedPromo(admin, id, hostId) {
 
 // GET /api/host/promotions/[id]
 export async function GET(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
 
 // PATCH /api/host/promotions/[id]
 export async function PATCH(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
@@ -88,7 +88,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE /api/host/promotions/[id]
 export async function DELETE(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()

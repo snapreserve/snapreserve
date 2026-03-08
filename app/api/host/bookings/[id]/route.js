@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { bookingHostPayout, calcPlatformFee } from '@/lib/platform-fee'
 
 // PATCH /api/host/bookings/[id]  — update host_notes
 export async function PATCH(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
@@ -33,7 +33,7 @@ export async function PATCH(request, { params }) {
 
 // GET /api/host/bookings/[id]  — full booking detail for the host detail page
 export async function GET(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params

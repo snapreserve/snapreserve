@@ -1,15 +1,11 @@
 import { createAdminClient } from '@/lib/supabase-admin'
+import { getHostUser } from '@/lib/get-host-user'
 
 export async function GET(request) {
-  const authHeader = request.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '').trim()
-  if (!token) return Response.json({ error: 'Unauthorised' }, { status: 401 })
+  const { user } = await getHostUser(request)
+  if (!user) return Response.json({ error: 'Unauthorised' }, { status: 401 })
 
   const admin = createAdminClient()
-
-  // Verify the JWT token
-  const { data: { user }, error: authError } = await admin.auth.getUser(token)
-  if (authError || !user) return Response.json({ error: 'Unauthorised' }, { status: 401 })
 
   // Get host record
   const { data: hostRow } = await admin

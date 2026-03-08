@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:ipad": "echo '\\n  iPad Pro 13\" viewport: 1024×1366 (portrait) or 1366×1024 (landscape)\\n  See docs/test-ipad-pro-13.md for DevTools steps.\\n' && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

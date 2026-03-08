@@ -558,6 +558,9 @@ export default function HostDashboard() {
   const [newRoleName,          setNewRoleName]          = useState('')
   const [newRolePerms,         setNewRolePerms]         = useState([])
   const [newRoleSaving,        setNewRoleSaving]        = useState(false)
+  // Activity log (booking + team events)
+  const [activityEvents,      setActivityEvents]        = useState([])
+  const [activityLoading,     setActivityLoading]       = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -646,6 +649,13 @@ export default function HostDashboard() {
     }
     load()
   }, [])
+
+  // Load earnings/refund metrics when overview is shown (so Overview shows Total Earned & Total Refunded)
+  useEffect(() => {
+    if (activeNav === 'overview' && !loading && !hostMetrics && !hostBookingsLoading) {
+      loadHostBookings('all', 'all', 1)
+    }
+  }, [activeNav, loading, hostMetrics, hostBookingsLoading])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -905,12 +915,25 @@ export default function HostDashboard() {
         fetch('/api/host/team'),
         fetch('/api/host/team/roles'),
       ])
-      const teamJson  = await teamRes.json()
-      const rolesJson = await rolesRes.json()
+      const teamJson  = await teamRes.json().catch(() => ({}))
+      const rolesJson = await rolesRes.json().catch(() => ({ roles: [] }))
       if (teamRes.ok)  setTeamData(teamJson)
       if (rolesRes.ok) setCustomRoles(rolesJson.roles || [])
     } finally {
       setTeamLoading(false)
+    }
+  }
+
+  async function loadActivity() {
+    if (activityLoading) return
+    setActivityLoading(true)
+    try {
+      const res = await fetch('/api/host/activity')
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) setActivityEvents(data.events || [])
+      else setActivityEvents([])
+    } finally {
+      setActivityLoading(false)
     }
   }
 
@@ -1562,8 +1585,10 @@ export default function HostDashboard() {
           onNavChange={(id) => {
             setActiveNav(id)
             if (['team','permissions','access','activity'].includes(id) && !teamData) loadTeam()
+            if (id === 'activity') loadActivity()
             if (id === 'team' && !tasksLoaded) loadTasks()
             if (id === 'promotions' && !promoLoaded) loadPromotions()
+            if (['overview','bookings','earnings'].includes(id) && !hostMetrics && !hostBookingsLoading) loadHostBookings('all', 'all', 1)
             if (['bookings','earnings'].includes(id) && hostBookings.length === 0 && !hostBookingsLoading) loadHostBookings('all', 'all', 1)
             if (id === 'reviews' && !hostReviewsMetrics && !hostReviewsLoading) loadHostReviews('all', 1)
             if (id === 'calendar' && calBookings.length === 0 && !calLoading) loadCalBookings('all')
@@ -1653,6 +1678,8 @@ export default function HostDashboard() {
                     { label: 'Live Listings',  val: liveCount,                          hint: `of ${listings.length} total`, color: 'var(--sr-green)'  },
                     { label: 'Messages',       val: totalUnread,                         hint: 'unread messages',             color: 'var(--sr-orange)' },
                     { label: 'Properties',     val: listings.length,                     hint: 'total listings',              color: 'var(--sr-blue)'   },
+                    { label: 'Total Earned',   val: hostMetrics != null ? `$${Number(hostMetrics.total_earned||0).toFixed(2)}` : '—', hint: hostMetrics ? `${hostMetrics.completed_count || 0} completed stay${(hostMetrics.completed_count||0) !== 1 ? 's' : ''}` : 'Loading…', color: '#4ade80' },
+                    { label: 'Total Refunded', val: hostMetrics != null ? `$${Number(hostMetrics.total_refunds||0).toFixed(2)}` : '—', hint: hostMetrics ? `${hostMetrics.cancelled_count || 0} cancellation${(hostMetrics.cancelled_count||0) !== 1 ? 's' : ''}` : 'Loading…', color: '#f87171' },
                     { label: 'Avg. Rating',    val: '—',                                 hint: 'no reviews yet',              color: 'var(--sr-yellow)' },
                   ].map(({ label, val, hint, color }) => (
                     <div key={label} className="hd-stat-card">
@@ -2226,9 +2253,9 @@ export default function HostDashboard() {
                           const psColor = ps==='released' ? '#4ade80'                : ps==='refunded' ? '#f87171'               : '#fcd34d'
                           const psLabel = ps==='released' ? 'Released'               : ps==='refunded' ? 'Refunded'              : 'Pending'
                           return (
-                            <tr key={b.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i%2===1 ? 'var(--sr-overlay-xs)' : 'transparent' }}>
+                            <tr key={b.id} style={{ borderBottom: '1px solid var(--sr-border)', background: i%2===1 ? 'var(--sr-overlay-xs)' : 'transparent', cursor: 'pointer' }} onClick={() => window.location.href = `/host/bookings/${b.id}`}>
                               <td style={{ padding: '12px 18px' }}>
-                                <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--sr-orange)', fontWeight: 700 }}>{b.reference}</span>
+                                <a href={`/host/bookings/${b.id}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--sr-orange)', fontWeight: 700, textDecoration: 'none' }}>{b.reference}</a>
                               </td>
                               <td style={{ padding: '12px 18px', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--sr-text)' }}>{b.listing_title}</div>
@@ -3653,7 +3680,7 @@ export default function HostDashboard() {
                   </div>
                 )}
 
-                {teamLoading && !teamData && (
+                {(teamLoading && !teamData) && (
                   <div style={{ color: 'var(--sr-sub)', fontSize: '0.88rem', padding: '40px 0' }}>Loading…</div>
                 )}
 
@@ -3662,36 +3689,38 @@ export default function HostDashboard() {
                     <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.1rem', fontWeight: 700, color: 'var(--sr-text)' }}>Recent Activity</div>
                   </div>
                   <div style={{ padding: '0 24px' }}>
-                    {teamData?.members?.length > 0 ? (
-                      teamData.members
+                    {activityLoading ? (
+                      <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>Loading activity…</div>
+                    ) : (() => {
+                      const teamEvs = (teamData?.members || [])
                         .flatMap(m => {
-                          const events = []
-                          if (m.invited_at) events.push({ name: m.full_name || m.invite_email || m.email || 'Unknown', role: m.role, action: `Invited as ${m.role}`, at: m.invited_at, icon: '📨' })
-                          if (m.accepted_at) events.push({ name: m.full_name || m.invite_email || m.email || 'Unknown', role: m.role, action: 'Accepted invitation', at: m.accepted_at, icon: '✅' })
-                          return events
+                          const evs = []
+                          if (m.invited_at) evs.push({ id: `t-inv-${m.id}-${m.invited_at}`, label: `${m.full_name || m.invite_email || m.email || 'Unknown'} — Invited as ${m.role}`, sub: '', at: m.invited_at, icon: '📨' })
+                          if (m.accepted_at) evs.push({ id: `t-acc-${m.id}-${m.accepted_at}`, label: `${m.full_name || m.invite_email || m.email || 'Unknown'} — Accepted invitation`, sub: '', at: m.accepted_at, icon: '✅' })
+                          return evs
                         })
-                        .sort((a, b) => new Date(b.at) - new Date(a.at))
-                        .map((ev, i, arr) => {
-                          const RC = { owner: '#F4601A', manager: '#60a5fa', staff: '#4ade80', finance: '#fcd34d' }
-                          return (
-                            <div key={i} style={{ display: 'flex', gap: 14, padding: '16px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--sr-border)' : 'none', alignItems: 'flex-start' }}>
-                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>{ev.icon}</div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 600 }}>
-                                  <span style={{ color: RC[ev.role] || 'var(--sr-orange)' }}>{ev.name}</span> — {ev.action}
-                                </div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 3 }}>
-                                  {new Date(ev.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </div>
-                              </div>
+                      const bookingEvs = (activityEvents || []).map(e => ({ id: e.id, label: e.label, sub: e.sub, at: e.at, icon: e.icon }))
+                      const merged = [...teamEvs, ...bookingEvs].sort((a, b) => new Date(b.at) - new Date(a.at))
+                      if (merged.length === 0) {
+                        return (
+                          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>
+                            No activity yet. Bookings and team actions will appear here.
+                          </div>
+                        )
+                      }
+                      return merged.map((ev, i) => (
+                        <div key={ev.id || i} style={{ display: 'flex', gap: 14, padding: '16px 0', borderBottom: i < merged.length - 1 ? '1px solid var(--sr-border)' : 'none', alignItems: 'flex-start' }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>{ev.icon}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.84rem', color: 'var(--sr-text)', fontWeight: 600 }}>{ev.label}</div>
+                            {ev.sub ? <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 3 }}>{ev.sub}</div> : null}
+                            <div style={{ fontSize: '0.72rem', color: 'var(--sr-sub)', marginTop: 3 }}>
+                              {new Date(ev.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </div>
-                          )
-                        })
-                    ) : (
-                      <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>
-                        No activity yet. Invite your first team member to get started.
-                      </div>
-                    )}
+                          </div>
+                        </div>
+                      ))
+                    })()}
                   </div>
                 </div>
               </div>

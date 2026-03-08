@@ -1,28 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendEmail, teamInviteEmailHtml, teamInviteEmailText } from '@/lib/send-email'
 
-// GET /api/host/team
-// Returns the org (host) team members for the current user.
-// Works for org owners AND org members (returns the org they belong to).
-// Supports both cookie-based auth (web) and Bearer token auth (mobile).
+// GET /api/host/team — cookie (web) or Bearer (app)
 export async function GET(request) {
-  const admin = createAdminClient()
-
-  // Try Bearer token first (mobile), fall back to cookie session (web)
-  let user = null
-  const authHeader = request.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '').trim()
-  if (token) {
-    const { data: { user: u } } = await admin.auth.getUser(token)
-    user = u || null
-  }
-  if (!user) {
-    const session = await getUserSession()
-    user = session.user
-  }
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
 
   // Is this user a host (owner)?
   const { data: hostRow } = await admin
@@ -86,7 +72,7 @@ export async function GET(request) {
 // POST /api/host/team
 // Invite a new team member. Caller must be the org owner.
 export async function POST(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json().catch(() => ({}))

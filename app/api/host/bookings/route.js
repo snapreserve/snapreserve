@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { bookingHostPayout } from '@/lib/platform-fee'
 
@@ -14,7 +14,7 @@ function payoutStatus(b) {
 
 // GET /api/host/bookings?listing_id=&status=&page=1&limit=25
 export async function GET(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)

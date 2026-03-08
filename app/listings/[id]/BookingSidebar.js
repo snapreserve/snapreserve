@@ -43,7 +43,7 @@ export default function BookingSidebar({ listing, rooms }) {
   const searchParams = useSearchParams()
   const today = new Date().toISOString().slice(0, 10)
 
-  const isHotel = listing.type === 'hotel'
+  const isHotel = listing.property_type === 'hotel'
   const urlRoomId = searchParams?.get('room') || null
   const selectedRoom = isHotel && rooms?.length
     ? (rooms.find(r => r.id === urlRoomId) || null)

@@ -157,7 +157,7 @@ export default function DashboardPage() {
     if (!user) { router.push('/login?next=/dashboard'); return }
     const [{ data: prof }, { data: bks }, { data: svd }] = await Promise.all([
       supabase.from('users').select('full_name,email,avatar_url,user_role,is_host,suspended_at,is_active').eq('id', user.id).maybeSingle(),
-      supabase.from('bookings').select('*,listings(id,title,city,state,type,images,price_per_night)').eq('guest_id', user.id).order('check_in', { ascending: true }),
+      supabase.from('bookings').select('*,listings(id,title,city,state,property_type,images,price_per_night)').eq('guest_id', user.id).order('check_in', { ascending: true }),
       supabase.from('saved_listings').select('id,created_at,listing_id,listings(title,city,state)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
     ])
     setProfile(prof)

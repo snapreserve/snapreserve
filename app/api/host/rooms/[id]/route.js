@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 // PATCH /api/host/rooms/[id] — update room fields or toggle availability
 export async function PATCH(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
@@ -40,7 +40,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE /api/host/rooms/[id] — remove a room
 export async function DELETE(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params

@@ -44,10 +44,10 @@ function StatusBadge({ status }) {
   return <span className={`badge ${cfg.cls}`}>{cfg.label}</span>
 }
 
-const TYPE_EMOJI = { hotel: '🏨', private: '🏠', villa: '🌴', cabin: '🏔️' }
-const TYPE_BG    = { hotel: '#1e3a8a', private: '#065f46', villa: '#14532d', cabin: '#78350f' }
-function listingEmoji(t) { return TYPE_EMOJI[t?.toLowerCase()] ?? '🏠' }
-function listingBg(t)    { return TYPE_BG[t?.toLowerCase()]    ?? '#1e3a8a' }
+const TYPE_EMOJI = { hotel: '🏨', private_stay: '🏠' }
+const TYPE_BG    = { hotel: '#1e3a8a', private_stay: '#065f46' }
+function listingEmoji(t) { return TYPE_EMOJI[t] ?? '🏠' }
+function listingBg(t)    { return TYPE_BG[t]    ?? '#1e3a8a' }
 
 /* ── CSS ── */
 const CSS = `
@@ -429,14 +429,14 @@ export default function BookingsClient({ initialBookings, role }) {
                       {/* Listing */}
                       <div className="b-td">
                         <div className="b-listing-cell">
-                          <div className="b-lc-thumb" style={{ background: listingBg(b.listings?.type) }}>
-                            {listingEmoji(b.listings?.type)}
+                          <div className="b-lc-thumb" style={{ background: listingBg(b.listings?.property_type) }}>
+                            {listingEmoji(b.listings?.property_type)}
                           </div>
                           <div style={{ minWidth: 0 }}>
                             <div className="b-lc-name">{b.listings?.title ?? 'Unknown Listing'}</div>
                             <div className="b-lc-ref">{b.reference ?? b.id.slice(0, 8)}</div>
-                            <span className={`b-lc-type ${b.listings?.type === 'hotel' ? 'lct-hotel' : 'lct-priv'}`}>
-                              {b.listings?.type === 'hotel' ? '🏨 Hotel' : '🏠 Private'}
+                            <span className={`b-lc-type ${b.listings?.property_type === 'hotel' ? 'lct-hotel' : 'lct-priv'}`}>
+                              {b.listings?.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private'}
                             </span>
                           </div>
                         </div>
@@ -582,8 +582,8 @@ function PanelContent({ booking: b, tab, canCancel, onCancel }) {
       {/* Hero */}
       <div className="b-dp-hero">
         <div className="b-dph-prop">
-          <div className="b-dph-thumb" style={{ background: listingBg(b.listings?.type) }}>
-            {listingEmoji(b.listings?.type)}
+          <div className="b-dph-thumb" style={{ background: listingBg(b.listings?.property_type) }}>
+            {listingEmoji(b.listings?.property_type)}
           </div>
           <div>
             <div className="b-dph-name">{b.listings?.title ?? 'Unknown Listing'}</div>
@@ -605,8 +605,8 @@ function PanelContent({ booking: b, tab, canCancel, onCancel }) {
             <div className="b-dph-hrole">{hostEmail}</div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <span className={`b-lc-type ${b.listings?.type === 'hotel' ? 'lct-hotel' : 'lct-priv'}`}>
-              {b.listings?.type === 'hotel' ? '🏨 Hotel' : '🏠 Private'}
+            <span className={`b-lc-type ${b.listings?.property_type === 'hotel' ? 'lct-hotel' : 'lct-priv'}`}>
+              {b.listings?.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private'}
             </span>
           </div>
         </div>
@@ -649,7 +649,7 @@ function PanelContent({ booking: b, tab, canCancel, onCancel }) {
           ['Check-out',    fmtDate(b.check_out)],
           ['Duration',     `${nights} night${nights !== 1 ? 's' : ''}`],
           ['Cancellation', b.cancellation_policy ?? '—'],
-          ['Type',         b.listings?.type === 'hotel' ? 'Hotel' : 'Private Stay'],
+          ['Type',         b.listings?.property_type === 'hotel' ? 'Hotel' : 'Private Stay'],
         ].map(([l, v]) => (
           <div key={l} className="b-dp-row">
             <span className="b-dp-rl">{l}</span>
@@ -744,7 +744,17 @@ function PanelContent({ booking: b, tab, canCancel, onCancel }) {
                                         { dot: 'var(--green)',  event: 'Payout Released',     detail: `${fmtMoney(hostPayout)} sent to host`,                  time: fmtDate(b.check_out) + ' +24h' }] : []),
       ...(b.status === 'dispute'    ? [{ dot: 'var(--red)',    event: 'Dispute Filed',        detail: 'Guest filed complaint',                                  time: '—' },
                                         { dot: 'var(--purple)', event: 'Payout Held',          detail: 'Host payout frozen pending review',                     time: '—' }] : []),
-      ...(b.status === 'cancelled'  ? [{ dot: 'var(--red)',    event: 'Booking Cancelled',    detail: b.admin_cancel_reason ?? b.cancellation_reason ?? 'Cancelled', time: fmtDate(b.admin_cancelled_at) }] : []),
+      ...(b.status === 'cancelled'  ? [
+        { dot: 'var(--red)',    event: 'Booking Cancelled',    detail: b.admin_cancel_reason ?? b.cancellation_reason ?? 'Cancelled', time: fmtDate(b.admin_cancelled_at ?? b.cancelled_at) },
+        ...(b.cancelled_by_role === 'host' && (Number(b.refund_amount) || 0) > 0 ? [{
+          dot:  (b.payment_status === 'refund_pending' || b.payment_status === 'refunded') ? 'var(--cyan)' : 'var(--yellow)',
+          event: 'Refund to guest',
+          detail: (b.payment_status === 'refund_pending' || b.payment_status === 'refunded')
+            ? fmtMoney(b.refund_amount) + ' — approved; process in Refunds if needed'
+            : fmtMoney(b.refund_amount) + ' — pending admin approval (Refunds → Pending)',
+          time: '—',
+        }] : []),
+      ] : []),
       ...(b.status === 'refunded'   ? [{ dot: 'var(--cyan)',   event: 'Refund Issued',        detail: fmtMoney(b.refund_amount ?? totalAmount) + ' refunded',   time: '—' }] : []),
       ...(['confirmed', 'pending'].includes(b.status) ? [{ dot: 'var(--sub)', event: 'Check-in Upcoming', detail: `Scheduled ${fmtDate(b.check_in)}`, time: 'Upcoming' }] : []),
     ]

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 // Resolve the host_id for the current user (owner or team member)
@@ -19,7 +19,7 @@ async function resolveHostId(admin, userId) {
 
 // GET /api/host/tasks?listing_id=&status=
 export async function GET(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
@@ -63,7 +63,7 @@ export async function GET(request) {
 // POST /api/host/tasks
 // Body: { title, listing_id, description?, due_date?, status?, assigned_to? }
 export async function POST(request) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json().catch(() => ({}))

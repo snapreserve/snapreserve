@@ -27,7 +27,7 @@ export default async function PropertyPage({ params, searchParams }) {
   const admin = createAdminClient()
 
   const [{ data: listing }, { data: rooms }, { user }] = await Promise.all([
-    admin.from('listings').select('id, title, city, state, country, type, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active').eq('id', id).single(),
+    admin.from('listings').select('id, title, city, state, country, property_type, property_subcategory, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active').eq('id', id).single(),
     admin.from('rooms').select('*').eq('listing_id', id).eq('is_available', true).order('price_per_night', { ascending: true }),
     getUserSession(),
   ])
@@ -307,9 +307,9 @@ export default async function PropertyPage({ params, searchParams }) {
               <>
                 <a href="/dashboard" className="nav-btn outline" style={{ fontSize: '0.82rem' }}>Dashboard</a>
                 <a href="/dashboard" className="user-avatar">
-                  {userAvatar
+                  {userAvatar && userAvatar.startsWith('http')
                     ? <Image src={userAvatar} alt="Profile" width={36} height={36} style={{ objectFit: 'cover' }} />
-                    : userInitials
+                    : userAvatar || userInitials
                   }
                 </a>
               </>
@@ -378,8 +378,8 @@ export default async function PropertyPage({ params, searchParams }) {
             q += `&city=${encodeURIComponent(city)}`
             crumbs.push({ label: city, href: `/listings?${q}` })
           }
-          const typeLabel = listing.type === 'hotel' ? 'Hotels' : 'Private Stays'
-          const typeHref  = listing.type === 'hotel' ? '/listings?type=hotel' : '/listings?type=private_stay'
+          const typeLabel = listing.property_type === 'hotel' ? 'Hotels' : 'Private Stays'
+          const typeHref  = listing.property_type === 'hotel' ? '/listings?type=hotel' : '/listings?type=private_stay'
           return (
             <div className="breadcrumb">
               <a href={typeHref}>{typeLabel}</a>
@@ -409,8 +409,8 @@ export default async function PropertyPage({ params, searchParams }) {
               {listing.rating > 0 && (
                 <span className="rating-stars">★ {listing.rating} · <span style={{ color: '#7a5c3a', fontWeight: 400 }}>{listing.review_count} review{listing.review_count !== 1 ? 's' : ''}</span></span>
               )}
-              <span className={`type-badge ${listing.type === 'hotel' ? 'hotel-badge' : 'stay-badge'}`}>
-                {listing.type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}
+              <span className={`type-badge ${listing.property_type === 'hotel' ? 'hotel-badge' : 'stay-badge'}`}>
+                {listing.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}
               </span>
               {listing.is_instant_book && (
                 <span className="type-badge instant-badge">⚡ Instant Book</span>
@@ -427,7 +427,7 @@ export default async function PropertyPage({ params, searchParams }) {
             <div className="section">
               <div className="host-card">
                 <div className="host-avatar">
-                  {host?.avatar_url ? <Image src={host.avatar_url} alt={host.full_name || 'Host'} width={56} height={56} style={{ objectFit: 'cover' }} /> : '👤'}
+                  {host?.avatar_url?.startsWith('http') ? <Image src={host.avatar_url} alt={host.full_name || 'Host'} width={56} height={56} style={{ objectFit: 'cover' }} /> : (host?.avatar_url || '👤')}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div className="host-name">Hosted by {host?.full_name || 'SnapReserve™ Host'}</div>

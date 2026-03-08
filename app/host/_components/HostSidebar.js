@@ -151,10 +151,10 @@ export default function HostSidebar({
       {/* Footer */}
       <div className="hs-sidebar-footer">
         <div className="hs-user-row">
-          {userAvatar ? (
+          {userAvatar?.startsWith('http') ? (
             <img src={userAvatar} alt="" className="hs-avatar hs-avatar-img" />
           ) : (
-            <div className="hs-avatar">{userInitials}</div>
+            <div className="hs-avatar">{userAvatar || userInitials}</div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="hs-user-name">

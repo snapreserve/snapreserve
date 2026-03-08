@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/get-user-session'
+import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 
 const VALID_PERMS = ['bookings','properties','calendar','messages','earnings','payouts','activity','reviews']
@@ -11,7 +11,7 @@ async function getHostId(admin, userId) {
 
 // PATCH /api/host/team/roles/[roleId] — update name and/or permissions (owner only)
 export async function PATCH(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { roleId } = await params
@@ -63,7 +63,7 @@ export async function PATCH(request, { params }) {
 // DELETE /api/host/team/roles/[roleId] — delete custom role (owner only)
 // Members with this custom_role_id are reset to role='staff', custom_role_id=null
 export async function DELETE(request, { params }) {
-  const { user } = await getUserSession()
+  const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { roleId } = await params

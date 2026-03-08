@@ -87,7 +87,7 @@ export default function HomePage() {
   async function fetchData() {
     const { data } = await supabase
       .from('listings')
-      .select('id, title, city, state, type, price_per_night, rating, review_count, amenities')
+      .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities')
       .eq('is_active', true)
       .order('rating', { ascending: false })
     const all = data || []
@@ -469,7 +469,7 @@ export default function HomePage() {
             {filteredListings.map((listing, i) => {
               const img = cityImages[listing.city] || fallbackImages[i % fallbackImages.length]
               const amenities = listing.amenities ? listing.amenities.split(',').slice(0, 3) : []
-              const pill = listing.type === 'hotel'
+              const pill = listing.property_type === 'hotel'
                 ? { bg:'#EDF4FF', color:'#1A6EF4', label:'🏨 Hotel' }
                 : { bg:'#FFF3ED', color:'#F4601A', label:'🏠 Private Stay' }
               return (

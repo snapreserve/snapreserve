@@ -64,6 +64,23 @@ export async function POST(request, { params }) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
+  // Create a refund_request so it appears on admin Refunds page (guest cancel with refund)
+  if (refundAmount > 0) {
+    await admin
+      .from('refund_requests')
+      .insert({
+        booking_id:   id,
+        requested_by: user.id,
+        reason:       reason || 'Guest cancelled',
+        amount:       refundAmount,
+        status:       'approved',
+        approved_by:  null,
+        approved_at:  now,
+        notes:        'Guest cancellation (policy-based refund)',
+      })
+      .catch((err) => console.error('[guest-cancel] refund_requests insert:', err.message))
+  }
+
   // Restore room inventory if this was a hotel booking
   if (booking.room_id) {
     await admin.rpc('restore_room_units', { p_room_id: booking.room_id, p_amount: 1 })
