@@ -2522,7 +2522,7 @@ export default function HostDashboard() {
                           { icon: '➕', label: 'Invite Member',    sub: 'Add a team member',    action: () => setInviteModal(true) },
                           { icon: '📋', label: 'View Tasks',       sub: 'Manage all tasks',      action: () => setTeamSubTab('tasks') },
                           { icon: '🏨', label: 'Assign Property',  sub: 'Manage access',         action: () => setTeamSubTab('properties') },
-                          { icon: '🔐', label: 'Role Permissions', sub: 'View role access',      action: () => setTeamSubTab('permissions') },
+                          { icon: '🔐', label: 'Roles & Permissions', sub: 'View role access',  action: () => setTeamSubTab('permissions') },
                         ].map(qa => (
                           <button key={qa.label} onClick={qa.action} className="hd-qa-btn">
                             <span className="hd-qa-icon">{qa.icon}</span>
@@ -2937,7 +2937,7 @@ export default function HostDashboard() {
                   {teamSubTab === 'permissions' && (
                     <div>
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 4 }}>Role Permissions</div>
+                        <div style={{ fontFamily: "var(--sr-font-display)", fontSize: '1.2rem', fontWeight: 700, color: 'var(--sr-text)', marginBottom: 4 }}>Roles & Permissions</div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--sr-sub)' }}>What each role can access and manage within your team workspace.</div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>

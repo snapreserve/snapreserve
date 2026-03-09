@@ -51,6 +51,7 @@ export async function GET(request) {
       avatar_url: user.user_metadata?.avatar_url ?? '',
       is_host: false,
       is_verified: false,
+      verification_reference: user.user_metadata?.verification_reference ?? null,
     },
     { onConflict: 'id', ignoreDuplicates: true }
   )

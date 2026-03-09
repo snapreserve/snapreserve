@@ -86,3 +86,21 @@ The platform can highlight listings with an **Editor's Pick** badge. Only Admin/
    - Web uses a gold/amber style (e.g. `#FCD34D` text, subtle gold background) so the app can match for consistency.
 
 No API changes are required; the app only needs to read `editors_pick` from listing data and render the badge in the UI.
+
+---
+
+## Host portal — nav labels (match on mobile)
+
+Use these **exact** labels in the mobile host portal so they match the web. Do **not** use "roles and permission", "roles and perms", or "Role Permissions" as the main nav label.
+
+| Section | Nav item (id) | Label to show |
+|---------|----------------|---------------|
+| **TEAM** | team | **Team Members** |
+| **TEAM** | permissions | **Roles & Permissions** |
+| **TEAM** | access | **Property Access** |
+| **TEAM** | activity | **Activity Log** |
+
+- Section title: **TEAM** (all caps).
+- The second item under TEAM must be **Roles & Permissions** (ampersand `&`, full word "Permissions", not "Perms" or "Permission").
+- When the user opens that screen, the page title should be **Roles & Permissions** (same as sidebar).
+- Sub-tabs inside the Team area on web: **Team Members**, **Tasks**, **Properties**, **Permissions** — use full words, not abbreviations.

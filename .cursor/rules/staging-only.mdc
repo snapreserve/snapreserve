@@ -1,0 +1,12 @@
+---
+description: No production changes without explicit approval; staging only until testing is complete.
+alwaysApply: true
+---
+
+# Staging only — no prod without approval
+
+- **Do not make any changes to the production environment unless the user specifically approves it.** Production data is different and must not be modified during testing.
+- **All development and testing** happen on **staging / testing** only — for both the **website** and the **app** (mobile). The app uses the same rule: testing build first; production app store releases only when the user explicitly approves.
+- The assistant must **not** push to `main`, merge to `main`, trigger production deploys, or suggest production-only changes unless the user has explicitly asked to release to production / approved a production deploy.
+- When suggesting git commands: push only to the **staging** branch (e.g. `git push origin staging`). Do not run or suggest `git push origin main` or merge-to-main unless the user has specifically approved deploying to production.
+- See `docs/deployment.md` for the full staging vs production workflow.

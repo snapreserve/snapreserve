@@ -19,7 +19,7 @@ const ID_REJECT_REASONS = [
   { value: 'fraud',         label: 'Possible fraud',      desc: 'Document appears altered or fake' },
 ]
 
-const FILTERS = ['All', 'Active', 'New', 'Suspended', 'Flagged', 'ID Pending']
+const FILTERS = ['All', 'Active', 'Pending Activation', 'New', 'Suspended', 'Flagged', 'ID Pending']
 const TABS    = ['Overview', 'Identity', 'Bookings', 'Spend', 'Activity', 'Admin']
 
 const BOOKING_STATUS = {
@@ -194,6 +194,10 @@ function fmtDate(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+function fmtDateTime(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+}
 
 function fmtMoney(n) {
   if (!n && n !== 0) return '—'
@@ -232,6 +236,8 @@ function riskColor(score) {
 function guestStatus(g) {
   if (g.suspended_at) return { label: 'Suspended', color: '#F87171', bg: 'rgba(248,113,113,0.1)' }
   if (!g.is_active)   return { label: 'Inactive',  color: 'var(--sr-muted)', bg: 'rgba(107,94,82,0.15)' }
+  if (g.approval_status === 'rejected') return { label: 'Rejected', color: '#F87171', bg: 'rgba(248,113,113,0.1)' }
+  if (g.approval_status !== 'approved') return { label: 'Pending Activation', color: '#FBBF24', bg: 'rgba(251,191,36,0.15)' }
   return { label: 'Active', color: '#34D399', bg: 'rgba(52,211,153,0.1)' }
 }
 
@@ -283,7 +289,8 @@ export default function GuestsClient({ initialGuests, role }) {
     const now  = Date.now()
     return {
       total:     guests.length,
-      active:    guests.filter(g => g.is_active && !g.suspended_at).length,
+      active:    guests.filter(g => g.is_active && !g.suspended_at && g.approval_status === 'approved').length,
+      pendingActivation: guests.filter(g => g.approval_status !== 'approved' && g.approval_status !== 'rejected' && !g.suspended_at).length,
       newThis:   guests.filter(g => now - new Date(g.created_at) < week).length,
       idPending: guests.filter(g => g.verification_status === 'pending').length,
       verified:  guests.filter(g => g.verification_status === 'verified').length,
@@ -297,7 +304,8 @@ export default function GuestsClient({ initialGuests, role }) {
     const week = 7 * 86400 * 1000
     const now  = Date.now()
     let list = [...guests]
-    if (filter === 'Active')     list = list.filter(g => g.is_active && !g.suspended_at)
+    if (filter === 'Active')     list = list.filter(g => g.is_active && !g.suspended_at && g.approval_status === 'approved')
+    else if (filter === 'Pending Activation') list = list.filter(g => g.approval_status !== 'approved' && g.approval_status !== 'rejected' && !g.suspended_at)
     else if (filter === 'New')       list = list.filter(g => now - new Date(g.created_at) < week)
     else if (filter === 'Suspended') list = list.filter(g => !!g.suspended_at)
     else if (filter === 'Flagged')   list = list.filter(g => !!g.suspension_category)
@@ -426,6 +434,7 @@ export default function GuestsClient({ initialGuests, role }) {
         reject_account: 'Account rejected.', verify_user: 'ID approved.',
         unverify_user: 'Verification removed.', reject_id: 'ID rejected.',
         request_docs: 'Document request sent.', flag_risk: 'Risk flag applied.',
+        send_password_reset: 'Password reset email sent.',
       }
       showToast(labels[action] ?? 'Done.')
       setModal(null)
@@ -485,6 +494,7 @@ export default function GuestsClient({ initialGuests, role }) {
             {[
               { val: stats.total,    lbl: 'Total Guests' },
               { val: stats.active,   lbl: 'Active' },
+              { val: stats.pendingActivation, lbl: 'Pending Activation', highlight: stats.pendingActivation > 0, clickFilter: 'Pending Activation', accent: stats.pendingActivation > 0 ? '#FBBF24' : undefined },
               { val: stats.newThis,  lbl: 'New (7d)' },
               { val: stats.idPending, lbl: 'ID Pending ★', highlight: true, clickFilter: 'ID Pending', accent: '#FBBF24' },
               { val: stats.verified,  lbl: 'ID Verified',  accent: stats.verified > 0 ? '#60A5FA' : undefined },
@@ -527,7 +537,7 @@ export default function GuestsClient({ initialGuests, role }) {
                 <span>Status / ID</span>
                 <span>Bookings</span>
                 <span>Total Spent</span>
-                <span>Joined</span>
+                <span>Signed up</span>
                 <span>Actions</span>
               </div>
 
@@ -571,8 +581,8 @@ export default function GuestsClient({ initialGuests, role }) {
                       {fmtMoney(g.total_spent)}
                     </div>
 
-                    {/* Joined */}
-                    <div style={{ fontSize: '0.75rem', color: 'var(--sr-muted)' }}>{fmtDate(g.created_at)}</div>
+                    {/* Signed up */}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--sr-muted)' }}>{fmtDateTime(g.created_at)}</div>
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: 5 }} onClick={e => e.stopPropagation()}>
@@ -713,8 +723,9 @@ export default function GuestsClient({ initialGuests, role }) {
                           {[
                             { lbl: 'User ID',  val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: 'var(--sr-muted)' }}>{sel.id.slice(0, 8)}…</span> },
                             { lbl: 'Email',    val: sel.email },
-                            { lbl: 'Joined',   val: fmtDate(sel.created_at) },
+                            { lbl: 'Signed up', val: fmtDateTime(sel.created_at) },
                             { lbl: 'Type',     val: sel.is_host ? 'Host & Guest' : 'Guest' },
+                            sel.verification_reference && { lbl: 'Verification Reference', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--sr-orange)', fontWeight: 600 }}>{sel.verification_reference}</span> },
                             sel.suspended_at && { lbl: 'Suspended', val: fmtDate(sel.suspended_at) },
                             sel.suspension_reason && { lbl: 'Susp. reason', val: sel.suspension_reason },
                           ].filter(Boolean).map(({ lbl, val }) => (
@@ -1058,6 +1069,9 @@ export default function GuestsClient({ initialGuests, role }) {
                             {canReinstate && (!sel.is_active || sel.suspended_at) && (
                               <button className="gs-btn gs-btn-react" onClick={() => openModal('reactivate', sel)}>Reinstate Account</button>
                             )}
+                            {(canManage || canApprove) && sel.email && (
+                              <button className="gs-btn gs-btn-verify" onClick={() => openModal('send_password_reset', sel)}>Send password reset email</button>
+                            )}
                           </div>
                         ) : (
                           <p style={{ fontSize: '0.8rem', color: 'var(--sr-sub)' }}>Insufficient permissions.</p>
@@ -1070,6 +1084,7 @@ export default function GuestsClient({ initialGuests, role }) {
                           {[
                             { lbl: 'User ID', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.68rem' }}>{sel.id}</span> },
                             { lbl: 'Active',  val: sel.is_active ? 'Yes' : 'No' },
+                            (sel.verification_reference || detail?.guest?.verification_reference) && { lbl: 'Verification Reference', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--sr-orange)', fontWeight: 600 }}>{sel.verification_reference || detail?.guest?.verification_reference}</span> },
                             detail?.guest?.admin_notes && { lbl: 'Admin notes', val: detail.guest.admin_notes },
                           ].filter(Boolean).map(({ lbl, val }) => (
                             <div className="gs-info-row" key={lbl}>
@@ -1171,6 +1186,15 @@ export default function GuestsClient({ initialGuests, role }) {
               <div className="gs-warning">This will deny the user access to the platform.</div>
             </>}
 
+            {/* Send password reset */}
+            {modal.action === 'send_password_reset' && <>
+              <h2>Send password reset email</h2>
+              <div className="gs-modal-sub">{modal.guest.full_name ?? modal.guest.email}</div>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--sr-text)' }}>
+                A password reset link will be sent to <strong>{modal.guest.email}</strong>. The link expires in 1 hour.
+              </p>
+            </>}
+
             {/* Verify user */}
             {modal.action === 'verify_user' && <>
               <h2>Approve Identity</h2>
@@ -1256,7 +1280,7 @@ export default function GuestsClient({ initialGuests, role }) {
               <button
                 className={`gs-mbtn gs-mbtn-ok${
                   ['deactivate', 'reject_account', 'unverify_user', 'reject_id'].includes(modal.action) ? ' danger' :
-                  ['reactivate', 'approve_account', 'verify_user'].includes(modal.action) ? ' success' : ''
+                  ['reactivate', 'approve_account', 'verify_user', 'send_password_reset'].includes(modal.action) ? ' success' : ''
                 }`}
                 disabled={
                   loading ||
@@ -1276,7 +1300,8 @@ export default function GuestsClient({ initialGuests, role }) {
                   modal.action === 'unverify_user'   ? 'Remove' :
                   modal.action === 'reject_id'       ? 'Reject ID' :
                   modal.action === 'request_docs'    ? 'Send Request' :
-                  modal.action === 'flag_risk'       ? 'Flag Account' : 'Confirm'}
+                  modal.action === 'flag_risk'       ? 'Flag Account' :
+                  modal.action === 'send_password_reset' ? 'Send reset email' : 'Confirm'}
               </button>
             </div>
           </div>

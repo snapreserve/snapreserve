@@ -4,27 +4,35 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const STEPS = [
-  { id: 1, label: 'Property type' },
-  { id: 2, label: 'Location' },
-  { id: 3, label: 'Basics' },
-  { id: 4, label: 'Policies' },
-  { id: 5, label: 'Amenities' },
-  { id: 6, label: 'Photos' },
-  { id: 7, label: 'Pricing' },
-  { id: 8, label: 'Review & publish' },
+  { id: 1,  label: 'Property type' },
+  { id: 2,  label: 'Location' },
+  { id: 3,  label: 'Basics' },
+  { id: 4,  label: 'Policies' },
+  { id: 5,  label: 'Amenities' },
+  { id: 6,  label: 'Property details' },
+  { id: 7,  label: 'Availability' },
+  { id: 8,  label: 'Guest info' },
+  { id: 9,  label: 'Safety' },
+  { id: 10, label: 'Photos' },
+  { id: 11, label: 'Pricing' },
+  { id: 12, label: 'Review & publish' },
 ]
 
 // Hotel has an extra Room Types step after Location
 const HOTEL_STEPS = [
-  { id: 1, label: 'Property type' },
-  { id: 2, label: 'Location' },
-  { id: 3, label: 'Room types' },
-  { id: 4, label: 'Basics' },
-  { id: 5, label: 'Policies' },
-  { id: 6, label: 'Amenities' },
-  { id: 7, label: 'Photos' },
-  { id: 8, label: 'Pricing' },
-  { id: 9, label: 'Review & publish' },
+  { id: 1,  label: 'Property type' },
+  { id: 2,  label: 'Location' },
+  { id: 3,  label: 'Room types' },
+  { id: 4,  label: 'Basics' },
+  { id: 5,  label: 'Policies' },
+  { id: 6,  label: 'Amenities' },
+  { id: 7,  label: 'Property details' },
+  { id: 8,  label: 'Availability' },
+  { id: 9,  label: 'Guest info' },
+  { id: 10, label: 'Safety' },
+  { id: 11, label: 'Photos' },
+  { id: 12, label: 'Pricing' },
+  { id: 13, label: 'Review & publish' },
 ]
 
 const PRIVATE_SUBCATEGORIES = [
@@ -85,9 +93,219 @@ const AMENITIES = [
   { id: 'concierge',   icon: '🛎️', label: 'Concierge' },
 ]
 
+const DESTINATION_TAGS = [
+  { id: 'ski_resort',    icon: '⛷️',  label: 'Ski Resort' },
+  { id: 'wine_country',  icon: '🍷',  label: 'Wine Country' },
+  { id: 'national_park', icon: '🏕️',  label: 'National Park' },
+  { id: 'lake_house',    icon: '🏞️',  label: 'Lake House' },
+  { id: 'desert',        icon: '🏜️',  label: 'Desert' },
+  { id: 'golf',          icon: '⛳',  label: 'Golf' },
+  { id: 'vineyard',      icon: '🍇',  label: 'Vineyard' },
+  { id: 'hot_springs',   icon: '♨️',  label: 'Hot Springs' },
+  { id: 'historic',      icon: '🏛️',  label: 'Historic' },
+  { id: 'island',        icon: '🏝️',  label: 'Island' },
+]
+
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY']
 
 const BETA_TERMS_VERSION = '1.0'
+
+function BlockedDatesCalendar({ listingId, blockedDates, setBlockedDates, calendarStart, setCalendarStart, calendarEnd, setCalendarEnd, calendarMonth, setCalendarMonth }) {
+  const [saving, setSaving] = useState(false)
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  function isInBlockedRange(date) {
+    const ds = date.toISOString().slice(0, 10)
+    return blockedDates.some(b => ds >= b.start_date && ds <= b.end_date)
+  }
+
+  function handleDayClick(date) {
+    const ds = date.toISOString().slice(0, 10)
+    if (date < today) return
+    if (!calendarStart || (calendarStart && calendarEnd)) {
+      setCalendarStart(ds)
+      setCalendarEnd(null)
+    } else {
+      if (ds < calendarStart) {
+        setCalendarEnd(calendarStart)
+        setCalendarStart(ds)
+      } else {
+        setCalendarEnd(ds)
+      }
+    }
+  }
+
+  function isInSelection(date) {
+    const ds = date.toISOString().slice(0, 10)
+    if (!calendarStart) return false
+    if (!calendarEnd) return ds === calendarStart
+    return ds >= calendarStart && ds <= calendarEnd
+  }
+
+  async function blockSelectedDates() {
+    if (!calendarStart || !calendarEnd) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/host/listings/${listingId}/blocked-dates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start_date: calendarStart, end_date: calendarEnd }),
+      })
+      if (res.ok) {
+        const d = await res.json()
+        setBlockedDates(prev => [...prev, d.blocked_date])
+        setCalendarStart(null)
+        setCalendarEnd(null)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function removeBlocked(id) {
+    const res = await fetch(`/api/host/listings/${listingId}/blocked-dates`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blocked_date_id: id }),
+    })
+    if (res.ok) setBlockedDates(prev => prev.filter(b => b.id !== id))
+  }
+
+  function renderMonth(year, month) {
+    const firstDay = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' })
+
+    const cells = []
+    for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} />)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d)
+      const past = date < today
+      const blocked = isInBlockedRange(date)
+      const selected = isInSelection(date)
+      cells.push(
+        <div
+          key={d}
+          onClick={() => !past && handleDayClick(date)}
+          style={{
+            height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '6px', fontSize: '0.8rem', fontWeight: selected ? 700 : 500,
+            cursor: past ? 'default' : 'pointer',
+            opacity: past ? 0.3 : 1,
+            background: selected ? 'var(--orange)' : blocked ? 'rgba(232,98,42,0.18)' : 'transparent',
+            color: selected ? 'white' : blocked ? 'var(--orange)' : 'var(--brown)',
+            border: selected ? 'none' : blocked ? '1.5px solid rgba(232,98,42,0.4)' : 'none',
+            transition: 'all 0.12s',
+          }}
+        >
+          {d}
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--brown)', marginBottom: '10px', textAlign: 'center' }}>{monthName}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
+          {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, color: 'var(--mid)', padding: '4px 0' }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px' }}>{cells}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Month navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <button
+          onClick={() => setCalendarMonth(m => {
+            let mo = m.month - 1, yr = m.year
+            if (mo < 0) { mo = 11; yr-- }
+            return { year: yr, month: mo }
+          })}
+          style={{ background: 'none', border: '1.5px solid var(--border)', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer', color: 'var(--mid)', fontFamily: 'Syne, sans-serif', fontSize: '0.8rem' }}
+        >←</button>
+        <button
+          onClick={() => setCalendarMonth(m => {
+            let mo = m.month + 1, yr = m.year
+            if (mo > 11) { mo = 0; yr++ }
+            return { year: yr, month: mo }
+          })}
+          style={{ background: 'none', border: '1.5px solid var(--border)', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer', color: 'var(--mid)', fontFamily: 'Syne, sans-serif', fontSize: '0.8rem' }}
+        >→</button>
+      </div>
+
+      {/* Calendar grid — show 2 months side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', background: 'white', border: '1.5px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+        {renderMonth(calendarMonth.year, calendarMonth.month)}
+        {renderMonth(
+          calendarMonth.month === 11 ? calendarMonth.year + 1 : calendarMonth.year,
+          calendarMonth.month === 11 ? 0 : calendarMonth.month + 1
+        )}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontSize: '0.72rem', color: 'var(--mid)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', background: 'var(--orange)', borderRadius: '3px', display: 'inline-block' }} /> Selected</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', background: 'rgba(232,98,42,0.18)', border: '1.5px solid rgba(232,98,42,0.4)', borderRadius: '3px', display: 'inline-block' }} /> Blocked</span>
+      </div>
+
+      {/* Block button */}
+      {calendarStart && calendarEnd && (
+        <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--brown)' }}>
+            Block <strong>{calendarStart}</strong> → <strong>{calendarEnd}</strong>
+          </div>
+          <button
+            onClick={blockSelectedDates}
+            disabled={saving}
+            style={{ background: 'var(--orange)', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Syne, sans-serif', opacity: saving ? 0.6 : 1 }}
+          >
+            {saving ? 'Saving…' : 'Block these dates'}
+          </button>
+          <button
+            onClick={() => { setCalendarStart(null); setCalendarEnd(null) }}
+            style={{ background: 'none', border: '1.5px solid var(--border)', color: 'var(--mid)', borderRadius: '8px', padding: '7px 12px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {calendarStart && !calendarEnd && (
+        <div style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--mid)' }}>
+          Start: <strong style={{ color: 'var(--brown)' }}>{calendarStart}</strong> — now click an end date
+        </div>
+      )}
+
+      {/* Active blocked ranges list */}
+      {blockedDates.length > 0 && (
+        <div style={{ marginTop: '20px' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--mid)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Active blocked ranges</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {blockedDates.map(b => (
+              <div key={b.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 14px', fontSize: '0.82rem' }}>
+                <span style={{ color: 'var(--brown)' }}>
+                  <strong>{b.start_date}</strong> → <strong>{b.end_date}</strong>
+                  {b.reason && <span style={{ color: 'var(--mid)', marginLeft: '8px' }}>· {b.reason}</span>}
+                </span>
+                <button
+                  onClick={() => removeBlocked(b.id)}
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, fontFamily: 'Syne, sans-serif', padding: '0 4px' }}
+                  title="Remove blocked dates"
+                >×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function ListPropertyInner() {
   const router = useRouter()
@@ -144,10 +362,43 @@ function ListPropertyInner() {
     securityDeposit: '',
     minBookingAge: '18',
     extraGuestFee: '',
+    // Property details
+    destination_tags: [],
+    nearby_attractions: '',
+    neighborhood_description: '',
+    // Availability controls
+    advance_notice_hours: 0,
+    preparation_days: 0,
+    max_nights: '',
+    // Guest info (private)
+    wifi_name: '',
+    wifi_password: '',
+    door_code: '',
+    parking_instructions: '',
+    welcome_message: '',
+    house_manual: '',
+    // Safety disclosures
+    has_security_cameras: false,
+    security_camera_details: '',
+    has_weapons: false,
+    must_climb_stairs: false,
+    no_elevator: false,
+    // Accessibility
+    step_free_entry: false,
+    wide_doorways: false,
+    ground_floor: false,
   })
 
   // Room types for hotel path
   const [roomTypes, setRoomTypes] = useState([])
+
+  // Blocked dates calendar state
+  const [blockedDates, setBlockedDates] = useState([])
+  const [calendarStart, setCalendarStart] = useState(null)
+  const [calendarEnd, setCalendarEnd]   = useState(null)
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }
+  })
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -197,6 +448,31 @@ function ListPropertyInner() {
           securityDeposit:    listing.security_deposit     != null ? String(listing.security_deposit) : '',
           minBookingAge:      listing.min_booking_age      != null ? String(listing.min_booking_age)  : '18',
           extraGuestFee:      listing.extra_guest_fee      != null ? String(listing.extra_guest_fee)  : '',
+          // Property details
+          destination_tags:          Array.isArray(listing.destination_tags) ? listing.destination_tags : [],
+          nearby_attractions:        listing.nearby_attractions        || '',
+          neighborhood_description:  listing.neighborhood_description  || '',
+          // Availability controls
+          advance_notice_hours: listing.advance_notice_hours ?? 0,
+          preparation_days:     listing.preparation_days     ?? 0,
+          max_nights:           listing.max_nights != null ? String(listing.max_nights) : '',
+          // Guest info
+          wifi_name:            listing.wifi_name            || '',
+          wifi_password:        listing.wifi_password        || '',
+          door_code:            listing.door_code            || '',
+          parking_instructions: listing.parking_instructions || '',
+          welcome_message:      listing.welcome_message      || '',
+          house_manual:         listing.house_manual         || '',
+          // Safety
+          has_security_cameras:   listing.has_security_cameras   || false,
+          security_camera_details: listing.security_camera_details || '',
+          has_weapons:            listing.has_weapons            || false,
+          must_climb_stairs:      listing.must_climb_stairs      || false,
+          no_elevator:            listing.no_elevator            || false,
+          // Accessibility
+          step_free_entry: listing.step_free_entry || false,
+          wide_doorways:   listing.wide_doorways   || false,
+          ground_floor:    listing.ground_floor    || false,
         }))
         // Load existing rooms for hotel listings
         if (existingRooms?.length) {
@@ -219,6 +495,12 @@ function ListPropertyInner() {
             .eq('listing_id', editId).eq('status', 'open')
             .order('created_at', { ascending: false })
           setChangeNotes(crs || [])
+        }
+        // Load existing blocked dates
+        const res = await fetch(`/api/host/listings/${editId}/blocked-dates`)
+        if (res.ok) {
+          const d = await res.json()
+          setBlockedDates(d.blocked_dates || [])
         }
       }
     })
@@ -296,6 +578,31 @@ function ListPropertyInner() {
         security_deposit:    form.securityDeposit    ? parseFloat(form.securityDeposit)  : 0,
         min_booking_age:     form.minBookingAge      ? parseInt(form.minBookingAge)      : 18,
         extra_guest_fee:     form.extraGuestFee      ? parseFloat(form.extraGuestFee)    : 0,
+        // Property details
+        destination_tags:         form.destination_tags?.length > 0 ? form.destination_tags : null,
+        nearby_attractions:       form.nearby_attractions       || null,
+        neighborhood_description: form.neighborhood_description || null,
+        // Availability controls
+        advance_notice_hours: form.advance_notice_hours ?? 0,
+        preparation_days:     form.preparation_days     ?? 0,
+        max_nights:           form.max_nights ? parseInt(form.max_nights) : null,
+        // Guest info
+        wifi_name:            form.wifi_name            || null,
+        wifi_password:        form.wifi_password        || null,
+        door_code:            form.door_code            || null,
+        parking_instructions: form.parking_instructions || null,
+        welcome_message:      form.welcome_message      || null,
+        house_manual:         form.house_manual         || null,
+        // Safety
+        has_security_cameras:    form.has_security_cameras,
+        security_camera_details: form.security_camera_details || null,
+        has_weapons:             form.has_weapons,
+        must_climb_stairs:       form.must_climb_stairs,
+        no_elevator:             form.no_elevator,
+        // Accessibility
+        step_free_entry: form.step_free_entry,
+        wide_doorways:   form.wide_doorways,
+        ground_floor:    form.ground_floor,
       }
 
       let error
@@ -403,6 +710,31 @@ function ListPropertyInner() {
         security_deposit:    form.securityDeposit    ? parseFloat(form.securityDeposit)  : 0,
         min_booking_age:     form.minBookingAge      ? parseInt(form.minBookingAge)      : 18,
         extra_guest_fee:     form.extraGuestFee      ? parseFloat(form.extraGuestFee)    : 0,
+        // Property details
+        destination_tags:         form.destination_tags?.length > 0 ? form.destination_tags : null,
+        nearby_attractions:       form.nearby_attractions       || null,
+        neighborhood_description: form.neighborhood_description || null,
+        // Availability controls
+        advance_notice_hours: form.advance_notice_hours ?? 0,
+        preparation_days:     form.preparation_days     ?? 0,
+        max_nights:           form.max_nights ? parseInt(form.max_nights) : null,
+        // Guest info
+        wifi_name:            form.wifi_name            || null,
+        wifi_password:        form.wifi_password        || null,
+        door_code:            form.door_code            || null,
+        parking_instructions: form.parking_instructions || null,
+        welcome_message:      form.welcome_message      || null,
+        house_manual:         form.house_manual         || null,
+        // Safety
+        has_security_cameras:    form.has_security_cameras,
+        security_camera_details: form.security_camera_details || null,
+        has_weapons:             form.has_weapons,
+        must_climb_stairs:       form.must_climb_stairs,
+        no_elevator:             form.no_elevator,
+        // Accessibility
+        step_free_entry: form.step_free_entry,
+        wide_doorways:   form.wide_doorways,
+        ground_floor:    form.ground_floor,
       }
 
       let listing, listingError
@@ -489,13 +821,17 @@ function ListPropertyInner() {
   const subcategories = hostType === 'private_stay' ? PRIVATE_SUBCATEGORIES : HOTEL_SUBCATEGORIES
   const steps = hostType === 'hotel' ? HOTEL_STEPS : STEPS
   const totalSteps = steps.length
-  const reviewStep    = totalSteps       // last step
-  const pricingStep   = totalSteps - 1
-  const photosStep    = totalSteps - 2
-  const amenitiesStep = totalSteps - 3
-  const policiesStep  = totalSteps - 4
-  const basicsStep    = hostType === 'hotel' ? 4 : 3
-  const roomTypesStep = hostType === 'hotel' ? 3 : null
+  const reviewStep        = totalSteps       // last step
+  const pricingStep       = totalSteps - 1
+  const photosStep        = totalSteps - 2
+  const safetyStep        = totalSteps - 3
+  const guestInfoStep     = totalSteps - 4
+  const availabilityStep  = totalSteps - 5
+  const propDetailsStep   = totalSteps - 6
+  const amenitiesStep     = totalSteps - 7
+  const policiesStep      = totalSteps - 8
+  const basicsStep        = hostType === 'hotel' ? 4 : 3
+  const roomTypesStep     = hostType === 'hotel' ? 3 : null
   const progressPct = Math.round(((step - 1) / (totalSteps - 1)) * 100)
 
   // ──────────────── SUCCESS SCREEN ────────────────
@@ -1097,6 +1433,233 @@ function ListPropertyInner() {
               </div>
             )}
 
+            {/* ── STEP 6/7: Property Details ── */}
+            {step === propDetailsStep && (
+              <div>
+                <div className="section-title">Property identity &amp; location details</div>
+                <div className="section-sub">Help guests discover your property with destination tags and local context.</div>
+
+                {/* Destination tags — private stays only */}
+                {hostType === 'private_stay' && (
+                  <div style={{ marginBottom: '28px' }}>
+                    <div className="section-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>
+                      Destination tags <span style={{ color: 'var(--mid)', fontWeight: 400, fontSize: '0.8rem' }}>— optional, pick all that apply</span>
+                    </div>
+                    <div className="section-sub" style={{ marginBottom: '14px' }}>What kind of getaway is your property near?</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      {DESTINATION_TAGS.map(tag => {
+                        const active = form.destination_tags.includes(tag.id)
+                        return (
+                          <div
+                            key={tag.id}
+                            onClick={() => update('destination_tags', active ? form.destination_tags.filter(t => t !== tag.id) : [...form.destination_tags, tag.id])}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '8px 16px', borderRadius: '100px', cursor: 'pointer',
+                              border: `1.5px solid ${active ? 'var(--orange)' : 'var(--border)'}`,
+                              background: active ? 'rgba(232,98,42,0.08)' : 'var(--card)',
+                              fontSize: '0.84rem', fontWeight: active ? 700 : 500,
+                              color: active ? 'var(--orange)' : 'var(--brown)',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            <span>{tag.icon}</span> {tag.label}
+                            {active && <span style={{ fontSize: '0.7rem' }}>✓</span>}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">Neighborhood description <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <textarea
+                    className="form-textarea"
+                    placeholder="Describe the vibe of your neighborhood — quiet suburb, walkable downtown, beachside village…"
+                    value={form.neighborhood_description}
+                    onChange={e => update('neighborhood_description', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Nearby attractions &amp; getting around <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <textarea
+                    className="form-textarea"
+                    placeholder="e.g. 5 min walk to beach, 10 min to downtown, ski lift 2 miles, Whole Foods nearby…"
+                    value={form.nearby_attractions}
+                    onChange={e => update('nearby_attractions', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 7/8: Availability ── */}
+            {step === availabilityStep && (
+              <div>
+                <div className="section-title">Availability settings</div>
+                <div className="section-sub">Control how guests can book and block off dates you're unavailable.</div>
+
+                {/* Advance notice, preparation time, max nights */}
+                <div className="policy-row" style={{ marginBottom: '24px' }}>
+                  <div>
+                    <label className="form-label">Advance notice</label>
+                    <select className="policy-select" value={form.advance_notice_hours} onChange={e => update('advance_notice_hours', parseInt(e.target.value))}>
+                      <option value={0}>Same day</option>
+                      <option value={24}>At least 1 day</option>
+                      <option value={48}>At least 2 days</option>
+                      <option value={168}>At least 1 week</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Preparation time between bookings</label>
+                    <select className="policy-select" value={form.preparation_days} onChange={e => update('preparation_days', parseInt(e.target.value))}>
+                      <option value={0}>None</option>
+                      <option value={1}>1 day</option>
+                      <option value={2}>2 days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ maxWidth: '50%', paddingRight: '7px' }}>
+                  <label className="form-label">Max nights per stay <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <input className="form-input" type="number" min="1" placeholder="No limit" value={form.max_nights} onChange={e => update('max_nights', e.target.value)} />
+                </div>
+
+                {/* Blocked dates calendar */}
+                {draftId && (
+                  <div style={{ marginTop: '28px' }}>
+                    <div className="section-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>Block dates</div>
+                    <div className="section-sub" style={{ marginBottom: '16px' }}>Mark dates unavailable — guests won't be able to book them.</div>
+                    <BlockedDatesCalendar
+                      listingId={draftId}
+                      blockedDates={blockedDates}
+                      setBlockedDates={setBlockedDates}
+                      calendarStart={calendarStart}
+                      setCalendarStart={setCalendarStart}
+                      calendarEnd={calendarEnd}
+                      setCalendarEnd={setCalendarEnd}
+                      calendarMonth={calendarMonth}
+                      setCalendarMonth={setCalendarMonth}
+                    />
+                  </div>
+                )}
+                {!draftId && (
+                  <div className="hint" style={{ marginTop: '16px' }}>
+                    <div className="hint-icon">💡</div>
+                    <div className="hint-text">Save a draft first (top bar) to unlock the blocked-dates calendar.</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── STEP 8/9: Guest Info ── */}
+            {step === guestInfoStep && (
+              <div>
+                <div className="section-title">Guest access info</div>
+                <div className="section-sub">These details are only shown to guests <strong>after they book</strong>. Never visible publicly.</div>
+
+                <div style={{ background: 'rgba(232,98,42,0.04)', border: '1px solid rgba(232,98,42,0.15)', borderRadius: '10px', padding: '10px 14px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--mid)' }}>
+                  <span>🔒</span> All fields on this page are <strong style={{ color: 'var(--brown)' }}>private</strong> — shown only to confirmed guests.
+                </div>
+
+                <div className="form-grid">
+                  <div>
+                    <label className="form-label">WiFi network name</label>
+                    <input className="form-input" placeholder="HomeNetwork_5G" value={form.wifi_name} onChange={e => update('wifi_name', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="form-label">WiFi password</label>
+                    <input className="form-input" placeholder="supersecret123" value={form.wifi_password} onChange={e => update('wifi_password', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Door / lockbox code</label>
+                  <input className="form-input" placeholder="e.g. 1234 or 2-5-3-1" value={form.door_code} onChange={e => update('door_code', e.target.value)} style={{ fontFamily: 'monospace', fontSize: '1rem', letterSpacing: '0.1em' }} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Parking instructions <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <textarea className="form-textarea" rows={2} placeholder="e.g. Park in the driveway, street parking available on Oak St after 6 PM…" value={form.parking_instructions} onChange={e => update('parking_instructions', e.target.value)} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Welcome message <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <textarea className="form-textarea" rows={3} placeholder="Welcome to our home! We hope you have a wonderful stay…" value={form.welcome_message} onChange={e => update('welcome_message', e.target.value)} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">House manual <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+                  <textarea className="form-textarea" rows={5} placeholder="Full instructions: how to use the TV, appliances, trash schedule, emergency contacts…" value={form.house_manual} onChange={e => update('house_manual', e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 9/10: Safety & Accessibility ── */}
+            {step === safetyStep && (
+              <div>
+                <div className="section-title">Safety &amp; accessibility</div>
+                <div className="section-sub">These disclosures are shown publicly so guests can make informed decisions.</div>
+
+                <div style={{ marginBottom: '28px' }}>
+                  <div className="section-title" style={{ fontSize: '0.88rem', marginBottom: '12px' }}>Safety disclosures</div>
+                  {[
+                    { key: 'has_security_cameras', label: '📷 Security cameras or recording devices present', sub: 'Indoor/outdoor cameras, video doorbells, etc.' },
+                    { key: 'has_weapons', label: '⚠️ Weapons on the property', sub: 'Firearms, hunting equipment, or other weapons' },
+                    { key: 'must_climb_stairs', label: '🪜 Must climb stairs to access the property', sub: 'No ground-floor entry without stairs' },
+                    { key: 'no_elevator', label: '🚫 No elevator available', sub: 'Property is above ground floor with no lift' },
+                  ].map(item => (
+                    <div key={item.key} className="toggle-row">
+                      <div className="toggle-info">
+                        <h4 style={{ fontSize: '0.88rem' }}>{item.label}</h4>
+                        <p>{item.sub}</p>
+                      </div>
+                      <button
+                        className="toggle-switch"
+                        style={{ background: form[item.key] ? 'var(--orange)' : 'var(--border)' }}
+                        onClick={() => update(item.key, !form[item.key])}
+                      >
+                        <div className="toggle-knob" style={{ transform: form[item.key] ? 'translateX(20px)' : 'translateX(2px)' }} />
+                      </button>
+                    </div>
+                  ))}
+
+                  {form.has_security_cameras && (
+                    <div className="form-group" style={{ marginTop: '12px' }}>
+                      <label className="form-label">Camera details <span style={{ color: 'var(--mid)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(where are they?)</span></label>
+                      <input className="form-input" placeholder="e.g. Front door doorbell camera, outdoor patio camera only" value={form.security_camera_details} onChange={e => update('security_camera_details', e.target.value)} />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="section-title" style={{ fontSize: '0.88rem', marginBottom: '12px' }}>Accessibility features</div>
+                  {[
+                    { key: 'step_free_entry', label: '♿ Step-free entry', sub: 'No steps to access the main entrance' },
+                    { key: 'wide_doorways', label: '🚪 Wide doorways', sub: '32 inches or wider — wheelchair accessible' },
+                    { key: 'ground_floor', label: '🏠 Ground floor property', sub: 'Property is entirely on the ground floor' },
+                  ].map(item => (
+                    <div key={item.key} className="toggle-row">
+                      <div className="toggle-info">
+                        <h4 style={{ fontSize: '0.88rem' }}>{item.label}</h4>
+                        <p>{item.sub}</p>
+                      </div>
+                      <button
+                        className="toggle-switch"
+                        style={{ background: form[item.key] ? 'var(--orange)' : 'var(--border)' }}
+                        onClick={() => update(item.key, !form[item.key])}
+                      >
+                        <div className="toggle-knob" style={{ transform: form[item.key] ? 'translateX(20px)' : 'translateX(2px)' }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* ── STEP: Photos ── */}
             {step === photosStep && (
               <div>
@@ -1249,6 +1812,16 @@ function ListPropertyInner() {
                   <h3>Photos & amenities</h3>
                   <div className="review-row"><span className="review-key">Photos</span><span className="review-val">{form.photoUrls.length} uploaded</span></div>
                   <div className="review-row"><span className="review-key">Amenities</span><span className="review-val">{form.amenities.length} selected</span></div>
+                </div>
+
+                <div className="review-section">
+                  <h3>Availability & extras</h3>
+                  <div className="review-row"><span className="review-key">Advance notice</span><span className="review-val">{{0:'Same day',24:'1 day',48:'2 days',168:'1 week'}[form.advance_notice_hours] || 'Same day'}</span></div>
+                  <div className="review-row"><span className="review-key">Preparation time</span><span className="review-val">{form.preparation_days === 0 ? 'None' : `${form.preparation_days} day${form.preparation_days !== 1 ? 's' : ''}`}</span></div>
+                  {form.max_nights && <div className="review-row"><span className="review-key">Max stay</span><span className="review-val">{form.max_nights} nights</span></div>}
+                  <div className="review-row"><span className="review-key">Blocked dates</span><span className="review-val">{blockedDates.length} range{blockedDates.length !== 1 ? 's' : ''}</span></div>
+                  <div className="review-row"><span className="review-key">Destination tags</span><span className="review-val">{form.destination_tags?.length > 0 ? form.destination_tags.map(id => DESTINATION_TAGS.find(t => t.id === id)?.label).filter(Boolean).join(', ') : '—'}</span></div>
+                  <div className="review-row"><span className="review-key">Guest access info</span><span className="review-val">{form.wifi_name || form.door_code ? '✓ Provided' : '—'}</span></div>
                 </div>
 
                 <div style={{ background: 'rgba(232,98,42,0.04)', border: '1px solid rgba(232,98,42,0.15)', borderRadius: '12px', padding: '18px 20px', marginTop: '8px', marginBottom: '16px' }}>

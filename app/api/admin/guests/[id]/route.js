@@ -5,6 +5,7 @@ import { logAction } from '@/lib/audit-log'
 import { getAdminSession } from '@/lib/get-admin-session'
 import { getOverrideSession } from '@/lib/get-override-session'
 import { notifyUser } from '@/lib/notify-user'
+import { sendEmail, adminPasswordResetEmailHtml } from '@/lib/send-email'
 
 export async function GET(_req, { params }) {
   const { role, error } = await getAdminSession()
@@ -59,7 +60,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, suspension_category, admin_notes, reason } = body
 
-  const validActions = ['suspend', 'deactivate', 'reactivate', 'approve_account', 'reject_account', 'verify_user', 'unverify_user']
+  const validActions = ['suspend', 'deactivate', 'reactivate', 'approve_account', 'reject_account', 'verify_user', 'unverify_user', 'send_password_reset']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
@@ -120,6 +121,47 @@ export async function PATCH(request, { params }) {
     await logAction({
       actorId: user.id, actorEmail: user.email, actorRole: role,
       action: 'guest.unverify_user', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'send_password_reset') {
+    if (!['support', 'admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    const { data: guestRow } = await adminClient.from('users').select('email').eq('id', id).single()
+    let email = guestRow?.email
+    if (!email) {
+      const { data: authUser } = await adminClient.auth.admin.getUserById(id)
+      email = authUser?.user?.email
+    }
+    if (!email) {
+      return NextResponse.json({ error: 'User has no email on file' }, { status: 400 })
+    }
+    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+    })
+    const resetLink = linkData?.properties?.action_link ?? linkData?.action_link
+    if (linkError || !resetLink) {
+      console.error('[admin] generateLink recovery failed:', linkError?.message ?? linkData)
+      return NextResponse.json({ error: linkError?.message ?? 'Failed to generate reset link' }, { status: 500 })
+    }
+    const { error: sendErr } = await sendEmail({
+      to: email,
+      subject: 'Reset your SnapReserve™ password',
+      html: adminPasswordResetEmailHtml({ resetLink }),
+      text: `Reset your password: ${resetLink}\n\nThis link expires in 1 hour.`,
+    })
+    if (sendErr) {
+      console.error('[admin] password reset email failed:', sendErr)
+      return NextResponse.json({ error: 'Reset link generated but email failed: ' + sendErr }, { status: 500 })
+    }
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.send_password_reset', targetType: 'user', targetId: id,
       ipAddress: ip, userAgent: ua,
     })
     return NextResponse.json({ success: true })

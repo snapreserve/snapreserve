@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getUserSession } from '@/lib/get-user-session'
 import ReportButton from './ReportButton'
@@ -26,8 +27,10 @@ export default async function PropertyPage({ params, searchParams }) {
 
   const admin = createAdminClient()
 
-  const [{ data: listing }, { data: rooms }, { user }] = await Promise.all([
-    admin.from('listings').select('id, title, city, state, country, property_type, property_subcategory, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active, editors_pick').eq('id', id).single(),
+  const selectColumns = 'id, title, city, state, country, property_type, property_subcategory, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active, destination_tags, nearby_attractions, neighborhood_description, has_security_cameras, security_camera_details, has_weapons, must_climb_stairs, no_elevator, step_free_entry, wide_doorways, ground_floor'
+
+  const [{ data: listing }, { data: rooms }, user] = await Promise.all([
+    admin.from('listings').select(selectColumns).eq('id', id).single(),
     admin.from('rooms').select('*').eq('listing_id', id).eq('is_available', true).order('price_per_night', { ascending: true }),
     getUserSession(),
   ])
@@ -72,12 +75,7 @@ export default async function PropertyPage({ params, searchParams }) {
     : { data: null }
 
   if (!listing) {
-    return (
-      <div style={{ textAlign: 'center', padding: '80px', fontFamily: 'Syne, sans-serif', background: '#faf6f0', minHeight: '100vh' }}>
-        <h2 style={{ color: '#3a1f0d' }}>Property not found</h2>
-        <a href="/listings" style={{ color: '#e8622a' }}>← Back to listings</a>
-      </div>
-    )
+    notFound()
   }
 
   function fmt12(t) {
@@ -409,7 +407,7 @@ export default async function PropertyPage({ params, searchParams }) {
               {listing.rating > 0 && (
                 <span className="rating-stars">★ {listing.rating} · <span style={{ color: '#7a5c3a', fontWeight: 400 }}>{listing.review_count} review{listing.review_count !== 1 ? 's' : ''}</span></span>
               )}
-              {listing.editors_pick && (
+              {(listing.editors_pick ?? false) && (
                 <span className="type-badge" style={{ background: 'rgba(252,211,77,0.15)', color: '#B45309', borderColor: 'rgba(252,211,77,0.4)' }}>⭐ Editor's Pick</span>
               )}
               <span className={`type-badge ${listing.property_type === 'hotel' ? 'hotel-badge' : 'stay-badge'}`}>
@@ -595,6 +593,122 @@ export default async function PropertyPage({ params, searchParams }) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* DESTINATION TAGS */}
+            {Array.isArray(listing.destination_tags) && listing.destination_tags.length > 0 && (
+              <>
+                <hr className="divider" />
+                <div className="section">
+                  <div className="section-title">Destination</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {listing.destination_tags.map(tag => {
+                      const DEST_TAG_MAP = {
+                        ski_resort: { icon: '⛷️', label: 'Ski Resort' },
+                        wine_country: { icon: '🍷', label: 'Wine Country' },
+                        national_park: { icon: '🏕️', label: 'National Park' },
+                        lake_house: { icon: '🏞️', label: 'Lake House' },
+                        desert: { icon: '🏜️', label: 'Desert' },
+                        golf: { icon: '⛳', label: 'Golf' },
+                        vineyard: { icon: '🍇', label: 'Vineyard' },
+                        hot_springs: { icon: '♨️', label: 'Hot Springs' },
+                        historic: { icon: '🏛️', label: 'Historic' },
+                        island: { icon: '🏝️', label: 'Island' },
+                      }
+                      const t = DEST_TAG_MAP[tag]
+                      if (!t) return null
+                      return (
+                        <span key={tag} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 14px', border: '1.5px solid var(--border)', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--brown)', background: 'var(--card)' }}>
+                          {t.icon} {t.label}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* NEIGHBORHOOD */}
+            {listing.neighborhood_description && (
+              <>
+                <hr className="divider" />
+                <div className="section">
+                  <div className="section-title">The neighborhood</div>
+                  <p className="description">{listing.neighborhood_description}</p>
+                </div>
+              </>
+            )}
+
+            {/* NEARBY ATTRACTIONS */}
+            {listing.nearby_attractions && (
+              <>
+                <hr className="divider" />
+                <div className="section">
+                  <div className="section-title">Getting around</div>
+                  <p className="description">{listing.nearby_attractions}</p>
+                </div>
+              </>
+            )}
+
+            {/* SAFETY & ACCESSIBILITY */}
+            {(listing.has_security_cameras || listing.has_weapons || listing.must_climb_stairs || listing.no_elevator || listing.step_free_entry || listing.wide_doorways || listing.ground_floor) && (
+              <>
+                <hr className="divider" />
+                <div className="section">
+                  <div className="section-title">Safety &amp; accessibility</div>
+                  <div className="policies-grid">
+                    {listing.has_security_cameras && (
+                      <div className="policy-card">
+                        <div className="policy-icon">📷</div>
+                        <div className="policy-title">Security cameras</div>
+                        <div className="policy-val">{listing.security_camera_details || 'Present on property'}</div>
+                      </div>
+                    )}
+                    {listing.has_weapons && (
+                      <div className="policy-card">
+                        <div className="policy-icon">⚠️</div>
+                        <div className="policy-title">Weapons present</div>
+                        <div className="policy-val">Weapons are present on this property</div>
+                      </div>
+                    )}
+                    {listing.must_climb_stairs && (
+                      <div className="policy-card">
+                        <div className="policy-icon">🪜</div>
+                        <div className="policy-title">Stairs required</div>
+                        <div className="policy-val">Must climb stairs to access property</div>
+                      </div>
+                    )}
+                    {listing.no_elevator && (
+                      <div className="policy-card">
+                        <div className="policy-icon">🚫</div>
+                        <div className="policy-title">No elevator</div>
+                        <div className="policy-val">No elevator available</div>
+                      </div>
+                    )}
+                    {listing.step_free_entry && (
+                      <div className="policy-card">
+                        <div className="policy-icon">♿</div>
+                        <div className="policy-title">Step-free entry</div>
+                        <div className="policy-val">Accessible step-free entrance</div>
+                      </div>
+                    )}
+                    {listing.wide_doorways && (
+                      <div className="policy-card">
+                        <div className="policy-icon">🚪</div>
+                        <div className="policy-title">Wide doorways</div>
+                        <div className="policy-val">Wheelchair-accessible doorways</div>
+                      </div>
+                    )}
+                    {listing.ground_floor && (
+                      <div className="policy-card">
+                        <div className="policy-icon">🏠</div>
+                        <div className="policy-title">Ground floor</div>
+                        <div className="policy-val">Property is on the ground floor</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
 
             <hr className="divider" />

@@ -30,6 +30,10 @@ function fmtDate(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+function fmtDateTime(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+}
 
 function fmtMoney(n) {
   return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
@@ -58,6 +62,7 @@ export default function UsersClient({ initialUsers, role }) {
   const [suspReason, setSuspReason] = useState('')
   const [suspCat, setSuspCat]     = useState('policy_violation')
   const [suspending, setSuspending] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -156,6 +161,27 @@ export default function UsersClient({ initialUsers, role }) {
   }
 
   const canSuspend = ['admin', 'super_admin', 'trust_safety'].includes(role)
+  const canSendPasswordReset = ['support', 'admin', 'super_admin'].includes(role)
+
+  async function sendPasswordReset() {
+    if (!selected?.email || resetLoading) return
+    if (!window.confirm(`Send a password reset email to ${selected.email}?`)) return
+    setResetLoading(true)
+    try {
+      const res = await fetch(`/api/admin/guests/${selected.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_password_reset' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Request failed')
+      showToast('Password reset email sent.')
+    } catch (e) {
+      showToast(e.message, 'error')
+    } finally {
+      setResetLoading(false)
+    }
+  }
 
   const initials = u => u.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || u.email?.[0]?.toUpperCase() || '?'
 
@@ -220,7 +246,7 @@ export default function UsersClient({ initialUsers, role }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--sr-border-solid)' }}>
-                {['User', 'Account Type', 'Status', 'Joined', 'Bookings', 'Listings', ''].map(h => (
+                {['User', 'Account Type', 'Status', 'Signed up', 'Bookings', 'Listings', ''].map(h => (
                   <th key={h} style={{ padding: '10px 10px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -246,7 +272,7 @@ export default function UsersClient({ initialUsers, role }) {
                   </td>
                   <td style={{ padding: '10px 10px' }}><AccountTypeBadge user={u} /></td>
                   <td style={{ padding: '10px 10px' }}><StatusBadge active={u.is_active} suspended={!!u.suspended_at} /></td>
-                  <td style={{ padding: '10px 10px', color: 'var(--sr-muted)' }}>{fmtDate(u.created_at)}</td>
+                  <td style={{ padding: '10px 10px', color: 'var(--sr-muted)' }}>{fmtDateTime(u.created_at)}</td>
                   <td style={{ padding: '10px 10px', color: 'var(--sr-muted)', textAlign: 'center' }}>{u.booking_count || '—'}</td>
                   <td style={{ padding: '10px 10px', color: 'var(--sr-muted)', textAlign: 'center' }}>
                     {(u.is_host || u.user_role === 'host') ? (u.listing_count || '—') : '—'}
@@ -285,7 +311,7 @@ export default function UsersClient({ initialUsers, role }) {
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
               {[
-                { label: 'Joined',     val: fmtDate(selected.created_at) },
+                { label: 'Signed up',  val: fmtDateTime(selected.created_at) },
                 { label: 'Bookings',   val: selected.booking_count || 0 },
                 { label: 'Total Spent', val: fmtMoney(selected.total_spent) },
                 { label: 'Listings',   val: (selected.is_host || selected.user_role === 'host') ? (selected.listing_count || 0) : 'N/A' },
@@ -335,6 +361,15 @@ export default function UsersClient({ initialUsers, role }) {
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--sr-darker)', border: '1px solid var(--sr-border-solid)', borderRadius: 10, color: 'var(--sr-text)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}
                 >
                   <span>💬</span> Message User
+                </button>
+              )}
+              {canSendPasswordReset && selected.email && (
+                <button
+                  onClick={sendPasswordReset}
+                  disabled={!!resetLoading}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--sr-darker)', border: '1px solid var(--sr-border-solid)', borderRadius: 10, color: 'var(--sr-text)', fontSize: '0.82rem', fontWeight: 600, cursor: resetLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', width: '100%', textAlign: 'left' }}
+                >
+                  <span>🔑</span> {resetLoading ? 'Sending…' : 'Send password reset email'}
                 </button>
               )}
               {canSuspend && !selected.suspended_at && (

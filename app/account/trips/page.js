@@ -44,10 +44,58 @@ function StarPicker({ value, onChange, size = 22 }) {
   )
 }
 
+function HouseInfoCard({ listing }) {
+  const [open, setOpen] = useState(false)
+  const hasInfo = listing?.wifi_name || listing?.door_code || listing?.parking_instructions || listing?.welcome_message
+  if (!hasInfo) return null
+  return (
+    <div style={{ marginTop: '12px', border: '1px solid #E8E2D9', borderRadius: '10px', overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', background: '#FFF8F5', border: 'none', borderBottom: open ? '1px solid #E8E2D9' : 'none', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.82rem', fontWeight: 700, color: '#3a1f0d' }}
+      >
+        <span>🔑 House Info</span>
+        <span style={{ fontSize: '0.72rem', color: '#A89880', fontWeight: 400 }}>{open ? 'Hide ▲' : 'Show ▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'white' }}>
+          {listing.wifi_name && (
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '2px' }}>WiFi Network</div>
+              <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#3a1f0d' }}>{listing.wifi_name}</div>
+              {listing.wifi_password && <div style={{ fontSize: '0.78rem', color: '#6B5F54', marginTop: '2px' }}>Password: <span style={{ fontFamily: 'monospace', background: '#F5F0EB', padding: '1px 6px', borderRadius: '4px' }}>{listing.wifi_password}</span></div>}
+            </div>
+          )}
+          {listing.door_code && (
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '2px' }}>Door Code</div>
+              <div style={{ fontSize: '0.9rem', fontFamily: 'monospace', fontWeight: 700, color: '#F4601A', background: '#FFF3EE', padding: '4px 10px', borderRadius: '6px', display: 'inline-block' }}>{listing.door_code}</div>
+            </div>
+          )}
+          {listing.parking_instructions && (
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '2px' }}>Parking</div>
+              <div style={{ fontSize: '0.82rem', color: '#3a1f0d', lineHeight: 1.6 }}>{listing.parking_instructions}</div>
+            </div>
+          )}
+          {listing.welcome_message && (
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89880', marginBottom: '2px' }}>Welcome Message</div>
+              <div style={{ fontSize: '0.82rem', color: '#3a1f0d', lineHeight: 1.6, fontStyle: 'italic' }}>{listing.welcome_message}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function TripsPage() {
   const [filter, setFilter]         = useState('upcoming')
   const [bookings, setBookings]     = useState([])
+  const [hostBookings, setHostBookings] = useState([])
   const [loading, setLoading]       = useState(true)
+  const [hostLoading, setHostLoading]   = useState(false)
   const [cancelModal, setCancelModal] = useState(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
@@ -78,7 +126,25 @@ export default function TripsPage() {
     }
   }
 
+  async function loadHostBookings() {
+    setHostLoading(true)
+    try {
+      const res = await fetch('/api/host/bookings?status=upcoming&limit=50')
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && Array.isArray(json.bookings)) setHostBookings(json.bookings)
+      else setHostBookings([])
+    } catch {
+      setHostBookings([])
+    } finally {
+      setHostLoading(false)
+    }
+  }
+
   useEffect(() => { load(filter) }, [filter])
+  useEffect(() => {
+    if (filter === 'upcoming') loadHostBookings()
+    else setHostBookings([])
+  }, [filter])
 
   function canCancel(b) {
     return ['pending', 'confirmed'].includes(b.status) && filter === 'upcoming'
@@ -158,7 +224,7 @@ export default function TripsPage() {
 
       {loading && <div style={{ color: '#A89880', fontSize: '0.88rem' }}>Loading…</div>}
 
-      {!loading && bookings.length === 0 && (
+      {!loading && bookings.length === 0 && (filter !== 'upcoming' || hostBookings.length === 0) && (
         <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🧳</div>
           <div style={{ fontWeight: 700, marginBottom: '8px' }}>No {filter} trips</div>
@@ -169,6 +235,52 @@ export default function TripsPage() {
             Browse properties
           </a>
         </div>
+      )}
+
+      {/* Upcoming at your properties (for hosts) */}
+      {filter === 'upcoming' && (hostBookings.length > 0 || hostLoading) && (
+        <div style={{ marginBottom: '28px' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: '#1A1410' }}>Upcoming at your properties</h2>
+          {hostLoading ? (
+            <div style={{ color: '#A89880', fontSize: '0.88rem' }}>Loading…</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {hostBookings.map(b => (
+                <a key={b.id} href={`/host/bookings/${b.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ flex: 1, padding: '20px 24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.96rem' }}>{b.listing_title || 'Property'}</div>
+                        <span style={{ background: 'rgba(22,163,74,0.08)', color: '#16A34A', borderRadius: '100px', padding: '3px 10px', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>
+                          {b.status === 'checked_in' ? 'Checked in' : 'Confirmed'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: '#6B5F54', marginBottom: '6px' }}>
+                        Guest: {b.guest_name || b.guest_email || '—'}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: '#6B5F54', marginBottom: '12px' }}>
+                        {b.listing_city}{b.listing_state ? `, ${b.listing_state}` : ''}
+                      </div>
+                      <div style={{ display: 'flex', gap: '24px', fontSize: '0.82rem', color: '#6B5F54', marginBottom: '12px' }}>
+                        <span>{fmt(b.check_in)} → {fmt(b.check_out)}</span>
+                        <span>{b.nights} night{b.nights !== 1 ? 's' : ''}</span>
+                        <span>{b.guests} guest{b.guests !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.94rem' }}>${Number(b.total_amount).toFixed(2)} total</div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#F4601A' }}>View booking →</span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {filter === 'upcoming' && hostBookings.length > 0 && bookings.length > 0 && (
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: '#1A1410' }}>Your trips (as guest)</h2>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -198,7 +310,9 @@ export default function TripsPage() {
                   <span>{b.guests} guest{b.guests !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                {b.status === 'confirmed' && <HouseInfoCard listing={b.listings} />}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.94rem' }}>
                     ${Number(b.total_amount).toFixed(2)} total
                   </div>

@@ -21,13 +21,14 @@ export async function GET() {
     const fullName = meta.full_name ?? meta.name ?? ''
     const parts = fullName.trim().split(' ')
     const fallback = {
-      id:         user.id,
-      email:      user.email,
-      full_name:  fullName,
-      first_name: parts[0] || '',
-      last_name:  parts.slice(1).join(' ') || '',
-      avatar_url: meta.avatar_url ?? null,
-      is_host:    false,
+      id:                      user.id,
+      email:                   user.email,
+      full_name:               fullName,
+      first_name:              parts[0] || '',
+      last_name:               parts.slice(1).join(' ') || '',
+      avatar_url:              meta.avatar_url ?? null,
+      is_host:                 false,
+      verification_reference:  meta.verification_reference ?? null,
     }
     await admin.from('users').upsert(fallback, { onConflict: 'id' })
     return NextResponse.json({ ...fallback, booking_count: 0, total_spent: 0, saved_count: 0 })

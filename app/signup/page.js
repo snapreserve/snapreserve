@@ -65,7 +65,7 @@ function SignupInner() {
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: fullName, verification_reference: refCode } },
     })
 
     if (authError) {

@@ -22,17 +22,31 @@ export async function GET(request) {
   const admin = createAdminClient()
   const today = new Date().toISOString().slice(0, 10)
 
-  const { data: bookings, error } = await admin
-    .from('bookings')
-    .select('check_in, check_out')
-    .eq('listing_id', listing_id)
-    .not('status', 'in', '("cancelled","refunded")')
-    .gt('check_out', today)
+  const [{ data: bookings, error }, { data: blockedDates }] = await Promise.all([
+    admin
+      .from('bookings')
+      .select('check_in, check_out')
+      .eq('listing_id', listing_id)
+      .not('status', 'in', '("cancelled","refunded")')
+      .gt('check_out', today),
+    admin
+      .from('listing_blocked_dates')
+      .select('start_date, end_date')
+      .eq('listing_id', listing_id)
+      .gte('end_date', today),
+  ])
 
   if (error) {
     console.error('Availability fetch error:', error)
     return Response.json({ error: 'Failed to fetch availability.' }, { status: 500 })
   }
 
-  return Response.json({ booked: bookings || [] })
+  // Merge blocked date ranges (using same shape as bookings: check_in/check_out)
+  const blockedRanges = (blockedDates || []).map(b => ({
+    check_in: b.start_date,
+    check_out: b.end_date,
+    blocked: true,
+  }))
+
+  return Response.json({ booked: [...(bookings || []), ...blockedRanges] })
 }

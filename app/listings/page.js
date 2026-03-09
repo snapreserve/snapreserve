@@ -372,7 +372,7 @@ function ListingsInner() {
                   <button className="card-heart" onClick={e => e.preventDefault()}>♡</button>
                 </div>
                 <div className="card-body">
-                  {listing.editors_pick && (
+                  {(listing.editors_pick ?? false) && (
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#FCD34D', marginBottom: 4 }}>⭐ Editor's Pick</div>
                   )}
                   <div className="card-title">{listing.title}</div>

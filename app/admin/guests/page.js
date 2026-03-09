@@ -10,7 +10,7 @@ async function getGuests() {
   const [{ data: users }, { data: bookingRows }] = await Promise.all([
     admin
       .from('users')
-      .select('id, email, full_name, is_active, suspended_at, suspension_reason, suspension_category, deleted_at, created_at, is_host, verification_status')
+      .select('id, email, full_name, is_active, suspended_at, suspension_reason, suspension_category, deleted_at, created_at, is_host, verification_status, verification_reference, approval_status')
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     admin

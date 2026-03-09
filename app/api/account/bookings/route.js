@@ -21,7 +21,8 @@ export async function GET(request) {
       reference, created_at,
       listings (
         id, title, city, country,
-        main_image_url
+        main_image_url,
+        wifi_name, wifi_password, door_code, parking_instructions, welcome_message
       )
     `)
     .eq('guest_id', user.id)

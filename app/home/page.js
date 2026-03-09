@@ -87,7 +87,7 @@ export default function HomePage() {
   async function fetchData() {
     const { data } = await supabase
       .from('listings')
-      .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities, editors_pick')
+      .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities')
       .eq('is_active', true)
       .order('rating', { ascending: false })
     const all = data || []
@@ -477,7 +477,7 @@ export default function HomePage() {
                   <div className="card-img">
                     <img src={img} alt={listing.title} loading="lazy" />
                     <div className="type-pill" style={{ background:pill.bg, color:pill.color }}>{pill.label}</div>
-                    {listing.editors_pick && <div className="instant-pill" style={{ background: 'rgba(252,211,77,0.25)', color: '#FCD34D' }}>⭐ Editor's Pick</div>}
+                    {(listing.editors_pick ?? false) && <div className="instant-pill" style={{ background: 'rgba(252,211,77,0.25)', color: '#FCD34D' }}>⭐ Editor's Pick</div>}
                     {listing.is_instant_book && <div className="instant-pill">⚡ Instant</div>}
                   </div>
                   <div className="card-body">

@@ -563,6 +563,7 @@ export default function BookingSidebar({ listing, rooms }) {
       <button className="book-btn" onClick={handleReserve}>
         Reserve now →
       </button>
+      <div className="book-note">Total price shown — all fees included.</div>
       <div className="book-note">You won't be charged yet</div>
       {listing.is_instant_book && (
         <div className="instant-note">
