@@ -39,6 +39,7 @@ function MessagesTab({ userId, onRead }) {
   const [loading, setLoading] = useState(true)
   const [replies, setReplies] = useState({})
   const [sending, setSending] = useState(null)
+  const [reopening, setReopening] = useState(null)
   const [toast, setToast]     = useState(null)
 
   function showToast(msg, type = 'success') {
@@ -49,12 +50,23 @@ function MessagesTab({ userId, onRead }) {
   useEffect(() => {
     if (!userId) return
     async function load() {
-      const { data } = await supabase
+      let data
+      const { data: withClosed, error } = await supabase
         .from('host_messages')
-        .select('id, listing_id, type, subject, body, is_read, created_at, reply_body, replied_at')
+        .select('id, listing_id, type, subject, body, is_read, created_at, reply_body, replied_at, closed_at')
         .eq('host_user_id', userId)
         .order('created_at', { ascending: false })
-      setMsgs(data || [])
+      if (error && (error.message?.includes('closed_at') || error.code === 'PGRST204')) {
+        const { data: fallback } = await supabase
+          .from('host_messages')
+          .select('id, listing_id, type, subject, body, is_read, created_at, reply_body, replied_at')
+          .eq('host_user_id', userId)
+          .order('created_at', { ascending: false })
+        data = (fallback || []).map(m => ({ ...m, closed_at: null }))
+      } else {
+        data = withClosed || []
+      }
+      setMsgs(data)
       setLoading(false)
       const unreadIds = (data || []).filter(m => !m.is_read).map(m => m.id)
       if (unreadIds.length) {
@@ -86,6 +98,27 @@ function MessagesTab({ userId, onRead }) {
       showToast(e.message, 'error')
     } finally {
       setSending(null)
+    }
+  }
+
+  async function reopenMessage(msgId) {
+    setReopening(msgId)
+    try {
+      const res = await fetch(`/api/host/messages/${msgId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reopen' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to reopen')
+      setMsgs(prev => prev.map(m =>
+        m.id === msgId ? { ...m, closed_at: null } : m
+      ))
+      showToast('Conversation reopened. You can reply again.')
+    } catch (e) {
+      showToast(e.message, 'error')
+    } finally {
+      setReopening(null)
     }
   }
 
@@ -127,11 +160,19 @@ function MessagesTab({ userId, onRead }) {
           {msgs.map(m => {
             const cfg = MSG_TYPE_CFG[m.type] || MSG_TYPE_CFG.info
             const hasReplied = !!m.reply_body
+            const isClosed = !!m.closed_at
             const draft = replies[m.id] || ''
             return (
               <div key={m.id} style={{ background: 'var(--sr-card)', border: `1px solid ${!m.is_read ? 'rgba(244,96,26,0.35)' : 'var(--sr-border)'}`, borderRadius: '14px', padding: '18px 20px' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '100px', fontSize: '0.62rem', fontWeight: 700, background: cfg.bg, color: cfg.color, marginBottom: '8px' }}>
-                  {cfg.label}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '100px', fontSize: '0.62rem', fontWeight: 700, background: cfg.bg, color: cfg.color }}>
+                    {cfg.label}
+                  </div>
+                  {isClosed && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '100px', fontSize: '0.62rem', fontWeight: 700, background: 'var(--sr-overlay-sm)', color: 'var(--sr-sub)' }}>
+                      Closed by support
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
                   <div style={{ fontSize: '0.92rem', fontWeight: 700, color: !m.is_read ? 'var(--sr-orange)' : 'var(--sr-text)' }}>
@@ -148,25 +189,39 @@ function MessagesTab({ userId, onRead }) {
                     <div style={{ fontSize: '0.82rem', color: 'var(--sr-muted)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{m.reply_body}</div>
                   </div>
                 )}
-                <div style={{ marginTop: '12px' }}>
-                  <textarea
-                    style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.82rem', resize: 'vertical', minHeight: '64px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                    placeholder={hasReplied ? 'Send a follow-up…' : 'Write a reply…'}
-                    value={draft}
-                    onChange={e => setReplies(prev => ({ ...prev, [m.id]: e.target.value }))}
-                    onFocus={e => { e.target.style.borderColor = 'var(--sr-orange)' }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--sr-border)' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                {isClosed ? (
+                  <div style={{ marginTop: '12px', padding: '10px 14px', background: 'var(--sr-overlay-xs)', borderRadius: '10px', fontSize: '0.8rem', color: 'var(--sr-sub)' }}>
+                    <p style={{ margin: '0 0 12px 0' }}>This conversation was closed by SnapReserve™ support. If you need further help, you can reopen it to reply again.</p>
                     <button
-                      onClick={() => submitReply(m.id)}
-                      disabled={!draft || sending === m.id}
-                      style={{ background: draft ? 'var(--sr-orange)' : 'var(--sr-card2)', color: draft ? 'white' : 'var(--sr-sub)', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '0.8rem', fontWeight: 700, cursor: draft ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'all 0.15s' }}
+                      type="button"
+                      onClick={() => reopenMessage(m.id)}
+                      disabled={reopening === m.id}
+                      style={{ background: 'var(--sr-orange)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '0.8rem', fontWeight: 700, cursor: reopening === m.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}
                     >
-                      {sending === m.id ? 'Sending…' : hasReplied ? 'Send follow-up' : 'Reply'}
+                      {reopening === m.id ? 'Reopening…' : 'Reopen conversation'}
                     </button>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ marginTop: '12px' }}>
+                    <textarea
+                      style={{ width: '100%', background: 'var(--sr-card2)', border: '1px solid var(--sr-border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--sr-text)', fontSize: '0.82rem', resize: 'vertical', minHeight: '64px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                      placeholder={hasReplied ? 'Send a follow-up…' : 'Write a reply…'}
+                      value={draft}
+                      onChange={e => setReplies(prev => ({ ...prev, [m.id]: e.target.value }))}
+                      onFocus={e => { e.target.style.borderColor = 'var(--sr-orange)' }}
+                      onBlur={e => { e.target.style.borderColor = 'var(--sr-border)' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                      <button
+                        onClick={() => submitReply(m.id)}
+                        disabled={!draft || sending === m.id}
+                        style={{ background: draft ? 'var(--sr-orange)' : 'var(--sr-card2)', color: draft ? 'white' : 'var(--sr-sub)', border: 'none', borderRadius: '8px', padding: '8px 18px', fontSize: '0.8rem', fontWeight: 700, cursor: draft ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'all 0.15s' }}
+                      >
+                        {sending === m.id ? 'Sending…' : hasReplied ? 'Send follow-up' : 'Reply'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -457,6 +512,7 @@ export default function HostDashboard() {
   const [policiesSaving,  setPoliciesSaving]  = useState(null)
   const [followupDraft,   setFollowupDraft]   = useState({})
   const [followupSending, setFollowupSending] = useState(null)
+  const [deleteModalListing, setDeleteModalListing] = useState(null) // listing id when confirm delete modal is open
   // Caller identity
   const [myRole,         setMyRole]         = useState(null)   // 'owner'|'manager'|'staff'|'finance'
   const [myHostId,       setMyHostId]       = useState(null)
@@ -602,7 +658,7 @@ export default function HostDashboard() {
       const [{ data: prof }, { data: lists }, { data: hostOrg }] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
         resolvedHostId
-          ? supabase.from('listings').select('*').eq('host_id', resolvedHostId).order('created_at', { ascending: false })
+          ? supabase.from('listings').select('*').eq('host_id', resolvedHostId).is('deleted_at', null).order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
         resolvedHostId
           ? supabase.from('hosts').select('display_name').eq('id', resolvedHostId).maybeSingle()
@@ -777,6 +833,14 @@ export default function HostDashboard() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Action failed')
+
+      if (action === 'delete_listing') {
+        setListings(prev => prev.filter(l => l.id !== listingId))
+        setDeleteModalListing(null)
+        showToast('Listing removed.')
+        setActionLoading(null)
+        return
+      }
 
       const newStatus = { go_live: 'live', unpublish: 'approved', resubmit: 'pending_review' }[action]
       const newActive = action === 'go_live'
@@ -1209,9 +1273,9 @@ export default function HostDashboard() {
             </div>
           )}
 
-          {l.status === 'approved' && (
+          {l.status === 'approved' && !l.is_active && (
             <div style={{ background: 'rgba(244,96,26,0.06)', border: '1px solid rgba(244,96,26,0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '0.8rem', lineHeight: 1.6, color: 'var(--sr-orange)' }}>
-              ✅ Approved! Click "Go Live" to publish your listing.
+              📋 Listing is unpublished. Click "Republish" to make it visible to guests.
             </div>
           )}
 
@@ -1303,7 +1367,7 @@ export default function HostDashboard() {
             {l.status === 'approved' && (
               <>
                 <button style={{ borderRadius: '8px', padding: '9px', fontSize: '0.8rem', fontWeight: 700, cursor: isActing ? 'not-allowed' : 'pointer', fontFamily: 'inherit', border: 'none', textAlign: 'center', background: 'var(--sr-green)', color: 'white', opacity: isActing ? 0.4 : 1 }} onClick={() => callListingAction(l.id, 'go_live')} disabled={isActing}>
-                  {isActing ? 'Publishing…' : '🚀 Go Live'}
+                  {isActing ? 'Publishing…' : '↑ Republish'}
                 </button>
                 <a href={`/listings/${l.id}`} style={{ borderRadius: '8px', padding: '9px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: 'none', textAlign: 'center', textDecoration: 'none', display: 'block', background: 'var(--sr-card2)', color: 'var(--sr-muted)' }} target="_blank" rel="noreferrer">Preview</a>
               </>
@@ -1345,6 +1409,19 @@ export default function HostDashboard() {
               </>
             )}
           </div>}
+
+          {/* Delete listing — owner only */}
+          {myRole === 'owner' && (
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--sr-border)' }}>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.78rem', color: 'var(--sr-sub)', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}
+                onClick={() => setDeleteModalListing(l.id)}
+              >
+                Remove listing
+              </button>
+            </div>
+          )}
 
           {/* Edit policies */}
           {!['draft', 'rejected'].includes(l.status) && (
@@ -4583,6 +4660,40 @@ export default function HostDashboard() {
           </div>
         </div>
       )}
+
+      {/* Delete listing confirmation */}
+      {deleteModalListing && (() => {
+        const listing = listings.find(l => l.id === deleteModalListing)
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }} onClick={() => setDeleteModalListing(null)}>
+            <div style={{ background: 'var(--sr-card)', border: '1px solid var(--sr-border)', borderRadius: 16, padding: 24, maxWidth: 400, width: '90%' }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--sr-text)', marginBottom: 8 }}>Remove listing?</div>
+              <p style={{ fontSize: '0.88rem', color: 'var(--sr-muted)', lineHeight: 1.6, marginBottom: 20 }}>
+                {listing?.title && <strong style={{ color: 'var(--sr-text)' }}>"{listing.title}"</strong>}
+                {listing?.title && ' will be removed from your properties and unpublished. Existing bookings are not affected.'}
+                {!listing?.title && 'This listing will be removed from your properties and unpublished. Existing bookings are not affected.'}
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalListing(null)}
+                  style={{ padding: '10px 18px', borderRadius: 10, fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', background: 'var(--sr-bg)', border: '1px solid var(--sr-border)', color: 'var(--sr-muted)', fontFamily: 'inherit' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={actionLoading === deleteModalListing}
+                  onClick={() => callListingAction(deleteModalListing, 'delete_listing')}
+                  style={{ padding: '10px 18px', borderRadius: 10, fontSize: '0.86rem', fontWeight: 700, cursor: actionLoading === deleteModalListing ? 'not-allowed' : 'pointer', background: 'var(--sr-red)', border: 'none', color: 'white', fontFamily: 'inherit', opacity: actionLoading === deleteModalListing ? 0.6 : 1 }}
+                >
+                  {actionLoading === deleteModalListing ? 'Removing…' : 'Remove listing'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }

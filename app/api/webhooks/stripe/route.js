@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase-admin'
 import stripe from '@/lib/stripe'
 import { IS_PRODUCTION, IS_STAGING, APP_ENV } from '@/lib/env'
+import { sendEmail, bookingConfirmationEmailHtml, bookingConfirmationEmailText } from '@/lib/send-email'
+import { notifyHost } from '@/lib/notify-host'
 
 // Stripe requires raw body for signature verification — disable Next.js body parsing
 export const config = { api: { bodyParser: false } }
@@ -56,6 +58,75 @@ export async function POST(request) {
     for (const booking of (confirmedBookings || [])) {
       if (booking.room_id) {
         await admin.rpc('decrement_room_units', { p_room_id: booking.room_id, p_amount: 1 })
+      }
+    }
+
+    // Send guest confirmation email + notify host for each confirmed booking
+    for (const booking of (confirmedBookings || [])) {
+      try {
+        // Fetch full booking details for the email
+        const { data: full } = await admin
+          .from('bookings')
+          .select(`
+            id, reference, check_in, check_out, nights, guests, total_amount, host_id,
+            listings ( title, city, state ),
+            users!bookings_guest_id_fkey ( email, full_name )
+          `)
+          .eq('id', booking.id)
+          .single()
+
+        if (!full) continue
+
+        const guestEmail = full.users?.email
+        const guestName  = full.users?.full_name?.split(' ')[0] || 'there'
+        const baseUrl    = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+        const tripsUrl   = `${baseUrl}/account/trips`
+
+        // Email to guest
+        if (guestEmail) {
+          await sendEmail({
+            to:      guestEmail,
+            subject: `Booking confirmed — ${full.listings?.title || 'your stay'}`,
+            html:    bookingConfirmationEmailHtml({
+              guestName,
+              listingTitle: full.listings?.title,
+              city:         full.listings?.city,
+              state:        full.listings?.state,
+              checkIn:      full.check_in,
+              checkOut:     full.check_out,
+              nights:       full.nights,
+              guests:       full.guests,
+              total:        full.total_amount,
+              reference:    full.reference,
+              tripsUrl,
+            }),
+            text: bookingConfirmationEmailText({
+              guestName,
+              listingTitle: full.listings?.title,
+              city:         full.listings?.city,
+              state:        full.listings?.state,
+              checkIn:      full.check_in,
+              checkOut:     full.check_out,
+              nights:       full.nights,
+              guests:       full.guests,
+              total:        full.total_amount,
+              reference:    full.reference,
+              tripsUrl,
+            }),
+          })
+        }
+
+        // Notify host via in-app message
+        const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        await notifyHost({
+          hostUserId: full.host_id,
+          type:       'info',
+          subject:    `New booking — ${full.listings?.title || 'your listing'}`,
+          body:       `A new booking has been confirmed.\n\nGuest: ${full.users?.full_name || 'Guest'}\nDates: ${fmt(full.check_in)} → ${fmt(full.check_out)} (${full.nights} night${full.nights !== 1 ? 's' : ''})\nGuests: ${full.guests}\nTotal: $${Number(full.total_amount).toFixed(2)}\nReference: ${full.reference}`,
+        })
+      } catch (notifyErr) {
+        // Non-blocking — don't fail the webhook over notification errors
+        console.error(`[SnapReserve™] Webhook: notification error for booking ${booking.id}:`, notifyErr.message)
       }
     }
 

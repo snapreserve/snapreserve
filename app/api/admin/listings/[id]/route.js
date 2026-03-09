@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
 import { getAdminSession } from '@/lib/get-admin-session'
 import { notifyHost } from '@/lib/notify-host'
+import { sendEmail, listingChangesRequestedEmailHtml } from '@/lib/send-email'
 
 export async function PATCH(request, { params }) {
   const { user, role, error } = await getAdminSession()
@@ -67,8 +68,8 @@ export async function PATCH(request, { params }) {
   let approvalUpdate = {}
 
   if (action === 'approve') {
-    updatePayload.status = 'approved'
-    // NOT setting is_active — host must go live themselves
+    updatePayload.status    = 'live'
+    updatePayload.is_active = true   // auto-publish on approval — no "Go Live" step needed
     approvalUpdate = { status: 'approved', reviewed_at: now }
   } else if (action === 'reject') {
     updatePayload.status = 'rejected'
@@ -129,6 +130,35 @@ export async function PATCH(request, { params }) {
       notes:       notes.trim(),
       status:      'open',
     })
+    // In-app message so host sees it in dashboard
+    await adminClient.from('host_messages').insert({
+      host_user_id: hostUserId,
+      listing_id:   id,
+      type:         'warning',
+      subject:      'Changes requested for your listing',
+      body:         `Our team has requested changes to your listing "${listing.title}".\n\n${notes.trim()}\n\nEdit your listing to make the updates and resubmit for review.`,
+    })
+    // Email with clear "Edit your listing" link
+    try {
+      const { data: authUser } = await adminClient.auth.admin.getUserById(hostUserId)
+      const hostEmail = authUser?.user?.email
+      if (hostEmail) {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+        const editUrl = `${baseUrl}/list-property?edit=${id}`
+        await sendEmail({
+          to:      hostEmail,
+          subject: 'Changes requested for your listing',
+          html:    listingChangesRequestedEmailHtml({
+            listingTitle: listing.title,
+            notes:        notes.trim(),
+            editUrl,
+          }),
+          text:    `Our team has requested changes to your listing "${listing.title}".\n\n${notes.trim()}\n\nEdit your listing: ${editUrl}`,
+        })
+      }
+    } catch (err) {
+      console.error('[admin/listings] request_changes email failed:', err.message)
+    }
   }
 
   // Sync listing_approvals if needed
