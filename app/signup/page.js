@@ -62,14 +62,26 @@ function SignupInner() {
     setError('')
     setSkipped(skip)
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, verification_reference: refCode } },
+    // Server-side signup avoids Supabase's built-in email sender (and its rate limits)
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: fullName }),
     })
+    const json = await res.json()
 
-    if (authError) {
-      setError(authError.message)
+    if (!res.ok) {
+      setError(json.error || 'Failed to create account. Please try again.')
+      setStep(1)
+      setLoading(false)
+      return
+    }
+
+    // Establish client session
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (signInError) {
+      setError(signInError.message)
       setStep(1)
       setLoading(false)
       return
