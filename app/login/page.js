@@ -32,11 +32,11 @@ function LoginInner() {
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
-    // Use current origin so OAuth always redirects back to this site (prod vs staging).
+    // Always use current origin for OAuth callback so prod never redirects to staging.
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const callbackUrl = next
-      ? `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback?next=${encodeURIComponent(next)}`
-      : `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback`
+      ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${origin}/auth/callback`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: callbackUrl },
@@ -49,7 +49,7 @@ function LoginInner() {
     setError('')
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback?next=/account`,
+      redirectTo: `${origin}/auth/callback?next=/account`,
     })
     setLoading(false)
     if (error) { setError(error.message); return }

@@ -43,11 +43,11 @@ function SignupInner() {
 
   async function handleGoogleSignUp() {
     setGoogleLoading(true)
-    // Use current origin so OAuth always redirects back to this site (prod vs staging).
+    // Always use current origin so prod never redirects to staging.
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback` },
+      options: { redirectTo: `${origin}/auth/callback` },
     })
   }
 
