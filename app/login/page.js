@@ -18,16 +18,28 @@ function LoginInner() {
   const [googleLoading, setGoogleLoading] = useState(false)
 
   useEffect(() => {
-    if (searchParams.get('error') === 'account_suspended') {
+    const err = searchParams.get('error')
+    if (err === 'account_suspended') {
       setError('Your account has been suspended. Contact support@snapreserve.app to appeal.')
+    } else if (err === 'no_admin_role') {
+      setError('This account does not have access to the admin portal. If you should have access, ask a super admin to add your role in Super Admin → Roles.')
+    } else if (err === 'oauth_failed') {
+      setError('Sign-in with Google failed. Try again or use email and password.')
+    } else if (err === 'account_deactivated') {
+      setError('Your account has been deactivated. Contact support@snapreserve.app.')
     }
   }, [searchParams])
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
+    // Use current origin so OAuth always redirects back to this site (prod vs staging).
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const callbackUrl = next
+      ? `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     })
   }
 
@@ -35,8 +47,9 @@ function LoginInner() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback?next=/account`,
+      redirectTo: `${origin || process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback?next=/account`,
     })
     setLoading(false)
     if (error) { setError(error.message); return }
@@ -172,6 +185,11 @@ function LoginInner() {
                 <p style={{ fontSize:13, color:'var(--sr-muted)', marginBottom:22, lineHeight:1.65 }}>
                   Sign in to manage your bookings and listings.
                 </p>
+                {next && (next.startsWith('/admin') || next.startsWith('/superadmin')) && (
+                  <p style={{ fontSize:12, color:'var(--sr-orange)', marginBottom:16, lineHeight:1.5, padding:'10px 12px', background:'rgba(244,96,26,0.08)', borderRadius:8, border:'1px solid rgba(244,96,26,0.2)' }}>
+                    Admin access: after signing in you’ll need to enter your authenticator (MFA) code. Your account must have an admin role assigned.
+                  </p>
+                )}
 
                 {error && (
                   <div style={{ background:'rgba(239,68,68,.08)', border:'1px solid rgba(239,68,68,.2)', borderRadius:10, padding:'12px 14px', fontSize:12, color:'#ef4444', marginBottom:14 }}>

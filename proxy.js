@@ -26,6 +26,7 @@ async function isWaitlistV2Enabled(supabase) {
   }
 }
 
+// Super admin / owner email — bypasses waitlist; must have super_admin role in admin_roles for /admin and /superadmin
 function isOwnerEmail(user) {
   return user?.email === 'owner@snapreserve.app'
 }
@@ -87,6 +88,13 @@ export async function proxy(request) {
   const hostname = request.headers.get('host') ?? ''
   const isConsoleSubdomain = hostname === CONSOLE_HOST
   const isStatusSubdomain = hostname === STATUS_HOST
+
+  // /account/admin → /admin (admin portal lives at /admin)
+  if (path === '/account/admin' || path.startsWith('/account/admin/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = path === '/account/admin' ? '/admin' : '/admin' + path.slice('/account/admin'.length)
+    return NextResponse.redirect(url)
+  }
 
   // ----------------------------------------------------------------
   // status.snapreserve.app — serve /status, no auth required

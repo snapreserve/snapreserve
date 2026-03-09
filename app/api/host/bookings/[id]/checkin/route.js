@@ -47,6 +47,22 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: `Cannot check in a booking with status "${booking.status}"` }, { status: 409 })
   }
 
+  // Check-in only allowed on the arrival date (not before, not after)
+  const checkInDate = (booking.check_in || '').toString().slice(0, 10) // YYYY-MM-DD
+  const todayUtc = new Date().toISOString().slice(0, 10)
+  if (todayUtc < checkInDate) {
+    return NextResponse.json(
+      { error: 'Check-in is only allowed on the arrival date. Today is not yet the check-in date.' },
+      { status: 400 }
+    )
+  }
+  if (todayUtc > checkInDate) {
+    return NextResponse.json(
+      { error: 'Check-in can only be done on the arrival date. Please contact support if the guest arrived on a different day.' },
+      { status: 400 }
+    )
+  }
+
   const now = new Date().toISOString()
 
   const { error: updateErr } = await admin

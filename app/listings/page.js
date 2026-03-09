@@ -372,6 +372,9 @@ function ListingsInner() {
                   <button className="card-heart" onClick={e => e.preventDefault()}>♡</button>
                 </div>
                 <div className="card-body">
+                  {listing.editors_pick && (
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#FCD34D', marginBottom: 4 }}>⭐ Editor's Pick</div>
+                  )}
                   <div className="card-title">{listing.title}</div>
                   <div className="card-loc">📍 {listing.city}, {listing.state}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>

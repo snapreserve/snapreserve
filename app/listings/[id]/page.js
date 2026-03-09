@@ -27,7 +27,7 @@ export default async function PropertyPage({ params, searchParams }) {
   const admin = createAdminClient()
 
   const [{ data: listing }, { data: rooms }, { user }] = await Promise.all([
-    admin.from('listings').select('id, title, city, state, country, property_type, property_subcategory, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active').eq('id', id).single(),
+    admin.from('listings').select('id, title, city, state, country, property_type, property_subcategory, price_per_night, rating, review_count, bedrooms, bathrooms, max_guests, images, amenities, description, cancellation_policy, pet_policy, smoking_policy, quiet_hours_start, quiet_hours_end, checkin_start_time, checkin_end_time, checkout_time, host_id, host_snap_verified, status, is_active, editors_pick').eq('id', id).single(),
     admin.from('rooms').select('*').eq('listing_id', id).eq('is_available', true).order('price_per_night', { ascending: true }),
     getUserSession(),
   ])
@@ -408,6 +408,9 @@ export default async function PropertyPage({ params, searchParams }) {
             <div className="rating-row">
               {listing.rating > 0 && (
                 <span className="rating-stars">★ {listing.rating} · <span style={{ color: '#7a5c3a', fontWeight: 400 }}>{listing.review_count} review{listing.review_count !== 1 ? 's' : ''}</span></span>
+              )}
+              {listing.editors_pick && (
+                <span className="type-badge" style={{ background: 'rgba(252,211,77,0.15)', color: '#B45309', borderColor: 'rgba(252,211,77,0.4)' }}>⭐ Editor's Pick</span>
               )}
               <span className={`type-badge ${listing.property_type === 'hotel' ? 'hotel-badge' : 'stay-badge'}`}>
                 {listing.property_type === 'hotel' ? '🏨 Hotel' : '🏠 Private Stay'}

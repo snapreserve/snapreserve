@@ -1,4 +1,5 @@
 import { Inter, Cormorant_Garamond } from "next/font/google"
+import { headers } from "next/headers"
 import "./globals.css"
 import StagingBanner from "./components/StagingBanner"
 import { ThemeProvider } from "./components/ThemeProvider"
@@ -24,14 +25,16 @@ export const metadata = {
   description: "Book unique spaces, instantly.",
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const headersList = await headers()
+  const host = headersList.get("host") ?? ""
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${cormorant.variable} antialiased`} suppressHydrationWarning>
         {/* Anti-FOUC: set data-theme from localStorage before first paint */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('sr-theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}else if(window.matchMedia&&!window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','light')}}catch(e){}})()` }} />
         <ThemeProvider>
-          <StagingBanner />
+          <StagingBanner host={host} />
           {children}
           <FloatingThemeToggle />
         </ThemeProvider>

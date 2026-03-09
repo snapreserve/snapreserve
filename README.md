@@ -29,6 +29,13 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Deployment — Staging vs Production
+
+- **Staging (testing):** Test new changes at e.g. `staging.snapreserve.app` before they go live. **All changes are made here first; never touch prod directly.**
+- **Production (main):** Live site at e.g. `snapreserve.app`. Update it only by promoting tested code from staging (e.g. merge to `main` and deploy).
+
+See **[docs/deployment.md](docs/deployment.md)** for the workflow (test on staging → merge to main → deploy prod) and how to keep both environments up to date.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

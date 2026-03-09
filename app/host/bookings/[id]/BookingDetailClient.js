@@ -313,7 +313,9 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
   const isCheckedIn = status === 'checked_in'
   const isCompleted = status === 'completed'
   const isCancelled = status === 'cancelled' || status === 'refunded'
-  const canCheckIn  = isConfirmed
+  const checkInDate = (booking.check_in || '').toString().slice(0, 10)
+  const todayUtc   = new Date().toISOString().slice(0, 10)
+  const canCheckIn = isConfirmed && checkInDate === todayUtc
   const canCancel   = ['pending', 'confirmed'].includes(status)
   const ref         = booking.reference || booking.id.slice(0, 8).toUpperCase()
 
@@ -906,6 +908,12 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
                     <div className="bdc-qa-icon" style={{ background: 'var(--sr-greenl)' }}>✅</div>
                     <div><div className="bdc-qa-btn-title">Confirm Check-in</div><div className="bdc-qa-btn-sub">Mark guest as arrived</div></div>
                   </button>
+                )}
+                {isConfirmed && !canCheckIn && checkInDate && (
+                  <div className="bdc-qa-btn" style={{ opacity: 0.7, cursor: 'default', borderStyle: 'dashed' }}>
+                    <div className="bdc-qa-icon" style={{ background: 'var(--sr-card2)' }}>📅</div>
+                    <div><div className="bdc-qa-btn-title">Confirm Check-in</div><div className="bdc-qa-btn-sub">{todayUtc < checkInDate ? `Available on arrival date (${fmtDate(booking.check_in, { month: 'short', day: 'numeric', year: 'numeric' })})` : 'Only available on the arrival date'}</div></div>
+                  </div>
                 )}
                 {isCheckedIn && (
                   <button className="bdc-qa-btn" disabled>

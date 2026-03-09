@@ -15,12 +15,18 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, rejection_reason, reason, notes } = body
 
-  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate', 'reject_permanently', 'edit']
+  const validActions = ['approve', 'reject', 'request_changes', 'soft_delete', 'suspend', 'reactivate', 'reject_permanently', 'edit', 'set_editors_pick']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
   if (action === 'edit' && role !== 'super_admin') {
     return NextResponse.json({ error: 'Only super admins can edit listings directly' }, { status: 403 })
+  }
+  if (action === 'set_editors_pick' && !['admin', 'super_admin'].includes(role)) {
+    return NextResponse.json({ error: 'Only Admin or Super Admin can set Editor\'s Pick' }, { status: 403 })
+  }
+  if (action === 'set_editors_pick' && typeof body.editors_pick !== 'boolean') {
+    return NextResponse.json({ error: 'editors_pick must be true or false' }, { status: 400 })
   }
   if (action === 'reject' && !rejection_reason?.trim()) {
     return NextResponse.json({ error: 'rejection_reason required' }, { status: 400 })
@@ -101,6 +107,8 @@ export async function PATCH(request, { params }) {
     EDITABLE.forEach(f => {
       if (f in fields) updatePayload[f] = fields[f]
     })
+  } else if (action === 'set_editors_pick') {
+    updatePayload.editors_pick = body.editors_pick
   }
 
   const { error: updateError } = await adminClient

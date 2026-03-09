@@ -136,6 +136,8 @@ export default function ListingApprovalsPage() {
     }
   }
 
+  const [editorsPickToggling, setEditorsPickToggling] = useState(null)
+
   async function doAction(listingId, action, extra = {}) {
     setActing(true)
     try {
@@ -161,6 +163,27 @@ export default function ListingApprovalsPage() {
       showToast(err.message, 'error')
     } finally {
       setActing(false)
+    }
+  }
+
+  async function doSetEditorsPick(listingId, value) {
+    if (editorsPickToggling === listingId) return
+    setEditorsPickToggling(listingId)
+    try {
+      const res = await fetch(`/api/admin/listings/${listingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_editors_pick', editors_pick: value }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Failed to update')
+      showToast(value ? "Editor's Pick enabled" : "Editor's Pick removed")
+      setApprovals(prev => prev.map(x => x.listing_id === listingId ? { ...x, listings: { ...x.listings, editors_pick: value } } : x))
+      if (selected?.listing_id === listingId) setSelected(prev => prev ? { ...prev, listings: { ...prev.listings, editors_pick: value } } : null)
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setEditorsPickToggling(null)
     }
   }
 
@@ -573,6 +596,52 @@ export default function ListingApprovalsPage() {
                       >
                         👁 Preview as guest →
                       </a>
+
+                      {/* Editor's Pick — Admin / Super Admin only */}
+                      {(myRole === 'admin' || myRole === 'super_admin') && (
+                        <div style={{ marginBottom: 16 }}>
+                          <div className="di-label" style={{ marginBottom: 8 }}>Editor's Pick</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => doSetEditorsPick(a.listing_id, true)}
+                              disabled={editorsPickToggling === a.listing_id}
+                              style={{
+                                padding: '8px 18px',
+                                borderRadius: 8,
+                                border: a.listings?.editors_pick ? '2px solid #FCD34D' : '1px solid var(--sr-border)',
+                                background: a.listings?.editors_pick ? 'rgba(252,211,77,0.2)' : 'var(--sr-bg)',
+                                color: a.listings?.editors_pick ? '#FCD34D' : 'var(--sr-muted)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                cursor: editorsPickToggling === a.listing_id ? 'not-allowed' : 'pointer',
+                                opacity: editorsPickToggling === a.listing_id ? 0.6 : 1,
+                              }}
+                            >
+                              ON
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => doSetEditorsPick(a.listing_id, false)}
+                              disabled={editorsPickToggling === a.listing_id}
+                              style={{
+                                padding: '8px 18px',
+                                borderRadius: 8,
+                                border: !a.listings?.editors_pick ? '2px solid var(--sr-border)' : '1px solid var(--sr-border)',
+                                background: !a.listings?.editors_pick ? 'var(--sr-card2)' : 'var(--sr-bg)',
+                                color: !a.listings?.editors_pick ? 'var(--sr-text)' : 'var(--sr-muted)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                cursor: editorsPickToggling === a.listing_id ? 'not-allowed' : 'pointer',
+                                opacity: editorsPickToggling === a.listing_id ? 0.6 : 1,
+                              }}
+                            >
+                              OFF
+                            </button>
+                            {editorsPickToggling === a.listing_id && <span style={{ fontSize: '0.78rem', color: 'var(--sr-sub)' }}>Updating…</span>}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Detail grid */}
                       <div className="detail-grid">

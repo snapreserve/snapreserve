@@ -1,11 +1,12 @@
 'use client'
 
 /**
- * Visible banner shown on all pages in the STAGING environment.
- * Renders nothing in production or development.
+ * Visible banner only on the staging host (e.g. staging.snapreserve.app).
+ * Main site (snapreserve.app) never shows this, regardless of env vars.
  */
-export default function StagingBanner() {
-  if (process.env.NEXT_PUBLIC_APP_ENV !== 'staging') return null
+export default function StagingBanner({ host = '' }) {
+  const isStagingHost = typeof host === 'string' && host.toLowerCase().includes('staging')
+  if (!isStagingHost) return null
 
   return (
     <div style={{
