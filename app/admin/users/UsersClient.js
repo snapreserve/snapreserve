@@ -63,6 +63,9 @@ export default function UsersClient({ initialUsers, role }) {
   const [suspCat, setSuspCat]     = useState('policy_violation')
   const [suspending, setSuspending] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -162,6 +165,53 @@ export default function UsersClient({ initialUsers, role }) {
 
   const canSuspend = ['admin', 'super_admin', 'trust_safety'].includes(role)
   const canSendPasswordReset = ['support', 'admin', 'super_admin'].includes(role)
+  const isSuperAdmin = role === 'super_admin'
+
+  function toggleSelectId(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (filtered.length === 0) return
+    const allSelected = filtered.every(u => selectedIds.has(u.id))
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (allSelected) filtered.forEach(u => next.delete(u.id))
+      else filtered.forEach(u => next.add(u.id))
+      return next
+    })
+  }
+
+  async function confirmBulkDelete() {
+    if (selectedIds.size === 0 || bulkDeleting) return
+    setBulkDeleting(true)
+    try {
+      const res = await fetch('/api/superadmin/users/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: Array.from(selectedIds) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete')
+      setUsers(prev => prev.filter(u => !(data.deletedIds || []).includes(u.id)))
+      if (selected?.id && data.deletedIds?.includes(selected.id)) setSelected(null)
+      setSelectedIds(new Set())
+      setDeleteModalOpen(false)
+      const msg = data.skipped > 0
+        ? `${data.deleted} user(s) removed. ${data.skipped} skipped (Super Admin accounts cannot be deleted).`
+        : `${data.deleted} user(s) removed.`
+      showToast(msg)
+    } catch (e) {
+      showToast(e.message, 'error')
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
 
   async function sendPasswordReset() {
     if (!selected?.email || resetLoading) return
@@ -238,6 +288,19 @@ export default function UsersClient({ initialUsers, role }) {
               placeholder="Search by name or email…"
               style={{ flex: 1, minWidth: 200, background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: 10, padding: '8px 14px', fontSize: '0.82rem', color: 'var(--sr-text)', outline: 'none', fontFamily: 'inherit' }}
             />
+            {isSuperAdmin && (
+              <button
+                onClick={() => setDeleteModalOpen(true)}
+                disabled={selectedIds.size === 0}
+                style={{
+                  padding: '8px 16px', borderRadius: 10, fontSize: '0.8rem', fontWeight: 700, cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed',
+                  background: selectedIds.size > 0 ? 'rgba(239,68,68,0.12)' : 'var(--sr-border-solid)', color: selectedIds.size > 0 ? '#EF4444' : 'var(--sr-muted)',
+                  border: selectedIds.size > 0 ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--sr-border-solid)', fontFamily: 'inherit',
+                }}
+              >
+                Delete selected {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+              </button>
+            )}
           </div>
         </div>
 
@@ -246,6 +309,17 @@ export default function UsersClient({ initialUsers, role }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--sr-border-solid)' }}>
+                {isSuperAdmin && (
+                  <th style={{ padding: '10px 10px', width: 40, textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)' }}>
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && filtered.every(u => selectedIds.has(u.id))}
+                      onChange={toggleSelectAll}
+                      onClick={e => e.stopPropagation()}
+                      style={{ width: 16, height: 16, cursor: 'pointer' }}
+                    />
+                  </th>
+                )}
                 {['User', 'Account Type', 'Status', 'Signed up', 'Bookings', 'Listings', ''].map(h => (
                   <th key={h} style={{ padding: '10px 10px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--sr-sub)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
@@ -253,7 +327,7 @@ export default function UsersClient({ initialUsers, role }) {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No users found.</td></tr>
+                <tr><td colSpan={isSuperAdmin ? 8 : 7} style={{ textAlign: 'center', padding: '48px', color: 'var(--sr-sub)', fontSize: '0.86rem' }}>No users found.</td></tr>
               )}
               {filtered.map(u => (
                 <tr
@@ -261,6 +335,16 @@ export default function UsersClient({ initialUsers, role }) {
                   onClick={() => setSelected(u)}
                   style={{ borderBottom: '1px solid var(--sr-border-mid)', cursor: 'pointer', background: selected?.id === u.id ? 'rgba(244,96,26,0.06)' : 'transparent', transition: 'background 0.1s' }}
                 >
+                  {isSuperAdmin && (
+                    <td style={{ padding: '10px 10px', width: 40, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(u.id)}
+                        onChange={() => toggleSelectId(u.id)}
+                        style={{ width: 16, height: 16, cursor: 'pointer' }}
+                      />
+                    </td>
+                  )}
                   <td style={{ padding: '10px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: avatarColor(u.id), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'white', flexShrink: 0 }}>{initials(u)}</div>
@@ -479,6 +563,34 @@ export default function UsersClient({ initialUsers, role }) {
               <button onClick={() => setMsgModal(false)} style={{ padding: '9px 20px', background: 'none', border: '1px solid var(--sr-border-solid)', borderRadius: 9, color: 'var(--sr-muted)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={sendMessage} disabled={!msgBody.trim() || msgSending} style={{ padding: '9px 20px', background: msgBody.trim() ? 'var(--sr-orange)' : 'var(--sr-border-solid)', border: 'none', borderRadius: 9, color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: msgBody.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
                 {msgSending ? 'Sending…' : 'Send Message'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK DELETE CONFIRMATION MODAL (Super Admin only) */}
+      {deleteModalOpen && isSuperAdmin && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--sr-surface)', border: '1px solid var(--sr-border-solid)', borderRadius: 16, padding: '28px 32px', maxWidth: 440, width: '100%' }}>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--sr-text)', marginBottom: 8 }}>Delete users?</div>
+            <div style={{ fontSize: '0.88rem', color: 'var(--sr-muted)', lineHeight: 1.5, marginBottom: 24 }}>
+              You are about to permanently remove <strong>{selectedIds.size}</strong> user{selectedIds.size !== 1 ? 's' : ''} from the platform. This action cannot be undone. Are you sure?
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={bulkDeleting}
+                style={{ padding: '9px 20px', background: 'none', border: '1px solid var(--sr-border-solid)', borderRadius: 9, color: 'var(--sr-muted)', fontSize: '0.82rem', fontWeight: 700, cursor: bulkDeleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleting}
+                style={{ padding: '9px 20px', background: bulkDeleting ? 'var(--sr-border-solid)' : '#EF4444', border: 'none', borderRadius: 9, color: 'white', fontSize: '0.82rem', fontWeight: 700, cursor: bulkDeleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {bulkDeleting ? 'Deleting…' : `Delete ${selectedIds.size} user${selectedIds.size !== 1 ? 's' : ''}`}
               </button>
             </div>
           </div>

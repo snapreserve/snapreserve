@@ -52,6 +52,7 @@ export async function GET(request) {
       is_host: false,
       is_verified: false,
       verification_reference: user.user_metadata?.verification_reference ?? null,
+      approval_status: 'pending',
     },
     { onConflict: 'id', ignoreDuplicates: true }
   )

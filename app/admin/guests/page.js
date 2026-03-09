@@ -10,7 +10,7 @@ async function getGuests() {
   const [{ data: users }, { data: bookingRows }] = await Promise.all([
     admin
       .from('users')
-      .select('id, email, full_name, is_active, suspended_at, suspension_reason, suspension_category, deleted_at, created_at, is_host, verification_status, verification_reference, approval_status')
+      .select('*')
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     admin
@@ -39,6 +39,11 @@ export default async function GuestsPage() {
   if (error === 'mfa_required') redirect('/admin/mfa-verify?next=/admin/guests')
   if (!role) redirect('/login?error=no_admin_role')
 
-  const guests = await getGuests()
+  let guests = []
+  try {
+    guests = await getGuests()
+  } catch (err) {
+    console.error('[admin/guests] getGuests failed:', err?.message ?? err)
+  }
   return <GuestsClient initialGuests={guests} role={role} />
 }

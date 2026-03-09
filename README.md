@@ -31,6 +31,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deployment — Staging vs Production
 
+**All updates go to staging first; production only with explicit approval.**
+
 - **Staging (testing):** Test new changes at e.g. `staging.snapreserve.app` before they go live. **All changes are made here first; never touch prod directly.**
 - **Production (main):** Live site at e.g. `snapreserve.app`. Update it only by promoting tested code from staging (e.g. merge to `main` and deploy).
 

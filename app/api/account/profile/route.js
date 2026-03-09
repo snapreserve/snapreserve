@@ -29,6 +29,7 @@ export async function GET() {
       avatar_url:              meta.avatar_url ?? null,
       is_host:                 false,
       verification_reference:  meta.verification_reference ?? null,
+      approval_status:         'pending',
     }
     await admin.from('users').upsert(fallback, { onConflict: 'id' })
     return NextResponse.json({ ...fallback, booking_count: 0, total_spent: 0, saved_count: 0 })
