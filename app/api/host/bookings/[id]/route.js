@@ -2,29 +2,110 @@ import { NextResponse } from 'next/server'
 import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { bookingHostPayout, calcPlatformFee } from '@/lib/platform-fee'
+import { notifyHost } from '@/lib/notify-host'
+import { sendEmail, bookingConfirmationEmailHtml, bookingConfirmationEmailText } from '@/lib/send-email'
 
-// PATCH /api/host/bookings/[id]  — update host_notes
+// PATCH /api/host/bookings/[id]  — confirm, reject, or update host_notes
 export async function PATCH(request, { params }) {
   const { user } = await getHostUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { host_notes } = await request.json()
+  const body = await request.json()
   const admin = createAdminClient()
 
+  // Resolve caller's host org user_id + role
   let hostUserId = null
+  let callerRole = 'owner'
   const { data: directHost } = await admin.from('hosts').select('user_id').eq('user_id', user.id).maybeSingle()
   if (directHost) {
     hostUserId = user.id
   } else {
-    const { data: mem } = await admin.from('host_team_members').select('host_id').eq('user_id', user.id).eq('status', 'active').maybeSingle()
+    const { data: mem } = await admin.from('host_team_members').select('host_id, role').eq('user_id', user.id).eq('status', 'active').maybeSingle()
     if (mem) {
       const { data: orgHost } = await admin.from('hosts').select('user_id').eq('id', mem.host_id).maybeSingle()
       hostUserId = orgHost?.user_id ?? null
+      callerRole = mem.role
     }
   }
   if (!hostUserId) return NextResponse.json({ error: 'No host found' }, { status: 403 })
 
+  const { action, host_notes } = body
+
+  // ── confirm (approve pending booking) ───────────────────────────────────
+  if (action === 'confirm') {
+    if (!['owner', 'manager'].includes(callerRole)) {
+      return NextResponse.json({ error: 'Only owner or manager can approve bookings' }, { status: 403 })
+    }
+
+    const { data: booking } = await admin
+      .from('bookings')
+      .select('id, status, guest_id, check_in, check_out, nights, guests, total_amount, reference, listings(title, city, state)')
+      .eq('id', id)
+      .eq('host_id', hostUserId)
+      .maybeSingle()
+
+    if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    if (booking.status !== 'pending') {
+      return NextResponse.json({ error: `Booking is already ${booking.status}` }, { status: 400 })
+    }
+
+    const { error } = await admin
+      .from('bookings')
+      .update({ status: 'confirmed', payment_status: 'paid' })
+      .eq('id', id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Notify guest — email + in-app
+    try {
+      const { data: guestUser } = await admin.auth.admin.getUserById(booking.guest_id)
+      const guestEmail = guestUser?.user?.email
+      const { data: guestProfile } = await admin.from('users').select('full_name').eq('id', booking.guest_id).maybeSingle()
+      const guestName = guestProfile?.full_name?.split(' ')[0] || 'there'
+      const baseUrl   = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+      const tripsUrl  = `${baseUrl}/account/trips?booking=${id}`
+
+      if (guestEmail) {
+        await sendEmail({
+          to:      guestEmail,
+          subject: `Booking confirmed — ${booking.listings?.title || 'your stay'}`,
+          html:    bookingConfirmationEmailHtml({
+            guestName,
+            listingTitle: booking.listings?.title,
+            city:         booking.listings?.city,
+            state:        booking.listings?.state,
+            checkIn:      booking.check_in,
+            checkOut:     booking.check_out,
+            nights:       booking.nights,
+            guests:       booking.guests,
+            total:        booking.total_amount,
+            reference:    booking.reference,
+            tripsUrl,
+          }),
+          text: bookingConfirmationEmailText({
+            guestName,
+            listingTitle: booking.listings?.title,
+            city:         booking.listings?.city,
+            state:        booking.listings?.state,
+            checkIn:      booking.check_in,
+            checkOut:     booking.check_out,
+            nights:       booking.nights,
+            guests:       booking.guests,
+            total:        booking.total_amount,
+            reference:    booking.reference,
+            tripsUrl,
+          }),
+        })
+      }
+    } catch (notifyErr) {
+      console.error('[host/bookings] confirm notify error:', notifyErr.message)
+    }
+
+    return NextResponse.json({ ok: true, status: 'confirmed' })
+  }
+
+  // ── host_notes update ────────────────────────────────────────────────────
   const { error } = await admin.from('bookings').update({ host_notes }).eq('id', id).eq('host_id', hostUserId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -81,10 +162,13 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  // Guest profile
+  // Guest profile; if guest account is deleted, do not expose booking detail
   const { data: guest } = booking.guest_id
-    ? await admin.from('users').select('id, full_name, email, created_at').eq('id', booking.guest_id).maybeSingle()
+    ? await admin.from('users').select('id, full_name, email, created_at, deleted_at').eq('id', booking.guest_id).maybeSingle()
     : { data: null }
+  if (booking.guest_id && (guest?.deleted_at != null)) {
+    return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+  }
 
   // Guest booking history (all their completed stays + this listing's past stays)
   const { data: guestBookings } = booking.guest_id

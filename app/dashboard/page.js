@@ -297,7 +297,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="db-nth-btns">
-                    <a href="/account/messages" className="db-btn-ghost">💬 Message</a>
+                    <a href={`/account/messages?listing=${nextTrip.listings?.id}`} className="db-btn-ghost">💬 Message</a>
                     <a href="/account/trips" className="db-btn-pri">Manage →</a>
                   </div>
                 </div>

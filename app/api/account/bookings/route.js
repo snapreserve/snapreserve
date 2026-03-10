@@ -21,7 +21,7 @@ export async function GET(request) {
       reference, created_at,
       listings (
         id, title, city, country,
-        main_image_url,
+        images,
         wifi_name, wifi_password, door_code, parking_instructions, welcome_message
       )
     `)
@@ -31,7 +31,7 @@ export async function GET(request) {
   if (filter === 'upcoming') {
     query = query
       .gte('check_out', today)
-      .in('status', ['pending', 'confirmed'])
+      .in('status', ['pending', 'confirmed', 'checked_in'])
   } else if (filter === 'past') {
     query = query.or(`check_out.lt.${today},status.in.(cancelled,completed)`)
   }

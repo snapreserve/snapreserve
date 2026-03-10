@@ -37,16 +37,36 @@ export default async function HostBookingDetailPage({ params }) {
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('*, listings(id, title, city, state, country, property_type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy, images, checkin_start_time, checkin_end_time, checkout_time)')
+    .select('*, listings(id, title, city, state, country, property_type, bedrooms, bathrooms, max_guests, price_per_night, cancellation_policy, early_checkout_policy, early_checkout_partial_amount, images, checkin_start_time, checkin_end_time, checkout_time)')
     .eq('id', id)
     .eq('host_id', hostUserId)
     .maybeSingle()
 
   if (!booking) redirect('/host/dashboard')
 
-  const { data: guest } = booking.guest_id
+  let { data: guest } = booking.guest_id
     ? await admin.from('users').select('id, full_name, email, avatar_url, phone, email_confirmed_at, phone_confirmed_at, id_verified, is_verified, created_at').eq('id', booking.guest_id).maybeSingle()
     : { data: null }
+
+  // Fallback: if public.users has no row or no name, pull from auth.users metadata
+  if (booking.guest_id && (!guest || !guest.full_name)) {
+    const { data: authUser } = await admin.auth.admin.getUserById(booking.guest_id)
+    if (authUser?.user) {
+      const meta = authUser.user.user_metadata || {}
+      guest = {
+        id:                   authUser.user.id,
+        full_name:            guest?.full_name || meta.full_name || meta.name || null,
+        email:                guest?.email     || authUser.user.email || '',
+        avatar_url:           guest?.avatar_url || meta.avatar_url || null,
+        phone:                guest?.phone     || authUser.user.phone || null,
+        email_confirmed_at:   guest?.email_confirmed_at || authUser.user.email_confirmed_at || null,
+        phone_confirmed_at:   guest?.phone_confirmed_at || null,
+        id_verified:          guest?.id_verified  || false,
+        is_verified:          guest?.is_verified  || false,
+        created_at:           guest?.created_at   || authUser.user.created_at || null,
+      }
+    }
+  }
 
   const { data: guestBookings } = booking.guest_id
     ? await admin.from('bookings').select('id, listing_id, status, check_in, check_out, nights, total_amount, listings(title)').eq('guest_id', booking.guest_id).eq('status', 'completed').order('check_in', { ascending: false }).limit(20)

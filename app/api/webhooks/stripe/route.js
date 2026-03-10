@@ -80,7 +80,7 @@ export async function POST(request) {
         const guestEmail = full.users?.email
         const guestName  = full.users?.full_name?.split(' ')[0] || 'there'
         const baseUrl    = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
-        const tripsUrl   = `${baseUrl}/account/trips`
+        const tripsUrl   = `${baseUrl}/account/trips?booking=${full.id}`
 
         // Email to guest
         if (guestEmail) {

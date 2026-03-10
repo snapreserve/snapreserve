@@ -61,19 +61,21 @@ export async function GET(request) {
   const { data: rows, count, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Mask guest names
+  // Mask guest names; exclude reviews from deleted guest accounts
   const guestIds = [...new Set((rows || []).map(r => r.guest_id).filter(Boolean))]
   const { data: guests } = guestIds.length
-    ? await admin.from('users').select('id, full_name').in('id', guestIds)
+    ? await admin.from('users').select('id, full_name, deleted_at').in('id', guestIds)
     : { data: [] }
+  const deletedGuestIds = new Set((guests || []).filter(g => g.deleted_at).map(g => g.id))
+  const rowsFiltered = (rows || []).filter(r => !deletedGuestIds.has(r.guest_id))
 
-  const guestMap = Object.fromEntries((guests || []).map(g => {
+  const guestMap = Object.fromEntries((guests || []).filter(g => !g.deleted_at).map(g => {
     const parts = (g.full_name || '').trim().split(/\s+/)
     const display = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0] || 'Guest'
     return [g.id, display]
   }))
 
-  const reviews = (rows || []).map(r => ({
+  const reviews = rowsFiltered.map(r => ({
     id:            r.id,
     listing_id:    r.listing_id,
     listing_title: listingMap[r.listing_id] || '—',
@@ -90,14 +92,20 @@ export async function GET(request) {
     created_at:    r.created_at,
   }))
 
-  // Aggregate metrics across ALL reviews (not just this page)
-  const { data: allRatings } = await admin
+  // Aggregate metrics across ALL reviews (not just this page), excluding deleted guests
+  const { data: allReviews } = await admin
     .from('reviews')
-    .select('rating')
+    .select('id, rating, guest_id')
     .in('listing_id', listingIdFilter ? [listingIdFilter] : listingIds)
     .eq('is_hidden', false)
+  const allGuestIds = [...new Set((allReviews || []).map(r => r.guest_id).filter(Boolean))]
+  const { data: allGuests } = allGuestIds.length
+    ? await admin.from('users').select('id, deleted_at').in('id', allGuestIds)
+    : { data: [] }
+  const allDeletedIds = new Set((allGuests || []).filter(u => u.deleted_at).map(u => u.id))
+  const allRatings = (allReviews || []).filter(r => !allDeletedIds.has(r.guest_id))
 
-  const ratingValues = (allRatings || []).map(r => Number(r.rating))
+  const ratingValues = allRatings.map(r => Number(r.rating))
   const avg_rating = ratingValues.length > 0
     ? Math.round((ratingValues.reduce((s, v) => s + v, 0) / ratingValues.length) * 10) / 10
     : 0

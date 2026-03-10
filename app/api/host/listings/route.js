@@ -16,11 +16,12 @@ export async function GET(request) {
 
   if (!hostRow) return Response.json({ error: 'Not a host' }, { status: 403 })
 
-  // Fetch ALL listings for this host (service role bypasses RLS)
+  // Fetch all non-deleted listings for this host
   const { data: listings, error } = await admin
     .from('listings')
     .select('id, title, city, state, price_per_night, status, is_active, images, rating, review_count, created_at')
     .eq('host_id', hostRow.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return Response.json({ error: 'Failed to fetch listings' }, { status: 500 })

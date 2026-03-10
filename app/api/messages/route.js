@@ -82,12 +82,14 @@ export async function GET(request) {
 }
 
 // POST — start (or retrieve) a conversation
+// Guest: { listing_id }
+// Host: { listing_id, guest_user_id } — host initiates from a confirmed booking
 export async function POST(request) {
   const { user } = await getUserSession()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { listing_id } = body
+  const { listing_id, guest_user_id } = body
   if (!listing_id) return NextResponse.json({ error: 'listing_id required' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -100,15 +102,38 @@ export async function POST(request) {
     .single()
 
   if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-  if (!listing.is_active || listing.status === 'suspended') {
-    return NextResponse.json({ error: 'This listing is not currently available.' }, { status: 400 })
-  }
 
   // listings.host_id → hosts.id (not users.id) — resolve the actual host user_id
   const { data: hostRow } = await admin
     .from('hosts').select('user_id').eq('id', listing.host_id).maybeSingle()
   const hostUserId = hostRow?.user_id
   if (!hostUserId) return NextResponse.json({ error: 'Host not found.' }, { status: 404 })
+
+  // ── Host-initiated: host opens/creates conv with a specific guest ────────
+  if (guest_user_id && hostUserId === user.id) {
+    const { data: existing } = await admin
+      .from('conversations')
+      .select('id')
+      .eq('guest_user_id', guest_user_id)
+      .eq('listing_id', listing_id)
+      .maybeSingle()
+
+    if (existing) return NextResponse.json({ conversation_id: existing.id })
+
+    const { data: conv, error } = await admin
+      .from('conversations')
+      .insert({ listing_id, guest_user_id, host_user_id: hostUserId })
+      .select('id')
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ conversation_id: conv.id }, { status: 201 })
+  }
+
+  // ── Guest-initiated ──────────────────────────────────────────────────────
+  if (!listing.is_active || listing.status === 'suspended') {
+    return NextResponse.json({ error: 'This listing is not currently available.' }, { status: 400 })
+  }
 
   if (hostUserId === user.id) {
     return NextResponse.json({ error: 'You cannot message your own listing.' }, { status: 400 })

@@ -73,14 +73,18 @@ function ListingsInner() {
   const stateParam   = searchParams.get('state')   || ''
   const countryParam = searchParams.get('country') || ''
 
-  const [listings,     setListings]     = useState([])
-  const [filtered,     setFiltered]     = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [destination,  setDestination]  = useState(cityParam || '')
-  const [typeFilter,   setTypeFilter]   = useState('all')       // all | hotel | private
-  const [locationChip, setLocationChip] = useState('all')      // all | new_york | miami | ...
-  const [featurePills, setFeaturePills] = useState([])         // beach, mountain, under200, etc.
-  const [sortBy,       setSortBy]       = useState('top_rated')
+  const [listings,          setListings]          = useState([])
+  const [filtered,          setFiltered]          = useState([])
+  const [loading,           setLoading]           = useState(true)
+  const [destination,       setDestination]       = useState(cityParam || '')
+  const [checkIn,           setCheckIn]           = useState(searchParams.get('check_in')  || '')
+  const [checkOut,          setCheckOut]          = useState(searchParams.get('check_out') || '')
+  const [unavailableIds,    setUnavailableIds]    = useState(new Set())
+  const [availChecking,     setAvailChecking]     = useState(false)
+  const [typeFilter,        setTypeFilter]        = useState('all')
+  const [locationChip,      setLocationChip]      = useState('all')
+  const [featurePills,      setFeaturePills]      = useState([])
+  const [sortBy,            setSortBy]            = useState('top_rated')
 
   useEffect(() => {
     fetchListings()
@@ -99,7 +103,7 @@ function ListingsInner() {
     seattle:       ['seattle'],
   }
 
-  useEffect(() => { applyFilters() }, [listings, destination, typeFilter, locationChip, featurePills, sortBy, cityParam, stateParam, countryParam])
+  useEffect(() => { applyFilters() }, [listings, destination, typeFilter, locationChip, featurePills, sortBy, cityParam, stateParam, countryParam, unavailableIds])
 
   async function fetchListings() {
     setLoading(true)
@@ -108,8 +112,28 @@ function ListingsInner() {
     setLoading(false)
   }
 
+  async function handleSearch() {
+    // If dates are provided, fetch unavailable listing IDs before applying filters
+    if (checkIn && checkOut && checkOut > checkIn) {
+      setAvailChecking(true)
+      try {
+        const res = await fetch(`/api/availability?check_in=${checkIn}&check_out=${checkOut}`)
+        const data = await res.json()
+        setUnavailableIds(new Set(data.unavailable_listing_ids || []))
+      } catch {
+        setUnavailableIds(new Set())
+      }
+      setAvailChecking(false)
+    } else {
+      setUnavailableIds(new Set())
+    }
+    applyFilters()
+  }
+
   function applyFilters() {
     let r = [...listings]
+    // Exclude unavailable listings when dates are selected
+    if (unavailableIds.size > 0) r = r.filter(l => !unavailableIds.has(l.id))
     if (countryParam) r = r.filter(l => (l.country||'').toLowerCase() === countryParam.toLowerCase())
     if (stateParam)   r = r.filter(l => (l.state||'').toLowerCase()   === stateParam.toLowerCase())
     if (cityParam)    r = r.filter(l => (l.city||'').toLowerCase()    === cityParam.toLowerCase())
@@ -257,24 +281,41 @@ function ListingsInner() {
               placeholder="Miami Beach, FL"
               value={destination}
               onChange={e => setDestination(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
           </div>
           <div className="sb-field">
             <span className="sb-label">Check-In</span>
-            <span className="sb-val">Mar 15, 2026</span>
-            <span className="sb-hint">Add dates</span>
+            <input
+              className="sb-input"
+              type="date"
+              value={checkIn}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={e => setCheckIn(e.target.value)}
+            />
           </div>
           <div className="sb-field">
             <span className="sb-label">Check-Out</span>
-            <span className="sb-val">Mar 18, 2026</span>
-            <span className="sb-hint">3 nights</span>
+            <input
+              className="sb-input"
+              type="date"
+              value={checkOut}
+              min={checkIn || new Date().toISOString().slice(0, 10)}
+              onChange={e => setCheckOut(e.target.value)}
+            />
+            {checkIn && checkOut && checkOut > checkIn && (
+              <span className="sb-hint">
+                {Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)} night{Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000) !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
           <div className="sb-field">
             <span className="sb-label">Guests</span>
             <span className="sb-val">2 guests</span>
           </div>
-          <button className="sb-btn" onClick={applyFilters}>🔍 Search</button>
+          <button className="sb-btn" onClick={handleSearch} disabled={availChecking}>
+            {availChecking ? '⏳ Checking…' : '🔍 Search'}
+          </button>
         </div>
       </div>
 
@@ -291,7 +332,17 @@ function ListingsInner() {
               {p.label}
             </button>
           ))}
-          <span className="pill-count">{filtered.length} properties</span>
+          <span className="pill-count">
+            {filtered.length} {unavailableIds.size > 0 ? 'available' : ''} propert{filtered.length !== 1 ? 'ies' : 'y'}
+            {unavailableIds.size > 0 && (
+              <button
+                onClick={() => { setUnavailableIds(new Set()); setCheckIn(''); setCheckOut('') }}
+                style={{ marginLeft: 8, fontSize: '0.7rem', color: '#F4601A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕ Clear dates
+              </button>
+            )}
+          </span>
         </div>
         {/* Row 2: Location chips */}
         <div className="pills-row pills-row-scroll">

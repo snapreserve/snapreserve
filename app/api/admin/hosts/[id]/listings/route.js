@@ -28,7 +28,11 @@ export async function GET(request, { params }) {
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  if (statusFilter !== 'all') q = q.eq('status', statusFilter)
+  if (statusFilter === 'pending') {
+    q = q.in('status', ['pending', 'pending_review'])
+  } else if (statusFilter !== 'all') {
+    q = q.eq('status', statusFilter)
+  }
   if (city) q = q.ilike('city', `%${city}%`)
 
   q = q.range(offset, offset + limit - 1)

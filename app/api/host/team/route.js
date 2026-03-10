@@ -44,18 +44,24 @@ export async function GET(request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Enrich with user profile data
-  const enriched = await Promise.all(
+  // Enrich with user profile data; exclude members whose user account is deleted
+  const enrichedRaw = await Promise.all(
     (members || []).map(async (m) => {
-      if (!m.user_id) return { ...m, full_name: null, email: m.invite_email }
+      if (!m.user_id) return { ...m, full_name: null, email: m.invite_email, _deleted: false }
       const { data: profile } = await admin
         .from('users')
-        .select('full_name, email')
+        .select('full_name, email, deleted_at')
         .eq('id', m.user_id)
         .maybeSingle()
-      return { ...m, full_name: profile?.full_name || null, email: profile?.email || m.invite_email }
+      return {
+        ...m,
+        full_name: profile?.full_name || null,
+        email: profile?.email || m.invite_email,
+        _deleted: !!profile?.deleted_at,
+      }
     })
   )
+  const enriched = enrichedRaw.filter((m) => !m._deleted).map(({ _deleted, ...m }) => m)
 
   // Determine caller's role in this org
   const callerMember = (members || []).find((m) => m.user_id === user.id)

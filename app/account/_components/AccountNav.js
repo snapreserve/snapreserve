@@ -24,6 +24,7 @@ const NAV_SECTIONS = [
     items: [
       { href: '/account/payments',      icon: '💳', label: 'Payments' },
       { href: '/account/profile',       icon: '👤', label: 'Profile & Settings' },
+      { href: '/account/verify',        icon: '🪪', label: 'Verify Identity' },
       { href: '/account/notifications', icon: '🔔', label: 'Notifications' },
       { href: '/account/security',      icon: '🔒', label: 'Security' },
     ],

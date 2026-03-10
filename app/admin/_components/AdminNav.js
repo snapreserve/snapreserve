@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Building2, Users, UserRound, ClipboardList, Luggage,
   CalendarDays, Flag, Star, Scale, Banknote, TrendingUp,
-  ListChecks, Globe2, CircleDot,
+  ListChecks, Globe2, CircleDot, MessageSquare,
   Zap, KeyRound, Shield, ScrollText, Mail, Settings, ShieldOff,
 } from 'lucide-react'
 import { getAllowedNavItems } from '@/lib/admin-permissions'
@@ -21,6 +21,7 @@ const HREF_KEY_MAP = {
   '/admin/reviews':            'reviews',
   '/admin/appeals':            'appeals',
   '/admin/refunds':            'refunds',
+  '/admin/messages':           'messages',
   '/admin/finance':            'finance',
   '/admin/waitlist':           'waitlist',
   '/admin/international-leads':'intl-leads',
@@ -44,8 +45,9 @@ const NAV_SECTIONS = [
   {
     title: 'Users & Content',
     items: [
-      { href: '/admin/listings',           Icon: Building2,     label: 'Listings' },
-      { href: '/admin/users',              Icon: Users,         label: 'All Users' },
+      { href: '/admin/listings',             Icon: Building2,     label: 'Listings' },
+      { href: '/admin/listings?tab=pending', Icon: ListChecks,    label: 'Pending Review' },
+      { href: '/admin/users',                Icon: Users,         label: 'All Users' },
       { href: '/admin/hosts',              Icon: UserRound,     label: 'Hosts' },
       { href: '/admin/host-applications',  Icon: ClipboardList, label: 'Host Applications' },
       { href: '/admin/guests',             Icon: Luggage,       label: 'Guests' },
@@ -55,6 +57,7 @@ const NAV_SECTIONS = [
     title: 'Operations',
     items: [
       { href: '/admin/bookings',  Icon: CalendarDays, label: 'Bookings' },
+      { href: '/admin/messages',  Icon: MessageSquare, label: 'Messages' },
       { href: '/admin/reports',   Icon: Flag,         label: 'Reports' },
       { href: '/admin/reviews',   Icon: Star,         label: 'Reviews' },
       { href: '/admin/appeals',   Icon: Scale,        label: 'Appeals' },

@@ -3,6 +3,7 @@ import { getHostUser } from '@/lib/get-host-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { logAction } from '@/lib/audit-log'
 import { headers } from 'next/headers'
+import { sendEmail, checkInEmailHtml, checkInEmailText } from '@/lib/send-email'
 
 // POST /api/host/bookings/[id]/checkin
 export async function POST(request, { params }) {
@@ -37,7 +38,7 @@ export async function POST(request, { params }) {
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('id, reference, status, check_in, check_out, listing_id, guest_id, listings(title)')
+    .select('id, reference, status, check_in, check_out, nights, guests, listing_id, guest_id, listings(title, city, state)')
     .eq('id', id)
     .eq('host_id', hostUserId)
     .maybeSingle()
@@ -84,6 +85,47 @@ export async function POST(request, { params }) {
     ipAddress:  ip,
     userAgent:  ua,
   })
+
+  // Email guest check-in confirmation (non-blocking)
+  try {
+    const { data: authUser } = await admin.auth.admin.getUserById(booking.guest_id)
+    const guestEmail = authUser?.user?.email
+    const { data: guestProfile } = await admin.from('users').select('full_name').eq('id', booking.guest_id).maybeSingle()
+    const guestName  = guestProfile?.full_name?.split(' ')[0] || authUser?.user?.user_metadata?.full_name?.split(' ')[0] || 'there'
+    const baseUrl    = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+    const tripsUrl   = `${baseUrl}/account/trips?booking=${booking.id}`
+
+    if (guestEmail) {
+      await sendEmail({
+        to:      guestEmail,
+        subject: `You're checked in — ${booking.listings?.title || 'your stay'}`,
+        html:    checkInEmailHtml({
+          guestName,
+          listingTitle: booking.listings?.title,
+          city:         booking.listings?.city,
+          state:        booking.listings?.state,
+          checkOut:     booking.check_out,
+          nights:       booking.nights,
+          guests:       booking.guests,
+          reference:    booking.reference,
+          tripsUrl,
+        }),
+        text: checkInEmailText({
+          guestName,
+          listingTitle: booking.listings?.title,
+          city:         booking.listings?.city,
+          state:        booking.listings?.state,
+          checkOut:     booking.check_out,
+          nights:       booking.nights,
+          guests:       booking.guests,
+          reference:    booking.reference,
+          tripsUrl,
+        }),
+      })
+    }
+  } catch (emailErr) {
+    console.error('[checkin] email error:', emailErr.message)
+  }
 
   return NextResponse.json({ success: true, checked_in_at: now })
 }

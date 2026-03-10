@@ -72,13 +72,19 @@ export async function GET(request) {
     .eq('status', 'checked_in')
     .lt('check_out', new Date().toISOString().slice(0, 10))
 
-  // ── Metrics: all bookings (not paginated) ─────────────────────────────────
+  // ── Metrics: all bookings (not paginated), exclude deleted guests ──────────
   let metricsQ = admin
     .from('bookings')
-    .select('status, payment_status, total_amount, service_fee, platform_fee, platform_fixed_fee, refund_amount, check_in')
+    .select('id, status, payment_status, total_amount, service_fee, platform_fee, platform_fixed_fee, refund_amount, check_in, guest_id')
     .eq('host_id', hostUserId)
   if (allowedListingIds) metricsQ = metricsQ.in('listing_id', allowedListingIds)
-  const { data: allBookings } = await metricsQ
+  const { data: allBookingsRaw } = await metricsQ
+  const metricGuestIds = [...new Set((allBookingsRaw || []).map(b => b.guest_id).filter(Boolean))]
+  const { data: metricGuests } = metricGuestIds.length
+    ? await admin.from('users').select('id, deleted_at').in('id', metricGuestIds)
+    : { data: [] }
+  const metricGuestDeleted = new Set((metricGuests || []).filter(u => u.deleted_at).map(u => u.id))
+  const allBookings = (allBookingsRaw || []).filter(b => !metricGuestDeleted.has(b.guest_id))
 
   const all      = allBookings || []
   const now      = new Date()
@@ -138,14 +144,18 @@ export async function GET(request) {
   const { data: bookings, count, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Enrich with guest profiles
+  // Enrich with guest profiles; exclude bookings whose guest account is deleted
   const guestIds = [...new Set((bookings || []).map(b => b.guest_id).filter(Boolean))]
   const { data: guests } = guestIds.length
-    ? await admin.from('users').select('id, full_name, email').in('id', guestIds)
+    ? await admin.from('users').select('id, full_name, email, deleted_at').in('id', guestIds)
     : { data: [] }
   const guestMap = Object.fromEntries((guests || []).map(g => [g.id, g]))
+  const bookingsFiltered = (bookings || []).filter(b => {
+    const g = guestMap[b.guest_id]
+    return g && !g.deleted_at
+  })
 
-  const rows = (bookings || []).map(b => {
+  const rows = bookingsFiltered.map(b => {
     const g = guestMap[b.guest_id] || {}
     const hostEarnings = bookingHostPayout(b)
     const pfee = (Number(b.platform_fee) || 0) + (Number(b.platform_fixed_fee) || 0)

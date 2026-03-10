@@ -136,12 +136,11 @@ export async function proxy(request) {
 
     if (!isOwner && !isBypassPath) {
       if (user) {
-        // Authenticated: check approval status
-        // Approved users bypass the waitlist lock entirely
+        // Authenticated: check approval status — pending/rejected cannot access any platform features
         const profile = await getUserProfile(supabase, user.id)
         if (profile.status !== 'approved') {
           const url = request.nextUrl.clone()
-          url.pathname = '/waitlist'
+          url.pathname = '/pending-approval'
           url.search   = ''
           return NextResponse.redirect(url)
         }

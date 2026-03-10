@@ -1,6 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
 
+// Reads ?booking=<id> from the URL (client-side only, no Suspense needed)
+function useBookingHighlight() {
+  const [highlightId, setHighlightId] = useState(null)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const id = p.get('booking')
+    if (id) setHighlightId(id)
+  }, [])
+  return highlightId
+}
+
 const STATUS_COLORS = {
   confirmed: { bg: 'rgba(22,163,74,0.08)', color: '#16A34A', label: 'Confirmed' },
   pending:   { bg: 'rgba(234,179,8,0.1)',  color: '#92400E', label: 'Pending' },
@@ -91,6 +102,7 @@ function HouseInfoCard({ listing }) {
 }
 
 export default function TripsPage() {
+  const highlightId = useBookingHighlight()
   const [filter, setFilter]         = useState('upcoming')
   const [bookings, setBookings]     = useState([])
   const [hostBookings, setHostBookings] = useState([])
@@ -145,6 +157,12 @@ export default function TripsPage() {
     if (filter === 'upcoming') loadHostBookings()
     else setHostBookings([])
   }, [filter])
+  // Scroll to + highlight the booking from the email link
+  useEffect(() => {
+    if (!highlightId || loading) return
+    const el = document.getElementById(`booking-${highlightId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [highlightId, loading])
 
   function canCancel(b) {
     return ['pending', 'confirmed'].includes(b.status) && filter === 'upcoming'
@@ -287,10 +305,11 @@ export default function TripsPage() {
         {bookings.map(b => {
           const st = STATUS_COLORS[b.status] ?? STATUS_COLORS.pending
           const reviewed = reviewedIds.has(b.id)
+          const isHighlighted = highlightId === b.id
           return (
-            <div key={b.id} style={{ background: 'white', border: '1px solid #E8E2D9', borderRadius: '16px', overflow: 'hidden', display: 'flex' }}>
-              {b.listings?.main_image_url && (
-                <div style={{ width: '140px', flexShrink: 0, background: '#E8E2D9', backgroundImage: `url(${b.listings.main_image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            <div key={b.id} id={`booking-${b.id}`} style={{ background: 'white', border: `2px solid ${isHighlighted ? '#F4601A' : '#E8E2D9'}`, borderRadius: '16px', overflow: 'hidden', display: 'flex', boxShadow: isHighlighted ? '0 0 0 4px rgba(244,96,26,0.12)' : 'none', transition: 'box-shadow 0.3s' }}>
+              {b.listings?.images?.[0] && (
+                <div style={{ width: '140px', flexShrink: 0, background: '#E8E2D9', backgroundImage: `url(${b.listings.images[0]})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
               )}
               <div style={{ flex: 1, padding: '20px 24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>

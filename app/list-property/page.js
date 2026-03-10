@@ -355,6 +355,8 @@ function ListPropertyInner() {
     checkinEndTime: '',
     checkoutTime: '11:00',
     cancellationPolicy: 'flexible',
+    earlyCheckoutPolicy: 'no_refund',
+    earlyCheckoutPartialAmount: '',
     petPolicy: 'no_pets',
     smokingPolicy: 'no_smoking',
     quietHoursStart: '',
@@ -440,7 +442,9 @@ function ListPropertyInner() {
           checkinStartTime:   listing.checkin_start_time   || '15:00',
           checkinEndTime:     listing.checkin_end_time     || '',
           checkoutTime:       listing.checkout_time        || '11:00',
-          cancellationPolicy: listing.cancellation_policy  || 'flexible',
+          cancellationPolicy:           listing.cancellation_policy           || 'flexible',
+          earlyCheckoutPolicy:          listing.early_checkout_policy          || 'no_refund',
+          earlyCheckoutPartialAmount:   listing.early_checkout_partial_amount != null ? String(listing.early_checkout_partial_amount) : '',
           petPolicy:          listing.pet_policy           || 'no_pets',
           smokingPolicy:      listing.smoking_policy       || 'no_smoking',
           quietHoursStart:    listing.quiet_hours_start    || '',
@@ -570,7 +574,9 @@ function ListPropertyInner() {
         checkin_start_time:  form.checkinStartTime  || null,
         checkin_end_time:    form.checkinEndTime     || null,
         checkout_time:       form.checkoutTime       || null,
-        cancellation_policy: form.cancellationPolicy || 'flexible',
+        cancellation_policy:           form.cancellationPolicy || 'flexible',
+        early_checkout_policy:         form.earlyCheckoutPolicy || 'no_refund',
+        early_checkout_partial_amount: form.earlyCheckoutPolicy === 'partial_refund' && form.earlyCheckoutPartialAmount ? Number(form.earlyCheckoutPartialAmount) : null,
         pet_policy:          form.petPolicy          || 'no_pets',
         smoking_policy:      form.smokingPolicy      || 'no_smoking',
         quiet_hours_start:   form.quietHoursStart    || null,
@@ -698,11 +704,13 @@ function ListPropertyInner() {
         min_nights:      form.minNights,
         is_instant_book:     form.instantBook,
         is_active:           false,
-        status:              'pending',
+        status:              'pending_review',
         checkin_start_time:  form.checkinStartTime  || null,
         checkin_end_time:    form.checkinEndTime     || null,
         checkout_time:       form.checkoutTime       || null,
-        cancellation_policy: form.cancellationPolicy || 'flexible',
+        cancellation_policy:           form.cancellationPolicy || 'flexible',
+        early_checkout_policy:         form.earlyCheckoutPolicy || 'no_refund',
+        early_checkout_partial_amount: form.earlyCheckoutPolicy === 'partial_refund' && form.earlyCheckoutPartialAmount ? Number(form.earlyCheckoutPartialAmount) : null,
         pet_policy:          form.petPolicy          || 'no_pets',
         smoking_policy:      form.smokingPolicy      || 'no_smoking',
         quiet_hours_start:   form.quietHoursStart    || null,
@@ -1353,6 +1361,37 @@ function ListPropertyInner() {
                     <option value="strict">Strict — full refund up to 7–14 days before check-in</option>
                     <option value="non_refundable">Non-refundable — no refunds after booking</option>
                   </select>
+                </div>
+
+                {/* Early Check-out Policy */}
+                <div className="form-group">
+                  <label className="form-label">Early check-out policy</label>
+                  <select className="policy-select" value={form.earlyCheckoutPolicy} onChange={e => update('earlyCheckoutPolicy', e.target.value)}>
+                    <option value="no_refund">No Refund — guest pays for all booked nights</option>
+                    <option value="one_night_fee">One Night Fee — guest pays 1 extra night, rest refunded</option>
+                    <option value="partial_refund">Partial Refund — set a specific refund amount</option>
+                    <option value="rebooked">Refund if Rebooked — refund issued if the nights are filled</option>
+                  </select>
+                  {form.earlyCheckoutPolicy === 'partial_refund' && (
+                    <div style={{ marginTop: 10 }}>
+                      <label className="form-label" style={{ marginBottom: 4 }}>Partial refund amount ($)</label>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 50.00"
+                        value={form.earlyCheckoutPartialAmount}
+                        onChange={e => update('earlyCheckoutPartialAmount', e.target.value)}
+                        style={{ maxWidth: 160 }}
+                      />
+                    </div>
+                  )}
+                  {form.earlyCheckoutPolicy === 'rebooked' && (
+                    <p style={{ marginTop: 8, fontSize: '0.8rem', color: 'var(--mid)', lineHeight: 1.5 }}>
+                      If the guest checks out early, unused nights will be refunded only after you confirm the dates were rebooked.
+                    </p>
+                  )}
                 </div>
 
                 {/* Pet & Smoking Policy */}

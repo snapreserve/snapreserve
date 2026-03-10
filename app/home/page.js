@@ -52,6 +52,7 @@ export default function HomePage() {
   const router = useRouter()
   const [mode, setMode] = useState('hotel')
   const [listings, setListings] = useState([])
+  const [editorsPick, setEditorsPick] = useState([])
   const [stats, setStats] = useState({ hotels: 0, private_stays: 0, cities: 0, hosts: 0 })
   const [activeChip, setActiveChip] = useState(null)
   const [destination, setDestination] = useState('')
@@ -69,6 +70,12 @@ export default function HomePage() {
   const searchRef = useRef(null)
   const autocompleteService = useRef(null)
   const debounceRef = useRef(null)
+  const topRatedRef = useRef(null)
+  const epRef = useRef(null)
+
+  function scrollSlider(ref, dir) {
+    ref.current?.scrollBy({ left: dir * 310, behavior: 'smooth' })
+  }
 
   useEffect(() => { fetchData() }, [])
   useEffect(() => { setActiveChip(null) }, [mode])
@@ -85,16 +92,26 @@ export default function HomePage() {
   }, [])
 
   async function fetchData() {
-    const { data } = await supabase
-      .from('listings')
-      .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities')
-      .eq('is_active', true)
-      .order('rating', { ascending: false })
+    const [{ data }, { data: epData }, { count: hostCount }] = await Promise.all([
+      supabase
+        .from('listings')
+        .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities, images, editors_pick, is_instant_book, host_snap_verified')
+        .eq('is_active', true)
+        .order('rating', { ascending: false }),
+      supabase
+        .from('listings')
+        .select('id, title, city, state, property_type, price_per_night, rating, review_count, amenities, images, is_instant_book, host_snap_verified')
+        .eq('is_active', true)
+        .eq('status', 'approved')
+        .eq('editors_pick', true)
+        .order('rating', { ascending: false }),
+      supabase.from('users').select('id', { count: 'exact', head: true }).eq('is_host', true),
+    ])
     const all = data || []
     setListings(all)
+    setEditorsPick(epData || [])
     const cities = [...new Set(all.map(l => l.city))].length
-    const { count: hostCount } = await supabase.from('users').select('id', { count: 'exact', head: true }).eq('is_host', true)
-    setStats({ hotels: all.filter(l => l.type === 'hotel').length, private_stays: all.filter(l => l.type === 'private_stay').length, cities, hosts: hostCount || 0 })
+    setStats({ hotels: all.filter(l => l.property_type === 'hotel').length, private_stays: all.filter(l => l.property_type === 'private_stay').length, cities, hosts: hostCount || 0 })
   }
 
   // Load Google Places
@@ -199,7 +216,7 @@ export default function HomePage() {
         : 'radial-gradient(ellipse at 60% 0%, #ffeade 0%, #faf6f0 55%)')
   const chips = isHotel ? hotelChips : privateChips
   const steps = isHotel ? hotelSteps : privateSteps
-  const filteredListings = listings.filter(l => l.type === mode).slice(0, 4)
+  const filteredListings = listings.filter(l => l.property_type === (mode === 'private' ? 'private_stay' : mode))
 
   return (
     <div>
@@ -262,7 +279,11 @@ export default function HomePage() {
         .see-all { font-size:0.84rem; font-weight:700; text-decoration:none; }
         .see-all:hover { text-decoration:underline; }
 
-        .listings-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+        .sl-track { display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; padding:4px 2px 16px; -webkit-overflow-scrolling:touch; }
+        .sl-track::-webkit-scrollbar { display:none; }
+        .sl-track .listing-card { flex:0 0 280px; scroll-snap-align:start; }
+        .sl-arrow { width:38px; height:38px; border-radius:50%; background:var(--sr-card); border:1.5px solid var(--sr-border); cursor:pointer; font-size:1.15rem; display:inline-flex; align-items:center; justify-content:center; color:var(--sr-text); transition:all 0.15s; font-family:inherit; flex-shrink:0; line-height:1; }
+        .sl-arrow:hover { background:var(--sr-surface); box-shadow:0 2px 12px rgba(0,0,0,0.13); }
         .listing-card { background:var(--sr-card); border-radius:18px; overflow:hidden; border:1px solid var(--sr-border); transition:all 0.22s; text-decoration:none; color:inherit; display:block; }
         .listing-card:hover { transform:translateY(-4px); box-shadow:0 16px 48px rgba(0,0,0,0.1); }
         .card-img { height:200px; position:relative; overflow:hidden; background:var(--sr-surface); }
@@ -295,9 +316,9 @@ export default function HomePage() {
         .sug-item { display:flex; align-items:center; gap:12px; padding:10px 16px; cursor:pointer; transition:background 0.15s; }
         .sug-item:hover { background:var(--sr-surface); }
 
-        @media(max-width:1024px) { .listings-grid{grid-template-columns:repeat(2,1fr);} }
-        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .listings-grid{grid-template-columns:repeat(2,1fr);} .hero,.w{padding-left:20px;padding-right:20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} }
-        @media(max-width:480px) { .listings-grid{grid-template-columns:1fr;} }
+        .sl-track .listing-card { flex:0 0 280px; }
+        @media(max-width:768px) { .cards-row,.steps-grid{grid-template-columns:1fr;} .hero,.w{padding-left:20px;padding-right:20px;} .big-card{height:280px;} .hero-headline{font-size:3rem;letter-spacing:-1px;} .search-box{grid-template-columns:1fr;border-radius:16px;} .sl-track .listing-card{flex:0 0 240px;} }
+        @media(max-width:480px) { .sl-track .listing-card{flex:0 0 82vw;} }
       `}</style>
 
 
@@ -460,14 +481,18 @@ export default function HomePage() {
         <div className="top-rated">
           <div className="section-header">
             <h2 className="section-title">Top rated <span style={{ color: accent, fontStyle:'italic' }}>{isHotel ? 'hotels' : 'private stays'}</span></h2>
-            <a href={`/listings?type=${mode}`} className="see-all" style={{ color: accent }}>See all →</a>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <button className="sl-arrow" onClick={() => scrollSlider(topRatedRef, -1)} aria-label="Previous">‹</button>
+              <button className="sl-arrow" onClick={() => scrollSlider(topRatedRef,  1)} aria-label="Next">›</button>
+              <a href={`/listings?type=${mode}`} className="see-all" style={{ color: accent, marginLeft: 4 }}>See all →</a>
+            </div>
           </div>
-          <div className="listings-grid">
+          <div ref={topRatedRef} className="sl-track">
             {filteredListings.length === 0 && (
-              <div style={{ gridColumn:'1/-1', textAlign:'center', padding:'48px', color:'var(--sr-muted)' }}>Loading listings...</div>
+              <div style={{ color:'var(--sr-muted)', padding:'48px 0', whiteSpace:'nowrap' }}>Loading listings…</div>
             )}
             {filteredListings.map((listing, i) => {
-              const img = cityImages[listing.city] || fallbackImages[i % fallbackImages.length]
+              const img = listing.images?.[0] || cityImages[listing.city] || fallbackImages[i % fallbackImages.length]
               const amenities = listing.amenities ? listing.amenities.split(',').slice(0, 3) : []
               const pill = listing.property_type === 'hotel'
                 ? { bg:'#EDF4FF', color:'#1A6EF4', label:'🏨 Hotel' }
@@ -499,6 +524,55 @@ export default function HomePage() {
             })}
           </div>
         </div>
+
+        {/* EDITOR'S PICK */}
+        {editorsPick.length > 0 && (
+          <div className="top-rated" style={{ marginTop: 0 }}>
+            <div className="section-header">
+              <h2 className="section-title">
+                <span style={{ color: '#F59E0B', fontStyle: 'italic' }}>Editor's</span> Pick
+                <span style={{ marginLeft: 8, fontSize: '1.1rem' }}>⭐</span>
+              </h2>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <button className="sl-arrow" onClick={() => scrollSlider(epRef, -1)} aria-label="Previous">‹</button>
+                <button className="sl-arrow" onClick={() => scrollSlider(epRef,  1)} aria-label="Next">›</button>
+                <a href="/listings" className="see-all" style={{ color: '#F59E0B', marginLeft: 4 }}>See all →</a>
+              </div>
+            </div>
+            <div ref={epRef} className="sl-track">
+              {editorsPick.map((listing, i) => {
+                const img = listing.images?.[0] || cityImages[listing.city] || fallbackImages[i % fallbackImages.length]
+                const amenities = listing.amenities ? listing.amenities.split(',').slice(0, 3) : []
+                const pill = listing.property_type === 'hotel'
+                  ? { bg: '#EDF4FF', color: '#1A6EF4', label: '🏨 Hotel' }
+                  : { bg: '#FFF3ED', color: '#F4601A', label: '🏠 Private Stay' }
+                return (
+                  <a key={listing.id} href={`/listings/${listing.id}`} className="listing-card">
+                    <div className="card-img">
+                      <img src={img} alt={listing.title} loading="lazy" />
+                      <div className="type-pill" style={{ background: pill.bg, color: pill.color }}>{pill.label}</div>
+                      <div className="instant-pill" style={{ background: 'rgba(245,158,11,0.9)', color: '#fff', fontWeight: 800 }}>⭐ Editor's Pick</div>
+                    </div>
+                    <div className="card-body">
+                      <div className="card-name">{listing.title}</div>
+                      <div className="card-loc">📍 {listing.city}, {listing.state}</div>
+                      {listing.host_snap_verified && (
+                        <div className="snap-badge">🛡 SnapReserve™ Verified Host</div>
+                      )}
+                      {amenities.length > 0 && (
+                        <div className="amenity-chips">{amenities.map(a => <span key={a} className="a-chip">{a.trim()}</span>)}</div>
+                      )}
+                      <div className="card-foot">
+                        <div className="card-price" style={{ color: '#F59E0B' }}>${listing.price_per_night} <small>/night</small></div>
+                        <div className="card-rating">★ {listing.rating} <span style={{ fontSize: '0.7rem', color: '#A89880' }}>({listing.review_count})</span></div>
+                      </div>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* HOW IT WORKS */}
         <div className="how">

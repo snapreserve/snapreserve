@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
 function supabase() {
@@ -11,7 +12,7 @@ function supabase() {
 
 const STATUS_TABS = [
   { key: 'all',                label: 'All',              icon: '📋' },
-  { key: 'pending',            label: 'Pending',          icon: '⏳' },
+  { key: 'pending',            label: 'Pending Review',    icon: '⏳' },
   { key: 'changes_requested',  label: 'Changes Req.',     icon: '🔄' },
   { key: 'pending_reapproval', label: 'Reapproval',       icon: '🔍' },
   { key: 'approved',           label: 'Approved',         icon: '✅' },
@@ -20,10 +21,13 @@ const STATUS_TABS = [
 ]
 
 export default function ListingApprovalsPage() {
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get('tab')
+  const initialTab = (tabFromUrl && STATUS_TABS.some(t => t.key === tabFromUrl)) ? tabFromUrl : 'pending'
   const [approvals, setApprovals]               = useState([])
   const [changeRequestsMap, setChangeRequestsMap] = useState({})
   const [loading, setLoading]                   = useState(true)
-  const [activeTab, setActiveTab]               = useState('pending')
+  const [activeTab, setActiveTab]               = useState(initialTab)
   const [selected, setSelected]                 = useState(null)
   const [myRole, setMyRole]                     = useState(null)
 
@@ -105,6 +109,12 @@ export default function ListingApprovalsPage() {
   }, [])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Keep tab in sync with URL (e.g. /admin/listings?tab=pending)
+  useEffect(() => {
+    const t = searchParams.get('tab')
+    if (t && STATUS_TABS.some(x => x.key === t) && t !== activeTab) setActiveTab(t)
+  }, [searchParams])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
@@ -267,7 +277,7 @@ export default function ListingApprovalsPage() {
 
   const stats = {
     all:                 approvals.length,
-    pending:             approvals.filter(a => a.status === 'pending').length,
+    pending:             approvals.filter(a => a.status === 'pending' || a.status === 'pending_review').length,
     changes_requested:   approvals.filter(a => a.status === 'changes_requested').length,
     pending_reapproval:  approvals.filter(a => a.status === 'pending_reapproval').length,
     approved:            approvals.filter(a => a.status === 'approved').length,
@@ -275,7 +285,7 @@ export default function ListingApprovalsPage() {
     suspended:           approvals.filter(a => a.status === 'suspended').length,
   }
   const filtered = approvals
-    .filter(a => activeTab === 'all' || a.status === activeTab)
+    .filter(a => activeTab === 'all' || (activeTab === 'pending' ? (a.status === 'pending' || a.status === 'pending_review') : a.status === activeTab))
     .filter(a => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
@@ -289,7 +299,7 @@ export default function ListingApprovalsPage() {
     })
 
   function ActionButtons({ a }) {
-    const isPending    = a.status === 'pending'
+    const isPending    = a.status === 'pending' || a.status === 'pending_review'
     const isChanges    = a.status === 'changes_requested'
     const isRejected   = a.status === 'rejected'
     const isSuspended  = a.status === 'suspended'

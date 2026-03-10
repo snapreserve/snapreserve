@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ThemeToggle from '@/app/components/ThemeToggle'
 import HostSidebar from '@/app/host/_components/HostSidebar'
@@ -231,7 +231,7 @@ function MessagesTab({ userId, onRead }) {
   )
 }
 
-function HostInbox({ userId, onAdminRead, unreadAdminCount = 0 }) {
+function HostInbox({ userId, onAdminRead, unreadAdminCount = 0, initialListing = null, initialGuest = null }) {
   const [tab,           setTab]          = useState('inbox')
   const [convs,         setConvs]        = useState([])
   const [convLoading,   setConvLoading]  = useState(true)
@@ -257,6 +257,45 @@ function HostInbox({ userId, onAdminRead, unreadAdminCount = 0 }) {
         setConvLoading(false)
       })
   }, [userId])
+
+  // Auto-open/create conversation from initialListing + initialGuest (from booking detail)
+  useEffect(() => {
+    if (!initialListing || convLoading) return
+
+    // Find conv matching listing + guest (if guest param provided), else just listing
+    const existing = initialGuest
+      ? convs.find(c => c.listing?.id === initialListing && c.guest_user_id === initialGuest)
+      : convs.find(c => c.listing?.id === initialListing)
+
+    if (existing) {
+      if (activeId !== existing.id) openThread(existing.id)
+      return
+    }
+
+    // No existing conv — create one (host-initiated, requires guest_user_id)
+    if (!initialGuest) return  // can't create without knowing the guest
+
+    fetch('/api/messages', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ listing_id: initialListing, guest_user_id: initialGuest }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.conversation_id) {
+          fetch('/api/messages')
+            .then(r => r.json())
+            .then(d => {
+              setConvs(d.conversations || [])
+              openThread(data.conversation_id)
+            })
+        } else if (data.error) {
+          showToast(data.error, 'error')
+        }
+      })
+      .catch(() => showToast('Could not open conversation.', 'error'))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convLoading, initialListing, initialGuest])
 
   async function openThread(convId) {
     setActiveId(convId)
@@ -492,13 +531,14 @@ function getGreeting() {
 }
 
 
-export default function HostDashboard() {
+function HostDashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [profile,       setProfile]       = useState(null)
   const [listings,      setListings]      = useState([])
   const [changeRequests,setChangeRequests]= useState({})
   const [loading,       setLoading]       = useState(true)
-  const [activeNav,     setActiveNav]     = useState('overview')
+  const [activeNav,     setActiveNav]     = useState(searchParams.get('nav') || 'overview')
   const [actionLoading, setActionLoading] = useState(null)
   const [toast,         setToast]         = useState(null)
   const [expandedCR,    setExpandedCR]    = useState(null)
@@ -541,6 +581,7 @@ export default function HostDashboard() {
   const [hostCancelReason,     setHostCancelReason]     = useState('')
   const [hostCancelling,       setHostCancelling]       = useState(false)
   const [hostCancelResult,     setHostCancelResult]     = useState(null)
+  const [approvingBookingId,   setApprovingBookingId]   = useState(null)
   // Calendar
   const [calYear,          setCalYear]          = useState(new Date().getFullYear())
   const [calMonth,         setCalMonth]         = useState(new Date().getMonth())    // 0-indexed
@@ -1179,6 +1220,23 @@ export default function HostDashboard() {
       setHostReviews(prev => prev.map(r => r.id === replyModal.id ? { ...r, host_reply: replyText.trim() || null } : r))
       setReplyModal(null)
       setReplyText('')
+    }
+  }
+
+  async function handleApproveBooking(bookingId) {
+    setApprovingBookingId(bookingId)
+    const res = await fetch(`/api/host/bookings/${bookingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm' }),
+    })
+    const json = await res.json()
+    setApprovingBookingId(null)
+    if (!res.ok) {
+      showToast(json.error || 'Failed to approve booking', 'error')
+    } else {
+      showToast('Booking approved!', 'success')
+      loadHostBookings(bkFilter, bkPropFilter, hostBookingsMeta.page)
     }
   }
 
@@ -1928,6 +1986,13 @@ export default function HostDashboard() {
                                       ✅ Check In
                                     </a>
                                   )}
+                                  {b.status === 'pending' && (myRole === 'owner' || myRole === 'manager') && (
+                                    <button onClick={e => { e.stopPropagation(); handleApproveBooking(b.id) }}
+                                      disabled={approvingBookingId === b.id}
+                                      style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.35)', color: '#4ade80', borderRadius: 6, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, cursor: approvingBookingId === b.id ? 'not-allowed' : 'pointer', opacity: approvingBookingId === b.id ? 0.6 : 1 }}>
+                                      {approvingBookingId === b.id ? 'Approving…' : '✓ Approve'}
+                                    </button>
+                                  )}
                                   {['confirmed','pending'].includes(b.status) && (myRole === 'owner' || myRole === 'manager') && (
                                     <button onClick={e => { e.stopPropagation(); setHostCancelModal(b); setHostCancelReason(''); setHostCancelResult(null) }}
                                       style={{ background: 'none', border: '1px solid #f87171', color: '#f87171', borderRadius: 6, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>
@@ -2262,6 +2327,8 @@ export default function HostDashboard() {
                   userId={profile?.id}
                   onAdminRead={() => setUnreadMsgCount(0)}
                   unreadAdminCount={unreadMsgCount}
+                  initialListing={searchParams.get('listing')}
+                  initialGuest={searchParams.get('guest')}
                 />
               </div>
             )}
@@ -4696,4 +4763,8 @@ export default function HostDashboard() {
       })()}
     </>
   )
+}
+
+export default function HostDashboardPage() {
+  return <Suspense><HostDashboard /></Suspense>
 }

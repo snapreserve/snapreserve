@@ -72,11 +72,48 @@ function MessagesInner() {
       })
   }, [])
 
-  // Auto-open conv from URL param
+  // Auto-open conv from ?c= URL param
   useEffect(() => {
     const c = searchParams.get('c')
     if (c && !activeId) openThread(c)
   }, [convs])
+
+  // Auto-open/create conv from ?listing= param (e.g. from dashboard Message button)
+  const listingParam = searchParams.get('listing')
+  useEffect(() => {
+    if (!listingParam || loading) return
+
+    // Check if we already have a conversation for this listing
+    const existing = convs.find(c => c.listing?.id === listingParam)
+    if (existing) {
+      if (activeId !== existing.id) openThread(existing.id)
+      return
+    }
+
+    // Create or retrieve conversation via API, then open it
+    fetch('/api/messages', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ listing_id: listingParam }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.conversation_id) {
+          // Reload conv list to get enriched data, then open
+          fetch('/api/messages')
+            .then(r => r.json())
+            .then(d => {
+              setConvs(d.conversations || [])
+              setUserId(d.userId)
+              openThread(data.conversation_id)
+            })
+        } else if (data.error) {
+          showToast(data.error, 'error')
+        }
+      })
+      .catch(() => showToast('Could not open conversation.', 'error'))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, listingParam])
 
   async function openThread(convId) {
     setActiveId(convId)

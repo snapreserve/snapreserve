@@ -75,6 +75,24 @@ export async function POST(request) {
       continue
     }
 
+    // If user is a host, deactivate their listings so they no longer appear bookable
+    const { data: hostRow } = await adminClient
+      .from('hosts')
+      .select('id')
+      .eq('user_id', id)
+      .maybeSingle()
+    if (hostRow) {
+      await adminClient
+        .from('listings')
+        .update({ is_active: false, status: 'suspended' })
+        .eq('host_id', hostRow.id)
+        .neq('status', 'deleted')
+      await adminClient
+        .from('hosts')
+        .update({ suspended_at: now, suspension_reason: 'account_deleted' })
+        .eq('id', hostRow.id)
+    }
+
     deleted.push(id)
     await logAction({
       actorId: user.id,

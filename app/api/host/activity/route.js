@@ -36,18 +36,26 @@ export async function GET(request) {
   let q = admin
     .from('bookings')
     .select(
-      'id, reference, status, created_at, cancelled_at, checked_in_at, check_out, cancelled_by_role, listings(id, title)'
+      'id, reference, status, created_at, cancelled_at, checked_in_at, check_out, cancelled_by_role, guest_id, listings(id, title)'
     )
     .eq('host_id', hostUserId)
     .order('created_at', { ascending: false })
     .limit(limit)
   if (allowedListingIds) q = q.in('listing_id', allowedListingIds)
 
-  const { data: bookings, error } = await q
+  const { data: bookingsRaw, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Exclude bookings whose guest account has been deleted
+  const guestIds = [...new Set((bookingsRaw || []).map(b => b.guest_id).filter(Boolean))]
+  const { data: guests } = guestIds.length
+    ? await admin.from('users').select('id, deleted_at').in('id', guestIds)
+    : { data: [] }
+  const deletedGuestIds = new Set((guests || []).filter(u => u.deleted_at).map(u => u.id))
+  const bookings = (bookingsRaw || []).filter(b => !deletedGuestIds.has(b.guest_id))
+
   const events = []
-  for (const b of bookings || []) {
+  for (const b of bookings) {
     const ref = b.reference || b.id?.slice(0, 8)?.toUpperCase() || '—'
     const title = b.listings?.title || 'Property'
     if (b.created_at) {

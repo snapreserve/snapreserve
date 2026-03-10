@@ -18,12 +18,15 @@ async function getBookings() {
       cancelled_at, cancelled_by_role, cancellation_reason,
       admin_cancelled_at, admin_cancel_reason, cancelled_by_admin_id,
       listings(id, title, city, state, property_type),
-      guest:users!bookings_guest_id_fkey(id, full_name, email),
-      host:users!bookings_host_id_fkey(id, full_name, email)
+      guest:users!bookings_guest_id_fkey(id, full_name, email, deleted_at),
+      host:users!bookings_host_id_fkey(id, full_name, email, deleted_at)
     `)
     .order('created_at', { ascending: false })
     .limit(500)
-  return data ?? []
+  // Exclude bookings where guest or host account has been deleted (avoids wrong/stale data)
+  return (data ?? []).filter(
+    b => !b.guest?.deleted_at && !b.host?.deleted_at
+  )
 }
 
 export default async function BookingsPage() {

@@ -5,7 +5,7 @@ import { logAction } from '@/lib/audit-log'
 import { getAdminSession } from '@/lib/get-admin-session'
 import { getOverrideSession } from '@/lib/get-override-session'
 import { notifyUser } from '@/lib/notify-user'
-import { sendEmail, adminPasswordResetEmailHtml } from '@/lib/send-email'
+import { sendEmail, adminPasswordResetEmailHtml, documentRequestEmailHtml } from '@/lib/send-email'
 
 export async function GET(_req, { params }) {
   const { role, error } = await getAdminSession()
@@ -60,10 +60,12 @@ export async function PATCH(request, { params }) {
   const body = await request.json()
   const { action, suspension_category, admin_notes, reason } = body
 
-  const validActions = ['suspend', 'deactivate', 'reactivate', 'approve_account', 'reject_account', 'verify_user', 'unverify_user', 'send_password_reset']
+  const validActions = ['suspend', 'deactivate', 'reactivate', 'approve_account', 'reject_account', 'verify_user', 'unverify_user', 'send_password_reset', 'request_docs', 'flag_risk']
   if (!validActions.includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
+
+  const { message } = body
 
   const h = await headers()
   const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
@@ -163,6 +165,73 @@ export async function PATCH(request, { params }) {
       actorId: user.id, actorEmail: user.email, actorRole: role,
       action: 'guest.send_password_reset', targetType: 'user', targetId: id,
       ipAddress: ip, userAgent: ua,
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'request_docs') {
+    if (!['support', 'admin', 'super_admin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return NextResponse.json({ error: 'message is required' }, { status: 400 })
+    }
+    const adminClient = createAdminClient()
+    const { data: guestRow } = await adminClient.from('users').select('email').eq('id', id).maybeSingle()
+    let toEmail = guestRow?.email
+    if (!toEmail) {
+      const { data: authUser } = await adminClient.auth.admin.getUserById(id)
+      toEmail = authUser?.user?.email
+    }
+    if (!toEmail) {
+      return NextResponse.json({ error: 'User has no email on file' }, { status: 400 })
+    }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://snapreserve.app'
+    const uploadUrl = `${siteUrl.replace(/\/$/, '')}/account/verify`
+    const textBody = `Our team has requested additional documents or information for your account verification.\n\n${message.trim()}\n\nUpload or resubmit your documents here: ${uploadUrl}\n\nPlease sign in if prompted, then go to Profile & Settings to upload your documents. Reply to this email if you have questions.`
+    const { error: sendErr } = await sendEmail({
+      to:      toEmail,
+      subject: 'SnapReserve™: Additional documents requested',
+      html:    documentRequestEmailHtml({ message: message.trim(), uploadUrl }),
+      text:    textBody,
+    })
+    if (sendErr) {
+      console.error('[admin] request_docs email failed:', sendErr)
+      const isNotConfigured = sendErr === 'Email service not configured'
+      await logAction({
+        actorId: user.id, actorEmail: user.email, actorRole: role,
+        action: 'guest.request_docs', targetType: 'user', targetId: id,
+        ipAddress: ip, userAgent: ua, adminNotes: message.trim(),
+      })
+      if (isNotConfigured) {
+        return NextResponse.json({
+          success: true,
+          warning: 'Request logged but the guest was not emailed. Add RESEND_API_KEY to your environment (e.g. in .env.local or your hosting dashboard) to send emails. See Resend.com for an API key.',
+        })
+      }
+      return NextResponse.json({ error: 'Message saved but email failed: ' + sendErr }, { status: 500 })
+    }
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.request_docs', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua, adminNotes: message.trim(),
+    })
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === 'flag_risk') {
+    if (!MANAGE_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const adminClient = createAdminClient()
+    const { data: guestRow } = await adminClient.from('users').select('id').eq('id', id).single()
+    if (!guestRow) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const flagNote = body.admin_notes?.trim() || body.flag_note?.trim()
+    await adminClient.from('users').update({ admin_notes: flagNote || null }).eq('id', id)
+    await logAction({
+      actorId: user.id, actorEmail: user.email, actorRole: role,
+      action: 'guest.flag_risk', targetType: 'user', targetId: id,
+      ipAddress: ip, userAgent: ua, adminNotes: flagNote || null,
     })
     return NextResponse.json({ success: true })
   }

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HostSidebar from '@/app/host/_components/HostSidebar'
 
@@ -257,6 +258,7 @@ function Countdown({ checkIn }) {
 /* ─── main component ────────────────────────────────────────────── */
 
 export default function BookingDetailClient({ booking, guest, room, pastStaysHere, hostName, hostAvatar, isFounder, feeRate, myRole = 'owner' }) {
+  const router = useRouter()
   const [tab, setTab]                   = useState('details')
   const [status, setStatus]             = useState(booking.status)
   const [checkedInAt, setCheckedInAt]   = useState(booking.checked_in_at)
@@ -271,6 +273,14 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
   const [hostNotes, setHostNotes]         = useState(booking.host_notes || '')
   const [notesSaving, setNotesSaving]     = useState(false)
   const [notesSaved, setNotesSaved]       = useState(false)
+  const [earlyCheckoutModal, setEarlyCheckoutModal] = useState(false)
+  const [earlyCheckoutDate, setEarlyCheckoutDate]   = useState('')
+  const [earlyCheckoutReason, setEarlyCheckoutReason] = useState('')
+  const [earlyCheckoutNoRefund, setEarlyCheckoutNoRefund] = useState(false)
+  const [earlyCheckoutLoading, setEarlyCheckoutLoading] = useState(false)
+  const [checkoutResult, setCheckoutResult] = useState(null)   // { refund_amount, actual_nights }
+  const [currentCheckout, setCurrentCheckout] = useState(booking.check_out)
+  const [currentNights, setCurrentNights]     = useState(booking.nights)
 
   function showToast(msg, ok = true) { setToast({ msg, ok }); setTimeout(() => setToast(null), 3500) }
 
@@ -294,6 +304,57 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
     if (res.ok) { setStatus('cancelled'); setCancelModal(false); showToast('Booking cancelled.') }
     else { const d = await res.json(); showToast(d.error || 'Failed to cancel', false) }
     setCancelling(false)
+  }
+
+  async function handleEarlyCheckout() {
+    if (!earlyCheckoutDate) return
+    setEarlyCheckoutLoading(true)
+    const res = await fetch(`/api/host/bookings/${booking.id}/checkout`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ early_checkout_date: earlyCheckoutDate, reason: earlyCheckoutReason, no_refund: earlyCheckoutNoRefund }),
+    })
+    const data = await res.json()
+    setEarlyCheckoutLoading(false)
+    if (res.ok) {
+      setStatus('completed')
+      setCurrentCheckout(earlyCheckoutDate)
+      setCurrentNights(data.actual_nights)
+      setCheckoutResult(data)
+      setEarlyCheckoutModal(false)
+      showToast(`Early check-out processed${data.refund_amount > 0 ? ` — $${data.refund_amount.toFixed(2)} refund queued` : ''}`)
+    } else {
+      showToast(data.error || 'Failed to process early check-out', false)
+    }
+  }
+
+  // Inline refund preview for the early checkout modal (mirrors server logic)
+  function earlyCheckoutRefund() {
+    if (!earlyCheckoutDate) return null
+    const pricePerNight = Number(booking.price_per_night || 0)
+    const originalNights = Number(booking.nights || 1)
+    const msPerDay = 86400000
+    const actualNights = Math.round((new Date(earlyCheckoutDate) - new Date(booking.check_in)) / msPerDay)
+    if (actualNights < 0) return null
+    const unusedNights = originalNights - actualNights
+    const policy = booking.listings?.early_checkout_policy || 'no_refund'
+    let refund = 0
+    if (!earlyCheckoutNoRefund) {
+      switch (policy) {
+        case 'one_night_fee':
+          refund = Math.max(0, Math.round(pricePerNight * Math.max(0, unusedNights - 1) * 100) / 100)
+          break
+        case 'partial_refund':
+          refund = Math.max(0, Number(booking.listings?.early_checkout_partial_amount) || 0)
+          break
+        case 'rebooked':
+          refund = Math.max(0, Math.round(pricePerNight * unusedNights * 100) / 100)
+          break
+        case 'no_refund':
+        default:
+          refund = 0
+      }
+    }
+    return { actualNights, unusedNights, refund, policy }
   }
 
   async function saveNotes() {
@@ -323,7 +384,7 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
   const platFee        = Number(booking.total_platform_fee || booking.platform_fee || 0)
   const hostEarnings   = Number(booking.host_earnings || 0)
   const pricePerNight  = Number(booking.price_per_night || listing.price_per_night || 0)
-  const nights         = Number(booking.nights || 1)
+  const nights         = Number(currentNights || booking.nights || 1)
   const cleaningFee    = Number(booking.cleaning_fee || 0)
   const serviceFee     = Number(booking.service_fee || 0)
   const discountAmt    = Number(booking.discount_amount || 0)
@@ -921,7 +982,13 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
                     <div><div className="bdc-qa-btn-title">Guest Checked In</div><div className="bdc-qa-btn-sub">Auto-completes after checkout</div></div>
                   </button>
                 )}
-                <button className="bdc-qa-btn">
+                {isCheckedIn && (myRole === 'owner' || myRole === 'manager') && (
+                  <button className="bdc-qa-btn" onClick={() => { setEarlyCheckoutDate(''); setEarlyCheckoutReason(''); setEarlyCheckoutNoRefund(false); setEarlyCheckoutModal(true) }}>
+                    <div className="bdc-qa-icon" style={{ background: 'rgba(96,165,250,0.12)' }}>🏁</div>
+                    <div><div className="bdc-qa-btn-title">Early Check-out</div><div className="bdc-qa-btn-sub">Guest is leaving before scheduled date</div></div>
+                  </button>
+                )}
+                <button className="bdc-qa-btn" onClick={() => router.push(`/host/dashboard?nav=messages&listing=${booking.listing_id}&guest=${booking.guest_id}`)}>
                   <div className="bdc-qa-icon" style={{ background: 'var(--sr-bluel)' }}>💬</div>
                   <div><div className="bdc-qa-btn-title">Message {guest.full_name.split(' ')[0]}</div><div className="bdc-qa-btn-sub">Send a direct message</div></div>
                 </button>
@@ -940,7 +1007,7 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Reference</span><span className="bdc-s-val" style={{ color: 'var(--sr-orange)', fontWeight: 700 }}>{ref}</span></div>
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Status</span><span className="bdc-s-val" style={{ color: sc.color }}>● {sc.label}</span></div>
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Check-in</span><span className="bdc-s-val">{fmtDate(booking.check_in, { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
-                  <div className="bdc-sum-row"><span className="bdc-s-lbl">Check-out</span><span className="bdc-s-val">{fmtDate(booking.check_out, { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
+                  <div className="bdc-sum-row"><span className="bdc-s-lbl">Check-out</span><span className="bdc-s-val">{fmtDate(currentCheckout, { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Duration</span><span className="bdc-s-val">{nights} night{nights !== 1 ? 's' : ''}</span></div>
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Guests</span><span className="bdc-s-val">{booking.guests ?? '—'}</span></div>
                   <div className="bdc-sum-row"><span className="bdc-s-lbl">Your Payout</span><span className="bdc-s-val" style={{ color: 'var(--sr-orange)', fontWeight: 700 }}>${hostEarnings.toFixed(2)}</span></div>
@@ -1046,6 +1113,126 @@ export default function BookingDetailClient({ booking, guest, room, pastStaysHer
           </div>
         </div>
       )}
+
+      {/* ── Early Check-out Modal ─────────────────────────────── */}
+      {earlyCheckoutModal && (() => {
+        const preview = earlyCheckoutRefund()
+        const maxDate = (() => {
+          const d = (booking.check_out || '').toString().slice(0, 10)
+          // max = day before original checkout
+          const dt = new Date(d + 'T12:00:00')
+          dt.setDate(dt.getDate() - 1)
+          return dt.toISOString().slice(0, 10)
+        })()
+        const minDate = (booking.check_in || '').toString().slice(0, 10)
+        const todayMax = new Date().toISOString().slice(0, 10)
+        const effectiveMax = maxDate < todayMax ? maxDate : todayMax
+        return (
+          <div className="bdc-overlay" onClick={e => e.target === e.currentTarget && setEarlyCheckoutModal(false)}>
+            <div className="bdc-cancel-modal" style={{ maxWidth: 500 }}>
+              <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--sr-text)', marginBottom: 4 }}>🏁 Early Check-out</div>
+              <div style={{ fontSize: 13, color: 'var(--sr-sub)', marginBottom: 12, lineHeight: 1.6 }}>
+                Record an early departure for <strong style={{ color: 'var(--sr-text)' }}>{guest.full_name}</strong>.
+              </div>
+              {/* Policy badge */}
+              {(() => {
+                const p = booking.listings?.early_checkout_policy || 'no_refund'
+                const LABELS = { no_refund: 'No Refund', one_night_fee: '1-Night Fee', partial_refund: 'Partial Refund', rebooked: 'Refund if Rebooked' }
+                return (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--sr-overlay-xs)', border: '1px solid var(--sr-border)', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, color: 'var(--sr-sub)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <span>Policy:</span>
+                    <span style={{ color: 'var(--sr-text)' }}>{LABELS[p] || p}</span>
+                  </div>
+                )
+              })()}
+
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sr-sub)', marginBottom: 6 }}>Actual check-out date</div>
+              <input
+                type="date"
+                value={earlyCheckoutDate}
+                min={minDate}
+                max={effectiveMax}
+                onChange={e => setEarlyCheckoutDate(e.target.value)}
+                style={{ width: '100%', background: 'var(--sr-overlay-xs)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--sr-text)', outline: 'none', fontFamily: 'var(--sr-font-sans)', marginBottom: 14 }}
+              />
+
+              {/* Live refund preview */}
+              {preview && (
+                <div style={{ background: preview.refund > 0 ? 'rgba(244,96,26,0.07)' : 'var(--sr-overlay-xs)', border: `1px solid ${preview.refund > 0 ? 'rgba(244,96,26,0.25)' : 'var(--sr-border)'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, textAlign: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--sr-sub)', marginBottom: 3 }}>Nights Stayed</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--sr-text)' }}>{preview.actualNights}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--sr-sub)', marginBottom: 3 }}>Unused Nights</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: preview.unusedNights > 0 ? 'var(--sr-orange)' : 'var(--sr-sub)' }}>{preview.unusedNights}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--sr-sub)', marginBottom: 3 }}>Guest Refund</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: (preview.refund > 0 && !earlyCheckoutNoRefund) ? 'var(--sr-orange)' : 'var(--sr-sub)' }}>
+                        {earlyCheckoutNoRefund ? 'Waived' : preview.refund > 0 ? `$${preview.refund.toFixed(2)}` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                  {preview.refund > 0 && !earlyCheckoutNoRefund && (
+                    <div style={{ fontSize: 11, color: 'var(--sr-sub)', marginTop: 10, textAlign: 'center', lineHeight: 1.5 }}>
+                      Refund = {preview.unusedNights} night{preview.unusedNights !== 1 ? 's' : ''} × ${Number(booking.price_per_night).toFixed(2)}/night. A refund request will be queued for admin approval.
+                    </div>
+                  )}
+                  {earlyCheckoutNoRefund && preview.unusedNights > 0 && (
+                    <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6, textAlign: 'center' }}>No refund will be issued for the {preview.unusedNights} unused night{preview.unusedNights !== 1 ? 's' : ''}.</div>
+                  )}
+                  {!earlyCheckoutNoRefund && preview.policy === 'rebooked' && preview.refund > 0 && (
+                    <div style={{ fontSize: 11, color: '#92400E', marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>⚠️ Refund is contingent on you confirming the nights were rebooked. Admin will review before processing.</div>
+                  )}
+                  {preview.refund === 0 && preview.unusedNights === 0 && (
+                    <div style={{ fontSize: 11, color: 'var(--sr-sub)', marginTop: 6, textAlign: 'center' }}>No refund — no unused nights.</div>
+                  )}
+                </div>
+              )}
+
+              {/* No Refund toggle — shown when there would be a refund */}
+              {preview && preview.unusedNights > 0 && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, background: earlyCheckoutNoRefund ? 'rgba(220,38,38,0.06)' : 'var(--sr-overlay-xs)', border: `1px solid ${earlyCheckoutNoRefund ? 'rgba(220,38,38,0.3)' : 'var(--sr-border)'}`, borderRadius: 10, padding: '10px 14px', cursor: 'pointer', marginBottom: 14 }}>
+                  <input
+                    type="checkbox"
+                    checked={earlyCheckoutNoRefund}
+                    onChange={e => setEarlyCheckoutNoRefund(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: '#DC2626', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: earlyCheckoutNoRefund ? '#DC2626' : 'var(--sr-text)' }}>No refund for early check-out</div>
+                    <div style={{ fontSize: 11, color: 'var(--sr-sub)', marginTop: 2 }}>Guest agreed to no refund, or policy does not allow one.</div>
+                  </div>
+                </label>
+              )}
+
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--sr-sub)', marginBottom: 6 }}>Reason (optional)</div>
+              <textarea
+                value={earlyCheckoutReason}
+                onChange={e => setEarlyCheckoutReason(e.target.value)}
+                placeholder="e.g. Guest had a family emergency, left a day early…"
+                rows={2}
+                style={{ width: '100%', background: 'var(--sr-overlay-xs)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--sr-text)', outline: 'none', resize: 'vertical', fontFamily: 'var(--sr-font-sans)', lineHeight: 1.6, marginBottom: 16 }}
+              />
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setEarlyCheckoutModal(false)}
+                  style={{ flex: 1, background: 'var(--sr-overlay-xs)', border: '1px solid var(--sr-border)', borderRadius: 10, padding: 11, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--sr-sub)', fontFamily: 'var(--sr-font-sans)' }}>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEarlyCheckout}
+                  disabled={earlyCheckoutLoading || !earlyCheckoutDate}
+                  style={{ flex: 2, background: 'var(--sr-orange)', color: '#fff', border: 'none', borderRadius: 10, padding: 11, fontSize: 13, fontWeight: 700, cursor: earlyCheckoutDate ? 'pointer' : 'not-allowed', fontFamily: 'var(--sr-font-sans)', opacity: (earlyCheckoutLoading || !earlyCheckoutDate) ? .55 : 1 }}>
+                  {earlyCheckoutLoading ? 'Processing…' : earlyCheckoutNoRefund ? 'Confirm Early Check-out (No Refund)' : `Confirm Early Check-out${preview?.refund > 0 ? ` & Refund $${preview.refund.toFixed(2)}` : ''}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }

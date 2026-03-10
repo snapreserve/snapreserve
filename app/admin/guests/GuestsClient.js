@@ -436,7 +436,11 @@ export default function GuestsClient({ initialGuests, role }) {
         request_docs: 'Document request sent.', flag_risk: 'Risk flag applied.',
         send_password_reset: 'Password reset email sent.',
       }
-      showToast(labels[action] ?? 'Done.')
+      if (data.warning) {
+        showToast(data.warning, 'err')
+      } else {
+        showToast(labels[action] ?? 'Done.')
+      }
       setModal(null)
     } catch (e) {
       showToast(e.message, 'err')
@@ -565,11 +569,16 @@ export default function GuestsClient({ initialGuests, role }) {
                       </div>
                     </div>
 
-                    {/* Status / ID */}
+                    {/* Status / ID + Verification Reference */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <span className="gs-badge" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
                       {id && (
                         <span className="gs-badge" style={{ background: id.bg, color: id.color, fontSize: '0.6rem' }}>{id.label}</span>
+                      )}
+                      {g.verification_reference && (
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: 'var(--sr-orange)', fontWeight: 600 }}>
+                          Ref: {g.verification_reference}
+                        </span>
                       )}
                     </div>
 
@@ -723,9 +732,9 @@ export default function GuestsClient({ initialGuests, role }) {
                           {[
                             { lbl: 'User ID',  val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.7rem', color: 'var(--sr-muted)' }}>{sel.id.slice(0, 8)}…</span> },
                             { lbl: 'Email',    val: sel.email },
-                            { lbl: 'Signed up', val: fmtDateTime(sel.created_at) },
+                            { lbl: 'Signed up', val: fmtDateTime(sel.created_at ?? detail?.guest?.created_at) },
                             { lbl: 'Type',     val: sel.is_host ? 'Host & Guest' : 'Guest' },
-                            sel.verification_reference && { lbl: 'Verification Reference', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--sr-orange)', fontWeight: 600 }}>{sel.verification_reference}</span> },
+                            (sel.verification_reference || detail?.guest?.verification_reference) && { lbl: 'Verification Reference', val: <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--sr-orange)', fontWeight: 600 }}>{sel.verification_reference || detail?.guest?.verification_reference}</span> },
                             sel.suspended_at && { lbl: 'Suspended', val: fmtDate(sel.suspended_at) },
                             sel.suspension_reason && { lbl: 'Susp. reason', val: sel.suspension_reason },
                           ].filter(Boolean).map(({ lbl, val }) => (

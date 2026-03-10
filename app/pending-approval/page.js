@@ -116,8 +116,7 @@ export default function PendingApprovalPage() {
           <div className="pa-heading">Account Pending Approval</div>
           <div className="pa-badge">Under Review</div>
           <p className="pa-body">
-            Your account is under review. You'll be notified once approved.
-            This typically takes less than 24 hours.
+            Your account and ID verification are under review. You won't be able to access any platform features until an admin has approved your account. We'll notify you once that's done—typically within 24 hours.
           </p>
           <button className="pa-signout" onClick={handleSignOut}>Sign Out</button>
         </div>

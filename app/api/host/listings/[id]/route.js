@@ -10,7 +10,7 @@ export async function PATCH(request, { params }) {
   const body = await request.json().catch(() => ({}))
   const { action } = body
 
-  if (!['go_live', 'unpublish', 'resubmit', 'submit_explanation', 'update_policies', 'send_followup'].includes(action)) {
+  if (!['go_live', 'unpublish', 'resubmit', 'submit_explanation', 'update_policies', 'send_followup', 'delete_listing'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
 
@@ -44,8 +44,11 @@ export async function PATCH(request, { params }) {
 
   if (!callerRole) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Role gates: manager actions require owner or manager
+  // Role gates: manager actions require owner or manager; delete is owner-only
   const managerOnlyActions = ['go_live', 'unpublish', 'resubmit', 'submit_explanation', 'update_policies']
+  if (action === 'delete_listing' && callerRole !== 'owner') {
+    return NextResponse.json({ error: 'Only the account owner can delete a listing' }, { status: 403 })
+  }
   if (managerOnlyActions.includes(action) && !['owner', 'manager'].includes(callerRole)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
@@ -160,6 +163,9 @@ export async function PATCH(request, { params }) {
       .eq('listing_id', id)
       .eq('status', 'changes_requested')
     updatePayload = { status: 'pending_review', is_active: false }
+  } else if (action === 'delete_listing') {
+    const now = new Date().toISOString()
+    updatePayload = { deleted_at: now, is_active: false }
   }
 
   const { error } = await admin.from('listings').update(updatePayload).eq('id', id)

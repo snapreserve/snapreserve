@@ -5,6 +5,7 @@ import Link from 'next/link'
 const STATUS_CFG = {
   draft:              { label: 'Draft',             color: 'var(--sr-sub)',  bg: 'rgba(107,94,82,0.12)' },
   pending:            { label: 'Pending Review',    color: '#FCD34D',        bg: 'rgba(251,191,36,0.1)' },
+  pending_review:     { label: 'Pending Review',    color: '#FCD34D',        bg: 'rgba(251,191,36,0.1)' },
   approved:           { label: 'Approved',          color: '#4ADE80',        bg: 'rgba(74,222,128,0.1)' },
   rejected:           { label: 'Rejected',          color: '#F87171',        bg: 'rgba(248,113,113,0.1)' },
   suspended:          { label: 'Suspended',         color: '#F87171',        bg: 'rgba(248,113,113,0.1)' },

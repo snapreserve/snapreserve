@@ -13,7 +13,7 @@ async function getStats() {
     { count: totalUsers },
     { count: activeListings },
     { count: waitlistCount },
-    { count: hostsCount },
+    { data: hostsRows },
     { count: bookingsCount },
     { count: openReportsCount },
     { count: guestCount },
@@ -26,8 +26,8 @@ async function getStats() {
     supabase.from('listing_approvals').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
     supabase.from('users').select('*', { count: 'exact', head: true }).is('deleted_at', null),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),
-    supabase.from('waitlist').select('*', { count: 'exact', head: true }),
-    supabase.from('hosts').select('*', { count: 'exact', head: true }),
+    supabase.from('waitlist_v2_signups').select('*', { count: 'exact', head: true }),
+    supabase.from('hosts').select('id, users(id, deleted_at)'),
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     supabase.from('users').select('*', { count: 'exact', head: true }).eq('user_role', 'user').is('deleted_at', null),
@@ -39,7 +39,9 @@ async function getStats() {
       .order('submitted_at', { ascending: false })
       .limit(6),
   ])
-  return { pendingCount: pendingCount ?? 0, approvedCount: approvedCount ?? 0, rejectedCount: rejectedCount ?? 0, totalUsers: totalUsers ?? 0, activeListings: activeListings ?? 0, waitlistCount: waitlistCount ?? 0, hostsCount: hostsCount ?? 0, bookingsCount: bookingsCount ?? 0, openReportsCount: openReportsCount ?? 0, guestCount: guestCount ?? 0, hostUserCount: hostUserCount ?? 0, teamMemberCount: teamMemberCount ?? 0, recentApprovals: recentApprovals ?? [] }
+  // Host accounts: only count hosts whose linked user is not deleted (matches Admin Hosts list)
+  const hostsCount = (hostsRows ?? []).filter(h => !h.users?.deleted_at).length
+  return { pendingCount: pendingCount ?? 0, approvedCount: approvedCount ?? 0, rejectedCount: rejectedCount ?? 0, totalUsers: totalUsers ?? 0, activeListings: activeListings ?? 0, waitlistCount: waitlistCount ?? 0, hostsCount, bookingsCount: bookingsCount ?? 0, openReportsCount: openReportsCount ?? 0, guestCount: guestCount ?? 0, hostUserCount: hostUserCount ?? 0, teamMemberCount: teamMemberCount ?? 0, recentApprovals: recentApprovals ?? [] }
 }
 
 export default async function AdminOverview() {
