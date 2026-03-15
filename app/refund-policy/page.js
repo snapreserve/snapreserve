@@ -5,8 +5,9 @@ export default function RefundPolicyPage() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
-        .logo span { color: #F4601A; }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 26px; width: auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .main { max-width: 760px; margin: 0 auto; padding: 56px 48px 80px; }
         .badge { display: inline-block; background: rgba(244,96,26,0.08); border: 1px solid rgba(244,96,26,0.2); border-radius: 100px; padding: 5px 14px; font-size: 0.72rem; font-weight: 700; color: #F4601A; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
         h1 { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 700; margin-bottom: 8px; line-height: 1.2; }
@@ -27,15 +28,16 @@ export default function RefundPolicyPage() {
         .cc-sub { font-size: 0.86rem; color: rgba(255,255,255,0.5); margin-bottom: 20px; }
         .cc-email { display: inline-block; background: #F4601A; color: white; padding: 12px 28px; border-radius: 100px; font-weight: 700; font-size: 0.9rem; text-decoration: none; }
         .footer { background: var(--sr-bg); color: var(--sr-muted); padding: 32px 48px; display: flex; align-items: center; justify-content: space-between; margin-top: 80px; border-top: 1px solid var(--sr-border); }
-        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--sr-text); }
-        .footer-logo span { color: #F4601A; }
+        .footer-logo { display: inline-flex; align-items: center; }
+        .footer-logo img { height: 22px; width: auto; }
+        html[data-theme="light"] .footer-logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .footer-links { display: flex; gap: 24px; }
         .footer-links a { font-size: 0.8rem; color: var(--sr-muted); text-decoration: none; }
         @media (max-width: 768px) { .main, .nav, .footer { padding-left: 20px; padding-right: 20px; } h1 { font-size: 1.8rem; } .policy-grid { grid-template-columns: 1fr; } }
       `}</style>
 
       <nav className="nav">
-        <a href="/" className="logo">Snap<span>Reserve™</span></a>
+        <a href="/" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <div style={{display:'flex',gap:'8px'}}>
           <a href="/login" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',border:'1px solid var(--sr-border-solid,#D4CEC5)',color:'var(--sr-text)',textDecoration:'none'}}>Log in</a>
           <a href="/signup" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',background:'#F4601A',color:'white',textDecoration:'none'}}>Sign up</a>
@@ -118,7 +120,7 @@ export default function RefundPolicyPage() {
       </div>
 
       <footer className="footer">
-        <div className="footer-logo">Snap<span>Reserve™</span></div>
+        <div className="footer-logo"><img src="/logo.png" alt="SnapReserve" /></div>
         <div className="footer-links">
           <a href="/coming-soon?page=support">Support</a>
           <a href="/terms">Terms</a>

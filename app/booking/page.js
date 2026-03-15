@@ -227,8 +227,9 @@ function BookingPageContent() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
-        .logo span { color: #F4601A; }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 26px; width: auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .page { max-width: 960px; margin: 40px auto; padding: 0 24px 80px; display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
         .left-col {}
         .card { background: var(--sr-card); border: 1px solid var(--sr-border-solid,#E8E2D9); border-radius: 20px; padding: 28px; margin-bottom: 20px; }
@@ -276,7 +277,7 @@ function BookingPageContent() {
       `}</style>
 
       <nav className="nav">
-        <a href="/" className="logo">Snap<span>Reserve</span></a>
+        <a href="/" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <a href={listingId ? `/listings/${listingId}` : '/listings'} style={{ fontSize: '0.84rem', color: 'var(--sr-muted)', textDecoration: 'none', fontWeight: 600 }}>
           ← Back
         </a>

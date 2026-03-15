@@ -42,11 +42,11 @@ const STYLES = `
     backdrop-filter: blur(12px);
   }
   .wl-logo {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600; font-size: 1.1rem; letter-spacing: -0.02em;
-    color: var(--text); text-decoration: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
-  .wl-logo span { color: var(--orange); }
+  .wl-logo img { height: 26px; width: auto; }
   .wl-nav-link {
     font-size: 0.85rem; color: var(--muted); text-decoration: none;
     transition: color var(--tr); letter-spacing: 0.01em;
@@ -565,7 +565,7 @@ export default function WaitlistPage() {
 
       {/* NAV */}
       <nav className="wl-nav">
-        <a href="/home" className="wl-logo">Snap<span>Reserve</span>™</a>
+        <a href="/home" className="wl-logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <a href="/login" className="wl-nav-link">Already have an account? Sign in →</a>
       </nav>
 

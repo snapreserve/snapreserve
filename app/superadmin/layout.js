@@ -23,7 +23,7 @@ export default function SuperAdminLayout({ children }) {
         <aside className="hs-sidebar">
           <div className="hs-logo-wrap">
             <a href="/" className="hs-logo-text">
-              Snap<span>Reserve</span><sup>™</sup>
+              <img src="/logo.png" alt="SnapReserve" />
             </a>
             <div className="hs-logo-sub">⚡ Super Admin</div>
           </div>

@@ -22,8 +22,8 @@ const STYLES = `
     padding:0 40px; height:60px;
     display:flex; align-items:center; justify-content:space-between;
   }
-  .bah-logo { font-size:15px; font-weight:700; text-decoration:none; color:#0f0e0c; }
-  .bah-logo span { color:#e8622a; }
+  .bah-logo { text-decoration:none; display:inline-flex; align-items:center; }
+  .bah-logo img { height:24px; width:auto; filter:drop-shadow(0 0 3px rgba(0,0,0,0.4)); }
   .bah-steps { display:flex; align-items:center; gap:6px; }
   .bah-step { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#9ca3af; }
   .bah-step.done { color:#16a34a; }
@@ -286,7 +286,7 @@ export default function BecomeAHostPage() {
     <>
       <style>{STYLES}</style>
       <nav className="bah-nav">
-        <a href="/home" className="bah-logo">Snap<span>Reserve</span></a>
+        <a href="/home" className="bah-logo"><img src="/logo.png" alt="SnapReserve" /></a>
       </nav>
       <div className="bah-main" style={{ textAlign: 'center' }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(217,119,6,.1)', border: '2px solid rgba(217,119,6,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', margin: '0 auto 24px' }}>⏳</div>
@@ -323,7 +323,7 @@ export default function BecomeAHostPage() {
 
       {/* Nav */}
       <nav className="bah-nav">
-        <a href="/home" className="bah-logo">Snap<span>Reserve</span></a>
+        <a href="/home" className="bah-logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <div className="bah-steps">
           <div className={`bah-step ${step >= 1 ? (step > 1 ? 'done' : 'active') : ''}`}>
             <div className="bah-dot">{step > 1 ? '✓' : '1'}</div>

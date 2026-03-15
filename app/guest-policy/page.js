@@ -18,8 +18,8 @@ export default function GuestPolicyPage() {
         html { scroll-behavior: smooth; }
         body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.75; }
         .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 700; font-size: 1rem; text-decoration: none; color: var(--text); }
-        .logo span { color: var(--orange); }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 24px; width: auto; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
         .version-badge { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); background: var(--subtle); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; }
         .effective-date { font-size: 0.78rem; color: var(--muted); }
@@ -59,7 +59,7 @@ export default function GuestPolicyPage() {
 
       {/* Top bar */}
       <div className="topbar">
-        <a href="/" className="logo">Snap<span>Reserve™</span></a>
+        <a href="/" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <div className="topbar-right">
           <span className="version-badge">v1.0</span>
           <span className="effective-date">Effective January 1, 2026</span>

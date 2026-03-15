@@ -27,8 +27,8 @@ export default function PrivacyPage() {
 
         /* ── Top Bar ── */
         .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .logo { font-weight: 700; font-size: 1rem; }
-        .logo span { color: var(--orange); }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 24px; width: auto; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
         .version-badge { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); background: var(--subtle); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; }
         .effective-date { font-size: 0.78rem; color: var(--muted); }
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
 
       {/* TOP BAR */}
       <div className="topbar">
-        <div className="logo">Snap<span>Reserve</span>™</div>
+        <div className="logo"><img src="/logo.png" alt="SnapReserve" /></div>
         <div className="topbar-right">
           <span className="version-badge">v1.1 — March 2026</span>
           <span className="effective-date">Last updated: March 5, 2026</span>

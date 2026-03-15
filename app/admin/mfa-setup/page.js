@@ -70,7 +70,9 @@ function MfaSetupContent() {
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); min-height:100vh; display:flex; align-items:center; justify-content:center; }
         .card { background:var(--sr-surface); border:1px solid var(--sr-border-solid); border-radius:20px; padding:40px; width:100%; max-width:420px; margin:20px; }
-        .logo { font-size:1rem; font-weight:800; color:var(--sr-orange); margin-bottom:6px; }
+        .logo { display:inline-flex; align-items:center; margin-bottom:6px; }
+        .logo img { height:24px; width:auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .title { font-size:1.3rem; font-weight:700; margin-bottom:6px; }
         .subtitle { font-size:0.82rem; color:var(--sr-muted); margin-bottom:28px; line-height:1.5; }
         .step-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--sr-orange); margin-bottom:20px; }
@@ -92,7 +94,7 @@ function MfaSetupContent() {
       `}</style>
 
       <div className="card">
-        <div className="logo">SnapReserve™</div>
+        <div className="logo"><img src="/logo.png" alt="SnapReserve" /></div>
 
         {step === 'loading' && (
           <>

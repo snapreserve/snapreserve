@@ -9,8 +9,10 @@ const STYLES = `
   html, body { height:100%; font-family:'DM Sans',-apple-system,sans-serif; background:var(--sr-bg); color:var(--sr-text); }
   .page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
   .card { background:var(--sr-surface); border:1px solid var(--sr-border); border-radius:20px; padding:40px 36px; width:100%; max-width:420px; }
-  .logo { font-size:1.1rem; font-weight:800; color:var(--sr-orange); margin-bottom:28px; display:block; }
-  .logo small { display:block; font-size:0.65rem; color:var(--sr-muted); font-weight:500; text-transform:uppercase; letter-spacing:0.1em; margin-top:2px; }
+  .logo { margin-bottom:28px; display:inline-flex; align-items:center; flex-direction:column; align-items:flex-start; }
+  .logo img { height:26px; width:auto; }
+  html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
+  .logo small { display:block; font-size:0.65rem; color:var(--sr-muted); font-weight:500; text-transform:uppercase; letter-spacing:0.1em; margin-top:4px; }
   h1 { font-size:1.3rem; font-weight:800; color:var(--sr-text); margin-bottom:8px; }
   .subtitle { font-size:0.88rem; color:var(--sr-muted); margin-bottom:24px; line-height:1.5; }
   .invite-info { background:var(--sr-bg); border:1px solid var(--sr-border); border-radius:10px; padding:16px 18px; margin-bottom:24px; }
@@ -91,7 +93,7 @@ function AcceptInviteContent() {
     <div className="page">
       <div className="card">
         <span className="logo">
-          SnapReserve™
+          <img src="/logo.png" alt="SnapReserve" />
           <small>Admin Console</small>
         </span>
 

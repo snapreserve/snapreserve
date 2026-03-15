@@ -127,8 +127,8 @@ export default function ContactPage() {
 
         /* FOOTER */
         .footer { background:#0F0C09; padding:24px 40px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
-        .footer-logo { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:white; }
-        .footer-logo span { color:#F4601A; }
+        .footer-logo { display:inline-flex; align-items:center; }
+        .footer-logo img { height:22px; width:auto; }
         .footer-links { display:flex; gap:22px; }
         .footer-links a { font-size:0.78rem; color:rgba(255,255,255,0.4); text-decoration:none; transition:color 0.15s; }
         .footer-links a:hover { color:rgba(255,255,255,0.7); }
@@ -365,7 +365,7 @@ export default function ContactPage() {
 
       {/* FOOTER */}
       <footer className="footer">
-        <span className="footer-logo">Snap<span>Reserve</span>™</span>
+        <span className="footer-logo"><img src="/logo.png" alt="SnapReserve" /></span>
         <div className="footer-links">
           <a href="/about">About</a>
           <a href="/become-a-host">For Hosts</a>

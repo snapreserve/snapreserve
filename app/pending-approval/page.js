@@ -38,14 +38,12 @@ export default function PendingApprovalPage() {
           text-align: center;
         }
         .pa-logo {
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: #F4601A;
           text-decoration: none;
-          display: inline-block;
+          display: inline-flex;
+          align-items: center;
           margin-bottom: 36px;
-          letter-spacing: -0.01em;
         }
+        .pa-logo img { height: 26px; width: auto; }
         .pa-icon {
           width: 64px;
           height: 64px;
@@ -111,7 +109,7 @@ export default function PendingApprovalPage() {
       `}</style>
       <div className="pa-shell">
         <div className="pa-card">
-          <a href="/home" className="pa-logo">SnapReserve™</a>
+          <a href="/home" className="pa-logo"><img src="/logo.png" alt="SnapReserve" /></a>
           <div className="pa-icon">⏳</div>
           <div className="pa-heading">Account Pending Approval</div>
           <div className="pa-badge">Under Review</div>

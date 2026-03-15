@@ -82,8 +82,9 @@ export default function TripsPage() {
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
 
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
-        .logo span { color: #F4601A; }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 26px; width: auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .nav-links { display: flex; align-items: center; gap: 8px; }
         .nav-link { padding: 8px 16px; border-radius: 100px; font-size: 0.84rem; font-weight: 600; text-decoration: none; color: var(--sr-muted); transition: all 0.15s; }
         .nav-link:hover { background: var(--sr-surface); color: var(--sr-text); }
@@ -142,7 +143,7 @@ export default function TripsPage() {
       `}</style>
 
       <nav className="nav">
-        <a href="/" className="logo">Snap<span>Reserve</span></a>
+        <a href="/" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <div className="nav-links">
           <a href="/trips" className="nav-link active">✈ Trips</a>
           <a href="/account" className="nav-link">👤 Account</a>

@@ -252,8 +252,9 @@ function ListingsInner() {
 
         /* ── FOOTER ── */
         .footer { background:var(--sr-bg); padding:24px 40px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; border-top:1px solid var(--sr-border); }
-        .footer-logo { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--sr-text); }
-        .footer-logo span { color:#F4601A; }
+        .footer-logo { display:inline-flex; align-items:center; }
+        .footer-logo img { height:22px; width:auto; }
+        html[data-theme="light"] .footer-logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .footer-links { display:flex; gap:22px; }
         .footer-links a { font-size:0.78rem; color:var(--sr-muted); text-decoration:none; transition:color 0.15s; }
         .footer-links a:hover { color:var(--sr-text); }
@@ -454,7 +455,7 @@ function ListingsInner() {
 
       {/* FOOTER */}
       <footer className="footer">
-        <span className="footer-logo">Snap<span>Reserve</span>™</span>
+        <span className="footer-logo"><img src="/logo.png" alt="SnapReserve" /></span>
         <div className="footer-links">
           <a href="/about">About</a>
           <a href="/listings">Explore</a>

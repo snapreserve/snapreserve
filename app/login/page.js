@@ -121,8 +121,8 @@ function LoginInner() {
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 80% 60% at 30% 40%, rgba(232,98,42,.18) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 80%, rgba(232,98,42,.08) 0%, transparent 55%)', pointerEvents:'none' }} />
 
           {/* Brand */}
-          <div style={{ fontSize:17, fontWeight:700, color:'white', position:'relative', zIndex:1 }}>
-            Snap<span style={{ color:'#e8622a' }}>Reserve</span><sup style={{ fontSize:8, color:'rgba(255,255,255,.3)', verticalAlign:'super', marginLeft:1 }}>™</sup>
+          <div style={{ position:'relative', zIndex:1 }}>
+            <img src="/logo.png" alt="SnapReserve" style={{ height:30, width:'auto' }} />
           </div>
 
           {/* Hero */}

@@ -146,16 +146,11 @@ button, a, input, textarea, select {
   flex-shrink: 0;
 }
 .hs-logo-text {
-  font-family: var(--sr-font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--sr-text);
   text-decoration: none;
-  display: block;
-  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
 }
-.hs-logo-text span { color: var(--sr-orange); }
-.hs-logo-text sup  { font-size: 0.55em; vertical-align: super; opacity: 0.7; }
+.hs-logo-text img { height: 28px; width: auto; }
 .hs-logo-sub {
   font-size: 0.6rem;
   font-weight: 700;

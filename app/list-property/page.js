@@ -1051,7 +1051,7 @@ function ListPropertyInner() {
 
       {/* TOPBAR */}
       <div className="topbar">
-        <a href="/home" className="logo">Snap<em>Reserve™</em></a>
+        <a href="/home" className="logo"><img src="/logo.png" alt="SnapReserve" style={{ height: 26, width: 'auto', filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.4))' }} /></a>
         <div className="topbar-right">
           <button className="save-btn" onClick={handleSaveDraft} disabled={saving}>
             {draftSaved ? '✓ Saved' : saving ? 'Saving…' : 'Save draft'}

@@ -124,7 +124,7 @@ export default function HostSidebar({
       {/* Logo */}
       <div className="hs-logo-wrap">
         <a href="/" className="hs-logo-text">
-          Snap<span>Reserve</span><sup>™</sup>
+          <img src="/logo.png" alt="SnapReserve" />
         </a>
         <div className="hs-logo-sub">
           {myRole === 'owner' ? 'Host Portal' : 'Team Portal'}

@@ -6,8 +6,9 @@ export default function HostAgreementPage() {
         body { font-family: var(--sr-font-sans, -apple-system, sans-serif); background: var(--sr-bg); color: var(--sr-text); }
 
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); position: sticky; top: 0; z-index: 100; }
-        .logo { font-family: var(--sr-font-display, Georgia, serif); font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
-        .logo span { color: #F4601A; }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 26px; width: auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
 
         .hero { background: var(--sr-card); padding: 56px 48px 48px; }
         .hero-inner { max-width: 760px; margin: 0 auto; }
@@ -65,8 +66,9 @@ export default function HostAgreementPage() {
         .cc-email { background: #F4601A; color: white; padding: 12px 26px; border-radius: 100px; font-weight: 700; font-size: 0.88rem; text-decoration: none; white-space: nowrap; }
 
         .footer { background: var(--sr-bg); color: var(--sr-muted); padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 80px; border-top: 1px solid var(--sr-border); }
-        .footer-logo { font-family: var(--sr-font-display, Georgia, serif); font-size: 1rem; font-weight: 700; color: var(--sr-text); }
-        .footer-logo span { color: #F4601A; }
+        .footer-logo { display: inline-flex; align-items: center; }
+        .footer-logo img { height: 22px; width: auto; }
+        html[data-theme="light"] .footer-logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .footer-links { display: flex; gap: 24px; }
         .footer-links a { font-size: 0.78rem; color: var(--sr-muted); text-decoration: none; }
         .footer-links a:hover { color: var(--sr-text); }
@@ -77,7 +79,7 @@ export default function HostAgreementPage() {
 
       {/* NAV */}
       <nav className="nav">
-        <a href="/home" className="logo">Snap<span>Reserve™</span></a>
+        <a href="/home" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <div style={{display:'flex',gap:'8px'}}>
           <a href="/login" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',border:'1px solid var(--sr-border-solid,#D4CEC5)',color:'var(--sr-text)',textDecoration:'none'}}>Log in</a>
           <a href="/home" style={{padding:'8px 20px',borderRadius:'100px',fontSize:'0.84rem',fontWeight:'700',background:'#F4601A',color:'white',textDecoration:'none'}}>Get Started</a>
@@ -478,7 +480,7 @@ export default function HostAgreementPage() {
       </div>
 
       <footer className="footer">
-        <div className="footer-logo">Snap<span>Reserve™</span></div>
+        <div className="footer-logo"><img src="/logo.png" alt="SnapReserve" /></div>
         <div className="footer-links">
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>

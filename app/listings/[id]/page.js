@@ -167,8 +167,8 @@ export default async function PropertyPage({ params, searchParams }) {
 
           /* NAV */
           .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-          .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; text-decoration: none; color: var(--brown); }
-          .logo em { color: var(--orange); font-style: normal; }
+          .logo { text-decoration: none; display: inline-flex; align-items: center; }
+          .logo img { height: 26px; width: auto; filter: drop-shadow(0 0 3px rgba(0,0,0,0.4)); }
           .nav-btn { padding: 8px 20px; border-radius: 100px; font-size: 0.84rem; font-weight: 600; text-decoration: none; font-family: 'Syne', sans-serif; }
           .nav-btn.outline { border: 1.5px solid var(--border); color: var(--brown); }
           .nav-btn.outline:hover { border-color: var(--mid); }
@@ -299,7 +299,7 @@ export default async function PropertyPage({ params, searchParams }) {
 
         {/* NAV */}
         <nav className="nav">
-          <a href="/home" className="logo">Snap<em>Reserve™</em></a>
+          <a href="/home" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {user ? (
               <>

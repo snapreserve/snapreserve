@@ -15,7 +15,6 @@ const NAV_LINKS = [
 const RIGHT_WIDTH = 196
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&display=swap');
   .sr-nav {
     background: var(--sr-surface, rgba(250,248,245,0.96));
     backdrop-filter: blur(12px);
@@ -35,17 +34,15 @@ const STYLES = `
     gap: 16px;
   }
   .sr-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.45rem;
-    font-weight: 700;
     text-decoration: none;
-    color: var(--sr-text, #1A1410);
-    letter-spacing: -0.01em;
     flex-shrink: 0;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
   }
-  .sr-logo span { color: var(--sr-orange, #F4601A); }
-  .sr-logo sup { font-size: 0.52em; vertical-align: super; opacity: 0.65; }
+  .sr-logo img { height: 28px; width: auto; }
+  html[data-theme="light"] .sr-logo img {
+    filter: drop-shadow(0 0 3px rgba(0,0,0,0.45));
+  }
   .sr-nav-links {
     display: flex;
     gap: 4px;
@@ -149,7 +146,7 @@ export default function SharedHeader() {
       <style>{STYLES}</style>
       <nav className="sr-nav">
         <div className="sr-nav-inner">
-          <a href="/home" className="sr-logo">Snap<span>Reserve</span><sup>™</sup></a>
+          <a href="/home" className="sr-logo"><img src="/logo.png" alt="SnapReserve" /></a>
 
           <div className="sr-nav-links">
             {NAV_LINKS.map(({ href, label }) => (

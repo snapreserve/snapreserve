@@ -89,7 +89,7 @@ export default async function AdminLayout({ children }) {
           {/* Logo — matches host portal exactly */}
           <div className="hs-logo-wrap">
             <a href="/" className="hs-logo-text">
-              Snap<span>Reserve</span><sup>™</sup>
+              <img src="/logo.png" alt="SnapReserve" />
             </a>
             <div className="hs-logo-sub">Admin Console</div>
           </div>

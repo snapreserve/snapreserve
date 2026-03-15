@@ -87,8 +87,9 @@ function ConfirmationContent() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--sr-bg); color: var(--sr-text); }
         .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 48px; height: 68px; background: var(--sr-card); border-bottom: 1px solid var(--sr-border-solid,#E8E2D9); }
-        .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-decoration: none; color: var(--sr-text); }
-        .logo span { color: #F4601A; }
+        .logo { text-decoration: none; display: inline-flex; align-items: center; }
+        .logo img { height: 26px; width: auto; }
+        html[data-theme="light"] .logo img { filter: drop-shadow(0 0 3px rgba(0,0,0,0.45)); }
         .wrapper { max-width: 600px; margin: 48px auto; padding: 0 24px 80px; }
         .check-circle { width: 72px; height: 72px; background: linear-gradient(135deg,#16A34A,#22C55E); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px; box-shadow: 0 8px 24px rgba(22,163,74,0.25); }
         .conf-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 6px; }
@@ -129,7 +130,7 @@ function ConfirmationContent() {
       `}</style>
 
       <nav className="nav">
-        <a href="/" className="logo">Snap<span>Reserve</span></a>
+        <a href="/" className="logo"><img src="/logo.png" alt="SnapReserve" /></a>
         <a href="/trips" style={{ fontSize: '0.84rem', color: 'var(--sr-muted)', textDecoration: 'none', fontWeight: 600 }}>
           My trips →
         </a>
