@@ -23,3 +23,4 @@ export default async function RefundsPage() {
   const refunds = await getRefunds()
   return <RefundsClient initialRefunds={refunds} role={role} />
 }
+
